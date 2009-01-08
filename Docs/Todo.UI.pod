@@ -1,0 +1,38 @@
+=head1 NAME
+
+Todo List for UMLS-Interface
+
+=head1 SYNOPSIS
+
+Plans for future versions of UMLS-Interface
+
+=head1 DESCRIPTION
+
+=head2 Version 0.03 ToDo
+
+=over
+
+=item 1. Allow for back compatability of UMLS versions
+
+=item 2. Revise marking relation to not be considered
+
+=head1 AUTHORS
+
+Bridget T. McInnes <bthomson at cs.umn.edu>
+
+=head1 SEE ALSO
+
+=head1 COPYRIGHT
+
+Copyright (C) 2007-2009 Ted Pedersen, Bridget T. McInnes, Sid Patwardhan, Serguei Pakhomov
+
+Permission is granted to copy, distribute and/or modify this  document  
+under the terms of the GNU Free Documentation License, Version 1.2 or  any  
+later version published by the Free Software Foundation; with no  
+Invariant Sections, no Front-Cover Texts, and no Back-Cover Texts.
+
+Note: a copy of the GNU Free Documentation License is available on the web   
+at L<http://www.gnu.org/copyleft/fdl.html> and is included in this    
+distribution as FDL.txt. 
+
+=cut

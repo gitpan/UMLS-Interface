@@ -1,0 +1,578 @@
+###########################################################################
+#
+#    INSTALLATION Instructions for the UMLS-Interface Package
+#    $Id: INSTALL.pod,v 1.5 2008/12/02 14:24:54 btmcinnes Exp $ 
+###########################################################################
+
+=head1 
+
+UMLS-Interface
+
+=head1 TESTING PLATFORMS
+
+UMLS-Interface has been developed and tested on Linux primarily 
+using Perl.
+
+=head1 SYNOPSIS
+
+ perl Makefile.PL
+
+ make
+
+ make test
+
+ make install
+
+=head1 DESCRIPTION
+
+=head1 REQUIREMENTS
+
+UMLS-Interface REQUIRES that the following software packages and data:
+
+=head2 Programming Languages
+
+Perl (version 5.8.0 or better)
+Java SE Development Kit (JDK)
+
+=head2 CPAN Modules
+DBI
+
+=head2 Database
+
+MySQL (version 5 or better)
+
+=head2 Data
+
+Unified Medical Language System (UMLS 2008AA or higher)
+
+=head1 INSTALLATION STAGES
+
+=item The installation is broken into five stages:
+
+
+=item Stage 1:  Install Programming Languages
+	  
+	  If already installed you need at minimum: 
+	      - Perl version 5.8 or better
+	      - Java SE Development Kit
+
+=item Stage 2:  Install CPAN Modules
+
+=item Stage 3:  Install MySQL
+      
+	  If already installed you need at minimum: 
+	      - MySQL version 5 or better
+
+=item Stage 4:  Install the UMLS
+	  
+	  If already installed you need at minimum: 
+	      - the following files in the META directory:
+	        -- populate_mysql_db.sh script 
+		-- MRREL.RFF
+		-- MRCONSO.RFF
+		-- MRSAB.RFF
+		-- MRDOC.RFF
+	      - the following files in the NET directory
+		    --populate_mysql_db.sh script
+		    --SRDEF
+	  
+=item Stage 5:  Load the UMLS into MySQL
+	  
+	  If already installed you need at minimum: 
+	      - the following tables 
+		-- MRREL
+		-- MRCONSO
+		-- MRSAB
+		-- MRDOC
+		-- SRDEF
+
+=item Stage 6:  Install UMLS-Interface and set environment variable
+
+More details on how to obtain and install appear below.
+
+=head1 Stage 1: Install Programming Languages, if already installed go to Stage 2
+
+=head2 Perl (version 5.8.5 or better)
+
+Perl is freely available at http://www.perl.org. It is very likely that 
+you will already have Perl installed if you are using a Unix/Linux based 
+system. 
+
+=head2 Java SE Development Kit (JDK)
+
+JDK is freely available at http://java.sun.com/. The latest version 
+today is JDK 6 which can be found here:
+      
+      http://java.sun.com/javase/6/webnotes/install/index.html
+
+
+I installed JDK 6 on Red Hat Enterprise Linux WS release 4 using rpms. 
+The instructions that I used can be found here:
+
+    http://java.sun.com/javase/6/webnotes/install/jdk/install-linux.html#install-rpm
+
+You can also install it using the binaries. Instructions for that 
+can be found here:
+
+    http://java.sun.com/javase/6/webnotes/install/jdk/install-linux.html#self-extracting
+
+=head1 Stage 2 - Install CPAN modules, if already installed go to Stage 3
+
+=head1 CPAN MODULES
+
+=head2 DBI
+
+UMLS-Interface uses DBI to access the mysql database containing the 
+UMLS. DBI is freely available at http://search.cpan.org/~timb/DBI/
+
+perl -MCPAN -e shell
+> install DBI
+
+CPAN modules, and will not be repeated in detail for each module.****
+
+If you have supervisor access, or have configured MCPAN for local 
+install, you can install via: 
+
+perl -MCPAN -e shell
+> install DBI
+
+If not, you can, "manually" install by downloading the *.tar.gz file,  
+unpacking, and executing the following commands. 
+
+perl Makefile.PL PREFIX=/space/kulka020/Bit-Vector LIB=/space/kulka020/MyPerlLib
+make
+make test
+make install
+
+Note that the PREFIX and LIB settings are just examples to help you create 
+a local install, if you do not have supervisor (su) access. 
+
+You must include /space/kulka020/MyPerlLib in your PERL5LIB environment 
+variable to access this module when running.
+
+=head1 Stage 3 - Install MySQL, if already installed go to Stage 4
+
+Requires MySQL (version 5 or better)
+
+MySQL is a freely available database at http://www.mysql.com/. You may be 
+able to install this with you package manager. Otherwise you will have to 
+download the appropriate files from the MySQL website. Either way, make 
+certain that the following are installed: 
+
+	1. Server
+	2. Client
+	3. Shared libraries
+	4. Headers and libraries
+
+Sometimes the headers and libraries are not installed so you want to 
+double check on that.
+
+==head2 Installing on Red Hat Enterprise Linux WS release 4 using rpms
+
+I installed this on Red Hat Enterprise Linux WS release 4 using rpms. So, I 
+downloaded the corresponding rpms:
+
+	1. MySQL-server-community-5.0.51a-0.rhel4.i386.rpm
+	2. MySQL-client-community-5.0.51a-0.rhel4.i386.rpm
+	3. MySQL-shared-community-5.0.51a-0.rhel4.i386.rpm
+	4. MySQL-devel-community-5.0.51a-0.rhel4.i386.rpm
+
+I ran into two problems. The first was I had an older version of RedHat 
+that another program was dependent on and it would not let me upgrade. 
+I ended up just removing the program and the older version of MySQL. This 
+was not recommended by the MySQL documentation but after a certain point 
+it just became too frustrating. The second problem that I had was I kept 
+receiving the following error:
+
+Warning: Can't connect to local MySQL server through socket 
+'/var/lib/mysql/mysql.sock' (2) in /var/www/html/forum/admin/
+db_mysql.php on line 40
+
+Warning: MySQL Connection Failed: Can't connect to local MySQL 
+server through socket '/var/lib/mysql/mysql.sock' (2) in 
+/var/www/html/forum/admin/db_mysql.php on line 40
+
+I don't completely understand this error but after much googling I ended 
+up moving the mysql.sock file to the '/tmp' directory and changed the the 
+socket location in my 'my.cnf' file which was located in the '/etc' 
+directory. I changed the following line:
+    from : socket = /var/lib/mysql/mysql.sock
+    to   : socket = /tmp/mysql.sock
+
+In the /var/lib/mysql/ directory I have a mysql.sock= file. I created a
+symbolic link to that from the /tmp directory
+
+        ln -s /var/lib/mysql/mysql.sock= /tmp/mysql.sock
+
+Then everything seemed to work fine. 
+
+I then set my root password:
+
+     /usr/bin/mysqladmin -u root password 'new-password'
+
+=head2 Installing on Fedora using yum
+
+Ted installed mysql on Fedora using yum. 
+
+To install mysql using yum, type the following three commands on 
+the command line:
+
+    1. yum install mysql
+    2. yum install mysql-server
+    3. yum install mysql-devel 
+
+After this is complete mysql should be installed. Next you need 
+to start the mysql server by typing the following command:
+   
+     service mysqld start
+
+=head2 Installing on Ubuntu using apt-get
+
+I also installed this on Ubuntu. This was 100 times easier than 
+using the rpms! Type the following commands: 
+
+sudo apt-get install mysql-common
+sudo apt-get install mysql-client
+sudo apt-get install mysql-server
+
+You are done - much easier!
+
+=head2 Reminder
+
+Also for all the installations, remember to set your root password:
+
+     /usr/bin/mysqladmin -u root password 'new-password'
+
+
+=head1 Stage 4 - Install UMLS, if already installed go to Stage 5
+
+=head2 VERSION
+
+The UMLS-Interface requires version UMLS 2008AA or higher
+
+=head2 REMINDER
+
+If you already have the UMLS installed, make certain that you have 
+the populate_mysql_db.sh script in the META directory as well as the 
+MRREL.RFF, MRCONSO.RFF, MRSAB.RFF, and MRDOC.RFF files. If you do 
+not you will need to run the install program (MetamorphoSys) again.
+
+=head2 DESCRIPTION OF UMLS
+
+The UMLS is a freely available knowledge representation framework 
+designed to support broad scope biomedical research queries. It 
+includes over 100 controlled medical terminologies and classification 
+systems encoded with different semantic and syntactic structures. 
+The three major sources of UMLS are the Metathesaurus, Semantic 
+Network and SPECIALIST Lexicon. To obtain the UMLS you need to 
+register for a license. For more information please see: 
+	
+	http://www.nlm.nih.gov/research/umls/
+
+The UMLS is installed and the MySQL load scripts are created using 
+MetamorphoSys. MetamorphoSys is the UMLS installation wizard and 
+customization tool included in each UMLS release. It installs one 
+or more of the UMLS Knowledge Sources; when the Metathesaurus is 
+selected, the user can create customized Metathesaurus subsets. 
+MetamorphoSys may be used to exclude vocabularies that are not 
+required or licensed for use in local applications and to select 
+from a variety of data output options and filters. Below are 
+directions for a basic installation - nothing fancy.
+
+There are quite a few steps and substeps here. The steps aren't 
+complicated - there are just alot of different windows that 
+pop up and I tried to break it down into small steps so I 
+wouldn't miss anything. The directions can also be found with 
+in the UMLS documentation:
+
+    http://www.nlm.nih.gov/research/umls/load_scripts.html
+    http://www.nlm.nih.gov/research/umls/meta6.html
+
+
+=head2 Step 1: Download the UMLS 
+
+     The UMLS is freely available but you need to register for 
+     a UMLS license prior to downloading. 
+
+     You can register here:      http://umlsks.nlm.nih.gov/ 
+
+     The download link is here: http://www.nlm.nih.gov/research/umls/
+     
+     Download the following files:
+       1. <current release>-1-meta.nlm  
+       2. <current release>-otherks.nlm    
+       3. <current release>-2-meta.nlm  
+       4. mmsys.zip	  
+       5. <current release>.CHK  
+       6. Copyright_Notice.txt  
+       7. README.txt
+
+=head2 Step 2: Unzip the mmsys.zip file (unzip mmsys.zip)
+	
+	The following should be created:
+	  1. linux_mmsys.sh
+	  2. solaris_mmsys.sh
+	  3. macintosh_mmsys.sh
+	  4. windows_mmsys.bat
+	  5. MMSYS/ (directory)
+
+
+=head2 Step 3: Run MetamorphoSys (the install wizard)
+
+       -- Run the appropriate .sh file for your system 
+	       --> I ran ./linux_mmsys.sh
+
+       -- Click 'Install UMLS'
+
+       -- INSTALL UMLS' Window will appear
+	  - Type in your destination directory. I used 
+	    the same directory as my Source.
+	  - At the very least make certain that the Metathesaurus 
+	    box is checked. Although, I installed all three of the 
+	    Knowledge Sources: 'Metathesaurus', 'Semantic 
+	    Network' and 'SPECIALIST Lexicon and Lexical Tools'.
+   	  - Click 'OK'
+
+       -- 'Install UMLS' and 'MetamorphoSys Configuration' windows will appear
+           - Click 'New Configuration' in the 'MetamorphoSys Configuration' 
+		     
+       -- 'License Agreement Notice' window will appear
+	  - Click 'Accept'
+
+       -- 'Select Default Subset' window will appear
+	  - Click 'Level 0 + SNOMEDCT' 		
+		- Unless you don't want or do not have a license for 
+		  SNOMED-CT. then Click 'Level 0'
+	  - Click 'Done'
+
+       -- 'UMLS Metathesaurus Configuration' window will appear
+	  - Click on the 'Output Options' tab
+	  - Check the 'Write MySQL load script' box 
+	        - this is under the heading 'Write Database Load Scripts'
+          - Click 'Done' and then 'Begin Subset'
+	        - this is the last option on the list of options in the 
+	          top left hand corner of the window. 
+          - A box will appear asking if you would save the changes 
+	        - this is up to you; I clicked 'No'
+
+     Now the UMLS will install and the load scripts will be created 
+			
+       -- 'Finished' window will appear
+          - Click 'Done'
+
+
+=head1 Stage 5 - Load UMLS into MySQL, if already installed go to Stage 6
+
+=head2 Step 1: Create the MySQL database
+
+        Log into MySQL and create a database called 'umls' 
+	as follows:
+
+	CREATE DATABASE IF NOT EXISTS umls CHARACTER SET utf8 COLLATE utf8_unicode_ci;
+
+=head2 Step 2: Modify the 'my.cnf' file. 
+
+	My 'my.cnf' file is located in the '/etc' directory. I found it by 
+	typing "whereis my.cnf" on the command line. If you do not have a 
+	my.cnf file check to see if you have a 'my.ini' file (which one 
+	you have will depend on your system).
+
+	The following options need to be modified to optimize for read 
+	performance, the MySQL 5 server requires changing buffer sizes 
+	to make use of the memory available. 
+
+		      key_buffer        = 300M
+		      table_cache       = 300
+		      sort_buffer_size  = 20M
+		      read_buffer_size  = 20M
+		      query_cache_limit = 3M
+		      query_cache_size  = 100M
+
+=head2 Step 3:	Populate the MySQL table using the load scripts
+
+=head3 Step A: Find the MySQL load script
+
+	        Go to your Destination directory that you 
+		typed in Step C (this is where I said my 
+		source and destination directory were the 
+		same)
+
+		go to the: <destination>/2008AA/META directory
+
+		In it you should see the file:
+
+		   populate_mysql_db.sh
+
+		If you don't see this file - you need to start 
+		over. Step 3 - F did not get done properly.
+
+
+=head3 Step B: Modify the MySQL load scripts 
+	   
+	   In the populate_mysql_db.sh you need to modify the 
+	   following:
+
+		MYSQL_HOME=<path to MYSQL_HOME>
+		user=<username>
+		password=<password>
+		db_name=<db_name>
+
+	   For example, I modified my file as follows:
+
+		MYSQL_HOME=/usr/
+		user=bthomson
+		password=<well I am not giving you my actual password>
+		db_name=umls
+
+=head3 Step C:  Run the MySQL load scripts
+
+		Run this script by typing on the command line:
+
+		    ./populate_mysql_db.sh
+
+		If you get the following:
+
+		    ./populate_mysql_db.sh: Permission denied.
+
+		You need to change your permissions and try again. To change 
+		your permissions type:
+
+		     chmod 755 populate_mysql_db.sh
+
+
+	Now this takes what feels like FOREVER! Now would be a good 
+	time to go do something else until sometime late tomorrow 
+	(yes, unfortunately, tomorrow) evening ... 
+
+=head2 Step D: Modify the my.cnf file (again)
+
+	My 'my.cnf' file is located in the '/etc' directory. I found it by 
+	typing "whereis my.cnf" on the command line. If you do not have a 
+	my.cnf file check to see if you have a 'my.ini' file (which one 
+	you have will depend on your system).
+
+	This time you are modifying it so the that the UMLS-Interface 
+	package and the umlsCycles.pl program can automatically 
+	log into the umls database.
+
+	    [client]
+	    user            = <username>
+	    password	    = <password>
+	    port	    = 3306
+	    socket          = /tmp/mysql.sock
+	    database        = umls
+	    
+	    The port number is should already be in the my.cnf file 
+	    under the [mysql] heading. I just copied and pasted that. 
+	    
+	    The socket is what ever socket you used in Stage 3. 
+
+	    Remember we discussed how big of pain this was since 
+	    it seemed like the socket location depended on what 
+	    operating system you were using. My RedHat is:
+		      socket = /tmp/mysql.sock
+	    where as on my Ubunutu:	    
+	              socket = /var/lib/mysql/mysql.sock
+
+            A pain I know. If you need help just send me an email.
+
+	    The database is whatever you called the database that 
+	    the UMLS is installed in. My is 'umls'.
+     
+=head1 Stage 6 - Install UMLS-Interface and set environment variable
+
+The usual way to install the package is to run the following commands:
+
+     perl Makefile.PL
+     make
+     make test
+     make install
+
+
+    You will often need root access/superuser privileges to run
+    make install. The module can also be installed locally. To do a local
+    install, you need to specify a PREFIX option when you run 'perl
+    Makefile.PL'. For example,
+
+     perl Makefile.PL PREFIX=/home/sid
+
+    or
+
+     perl Makefile.PL LIB=/home/sid/lib PREFIX=/home/sid
+
+    will install UMLS-Interface into /home/sid. The first method above 
+    will install the modules in /home/sid/lib/perl5/site_perl/5.8.3 
+    (assuming you are using version 5.8.3 of Perl; otherwise, the 
+    directory will be slightly different). The second method will 
+    install the modules in /home/sid/lib. In either case the executable 
+    scripts will be installed in /home/sid/bin and the man pages will 
+    be installed in home/sid/share.
+
+    Warning: do not put a dash or hyphen in front of PREFIX, LIB or WNHOME.
+
+    In your perl programs that you may write using the modules, you may need
+    to add a line like so
+
+     use lib '/home/sid/lib/perl5/site_perl/5.8.3';
+
+    if you used the first method or
+
+     use lib '/home/sid/lib';
+
+    if you used the second method. By doing this, the installed modules are
+    found by your program. To run the similarity.pl program, you would need
+    to do
+
+     perl -I/home/sid/lib/perl5/site_perl/5.8.3 similarity.pl
+
+    or
+
+     perl -I/home/sid/lib
+
+    Of course, you could also add the 'use lib' line to the top of the
+    program yourself, but you might not want to do that. You will need to
+    replace 5.8.3 with whatever version of Perl you are using. The
+    preceding instructions should be sufficient for standard and slightly
+    non-standard installations. However, if you need to modify other
+    makefile options you should look at the ExtUtils::MakeMaker
+    documentation. Modifying other makefile options is not recommended
+    unless you really, absolutely, and completely know what you're doing!
+
+    NOTE: If one (or more) of the tests run by 'make test' fails, you will
+    see a summary of the tests that failed, followed by a message of the
+    form "make: *** [test_dynamic] Error Y" where Y is a number between 1
+    and 255 (inclusive). If the number is less than 255, then it indicates
+    how many test failed (if more than 254 tests failed, then 254 will still
+    be shown). If one or more tests died, then 255 will be shown. For more
+    details, see:
+
+    http://search.cpan.org/dist/Test-Simple/lib/Test/Builder.pm#EXIT_CODES
+
+    The UMLSINTERFACE environment variable needs to be set to the location 
+    that the UMLS-Interface package is installed in order to gain access 
+    to the files in the default_options directory.
+
+    For example:
+
+      # in cshell
+      setenv UMLSINTERFACE /home/btmcinnes/UMLS-Interface
+
+      # in bash
+      export UMLSINTERFACE=/home/btmcinnes/UMLS-Interface
+
+    This can be added to your .cshrc or .bashrc file
+
+=head1 CONTACT US
+
+If you have any trouble installing and using UMLS-Interface, please 
+contact us via the users mailing list : 
+
+umls-query-users@lists.sourceforge.net
+
+You may also contact us directly if you prefer :
+
+Bridget T. McInnes: bthomson@cs.umn.edu
+Ted Pedersen      : tpederse@d.umn.edu
+
+
+

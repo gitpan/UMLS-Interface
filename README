@@ -1,0 +1,145 @@
+
+    UMLS::Interface
+
+  SYNOPSIS
+        This package provides a Perl interface to UMLS, a taxonomy of
+        medical concepts. The package is set up to access UMLS present in
+        a mysql database. The package was essentially created for use with
+        the Semantic::Similarity package for measuring the semantic
+        relatedness of concepts.
+
+  INSTALL
+        To install the module, run the following magic commands:
+
+          perl Makefile.PL
+          make
+          make test
+          make install
+
+        This will install the module in the standard location. You will, most
+        probably, require root privileges to install in standard system
+        directories. To install in a non-standard directory, specify a prefix
+        during the 'perl Makefile.PL' stage as:
+
+          perl Makefile.PL PREFIX=/home/sid
+
+        It is possible to modify other parameters during installation. The
+        details of these can be found in the ExtUtils::MakeMaker
+        documentation. However, it is highly recommended not messing around
+        with other parameters, unless you know what you're doing.
+
+        Next set the UMLSINTERFACE environment variable
+
+  DATABASE SETUP
+        The interface assumes that the UMLS is present as a mysql database. 
+        The names of these databases can be passed as configuration options 
+        at initialization. However, if the names of the database is not 
+        provided at initialization, then default values are used -- the 
+        database for the UMLS is called 'umls'.
+
+        The UMLS database must contain four tables: 
+            1. MRREL
+            2. MRCONSO
+            3. MRSAB
+            4. MRDOC
+
+        All other tables in the databases will be ignored, and any of these
+        tables missing would raise an error.
+
+        The mysql server can be on the same machine as the module or could
+        be on a remotely accessible machine. The location of the server can
+        be provided during initialization of the module.
+
+  INITIALIZING THE MODULE
+        To create an instance of the interface object, using default values for
+        all configuration options:
+
+          use UMLS::Interface;
+          my $interface = UMLS::Interface->new();
+
+        Configuration options can be included in the MySQL my.cnf 
+        file. This is preferable. The directions for this are in 
+        the INSTALL file. It is Stage 5 Step D.  
+
+        The following configuration options are also provided though:
+
+        'driver'       -> Default value 'mysql'. This option specifies the 
+                          Perl DBD driver that should be used to access the
+                          database. This implies that the some other DBMS
+                          system (such as PostgresSQL) could also be used,
+                          as long as there exist Perl DBD drivers to
+                          access the database.
+        'umls'         -> Default value 'umls'. This option specifes the name
+                          of the UMLS database.
+        'hostname'     -> Default value 'localhost'. The name or the IP 
+                          address of the machine on which the database 
+                          server is running.
+        'socket'       -> Default value '/tmp/mysql.sock'. The socket on 
+                          which the database server is using.
+        'port'         -> The port number on which the database server 
+                          accepts connections.
+        'username'     -> Username to use to connect to the database server. 
+                          If not provided, the module attempts to connect as 
+                          an anonymous user.
+        'password'     -> Password for access to the database server. If not
+                          provided, the module attempts to access the server
+                          without a password.
+
+  USING THE MODULE
+        Once the object of module is successfully created after following the
+        steps described in the previous section, a number of methods can be
+        called upon this object:
+
+          getError()                -- Returns the error code and error string from 
+                                       the last method call on the object.
+          root()                    -- Returns the concept ID of the root of the tree.
+          depth()                   -- Returns the depth of the tree.
+          version()                 -- Return the version of UMLS.
+          exists()                  -- Determines if a CUI exists
+          validCui()                -- Checks if CUI is a valid concept
+          getSab()                  -- Returns the list of sources the concept
+                                       exists in
+          getConceptList()          -- Returns the list of all concept IDs preset in
+                                       the database.
+          getTermsList()            -- Returns the list of terms corresponding to a 
+                                       particular concept ID.
+          getParents()              -- Returns the parent of a given CUI
+          getChildren()             -- Returns the children of a given CUI
+          pathsToRoot()             -- Returns a list of concept IDs that denote 
+                                       the path from the input concept ID to the 
+                                       root 
+                                       concept of the taxonomy.
+          findShortestPath()        -- Returns the shortest path between two CUIs
+          findLeastCommonSubsumer() -- Returns the least common subsumer between
+                                       two CUIs
+          getCuiDef                 -- Returns the definition(s) of a given CUI
+          getStDef                  -- Returns the definition of a given ST
+          dropTable                 -- Drops the temporary table created by 
+                                       the UMLS-Interface module of path information
+                                       for a specified set of sources
+
+        These methods essentially expose an interface as required by the
+        UMLS::Similarity modules. The UMLS::Similarity modules require
+        that any interface to a taxonomy provide the above methods.
+
+  SOFTWARE COPYRIGHT AND LICENSE
+        Copyright (C) 2004-2009 Bridget T McInnes, Siddharth Patwardhan, Serguei 
+        Pakhomov and Ted Pedersen
+
+        This suite of programs is free software; you can redistribute it and/or
+        modify it under the terms of the GNU General Public License as
+        published by the Free Software Foundation; either version 2 of the
+        License, or (at your option) any later version.
+
+        This program is distributed in the hope that it will be useful, but
+        WITHOUT ANY WARRANTY; without even the implied warranty of
+        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+        General Public License for more details.
+
+        You should have received a copy of the GNU General Public License along
+        with this program; if not, write to the Free Software Foundation, Inc.,
+        59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+
+        Note: The text of the GNU General Public License is provided in the
+        file 'GPL.txt' that you should have received with this distribution.
+
