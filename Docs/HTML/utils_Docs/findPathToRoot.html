@@ -14,7 +14,7 @@
 
 <ul>
 
-	<li><a href="#umlsinterface">UMLS-Interface</a></li>
+	<li><a href="#name">NAME</a></li>
 	<li><a href="#synopsis">SYNOPSIS</a></li>
 	<li><a href="#usage">USAGE</a></li>
 	<li><a href="#input">INPUT</a></li>
@@ -23,7 +23,7 @@
 		<li><a href="#required_arguments_">Required Arguments:</a></li>
 		<ul>
 
-			<li><a href="#term">TERM</a></li>
+			<li><a href="#cui">CUI</a></li>
 		</ul>
 
 		<li><a href="#optional_arguments_">Optional Arguments:</a></li>
@@ -54,19 +54,19 @@
 <hr />
 <p>
 </p>
-<h1><a name="umlsinterface">UMLS-Interface</a></h1>
-<p>findShortestPath.pl</p>
+<h1><a name="name">NAME</a></h1>
+<p>findShortestPath.pl - this program</p>
 <p>
 </p>
 <hr />
 <h1><a name="synopsis">SYNOPSIS</a></h1>
-<p>This program takes two CUIs and returns the shortest 
-path between them.</p>
+<p>This program takes a CUI and returns all of possible 
+paths to the root</p>
 <p>
 </p>
 <hr />
 <h1><a name="usage">USAGE</a></h1>
-<p>Usage: findShortestPath.pl [OPTIONS] CUI1 CUI2</p>
+<p>Usage: findPathToRoot.pl [OPTIONS] CUI</p>
 <p>
 </p>
 <hr />
@@ -76,8 +76,8 @@ path between them.</p>
 <h2><a name="required_arguments_">Required Arguments:</a></h2>
 <p>
 </p>
-<h3><a name="term">TERM</a></h3>
-<p>A term from the Unified Medical Language System</p>
+<h3><a name="cui">CUI</a></h3>
+<p>A concept (CUI) from the Unified Medical Language System</p>
 <p>
 </p>
 <h2><a name="optional_arguments_">Optional Arguments:</a></h2>

@@ -1,9 +1,9 @@
 #! /usr/local/bin/perl 
 #!/usr/bin/perl 
 
-=head1 UMLS-Interface
+=head1 NAME
 
-findShortestPath.pl
+findShortestPath.pl - program finds the shoretst path between two concepts
 
 =head1 SYNOPSIS
 
@@ -18,9 +18,9 @@ Usage: findShortestPath.pl [OPTIONS] CUI1 CUI2
 
 =head2 Required Arguments:
 
-=head3 TERM
+=head3 CUI1 and CUI2
 
-A term from the Unified Medical Language System
+A concepts (CUIs) from the Unified Medical Language System
 
 =head2 Optional Arguments:
 

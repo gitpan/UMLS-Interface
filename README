@@ -1,5 +1,5 @@
-
-    UMLS::Interface
+NAME
+    UMLS::Interface README
 
   SYNOPSIS
         This package provides a Perl interface to UMLS, a taxonomy of

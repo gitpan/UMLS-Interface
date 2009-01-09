@@ -1,9 +1,10 @@
 #! /usr/local/bin/perl 
 #!/usr/bin/perl 
 
-=head1 UMLS-Interface
+=head1 NAME
 
-dropTemporaryTables.pl
+dropTemporaryTables.pl - this program drops the temporary tables 
+that are created based on the default and/or configuration files.
 
 =head1 SYNOPSIS
 

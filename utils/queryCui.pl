@@ -1,9 +1,9 @@
 #! /usr/local/bin/perl 
 #!/usr/bin/perl 
 
-=head1 UMLS-Interface
+=head1 NAME
 
-queryCui.pl
+queryCui.pl - this program returns all associated terms of a concept
 
 =head1 SYNOPSIS
 

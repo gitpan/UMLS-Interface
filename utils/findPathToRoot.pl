@@ -1,26 +1,26 @@
 #! /usr/local/bin/perl 
 #!/usr/bin/perl 
 
-=head1 UMLS-Interface
+=head1 NAME
 
-findShortestPath.pl
+findShortestPath.pl - this program 
 
 =head1 SYNOPSIS
 
-This program takes two CUIs and returns the shortest 
-path between them.
+This program takes a CUI and returns all of possible 
+paths to the root
 
 =head1 USAGE
 
-Usage: findShortestPath.pl [OPTIONS] CUI1 CUI2
+Usage: findPathToRoot.pl [OPTIONS] CUI
 
 =head1 INPUT
 
 =head2 Required Arguments:
 
-=head3 TERM
+=head3 CUI
 
-A term from the Unified Medical Language System
+A concept (CUI) from the Unified Medical Language System
 
 =head2 Optional Arguments:
 
@@ -212,7 +212,7 @@ sub errorCheck
 ##############################################################################
 sub minimalUsageNotes {
     
-    print "Usage: findShortestPath.pl [OPTIONS] CUI1 CUI2\n\n";
+    print "Usage: findPathToRoot.pl [OPTIONS] CUI\n";
     &askHelp();
     exit;
 }
@@ -223,10 +223,10 @@ sub minimalUsageNotes {
 sub showHelp() {
 
         
-    print "This is a utility that takes as input two CUIs\n";
-    print "and returns the shortest path between them.\n\n";
+    print "This is a utility that takes as input a CUI\n";
+    print "and returns all possible paths to the root.\n\n";
   
-    print "Usage: findShortestPath.pl [OPTIONS] CUI1 CUI2\n\n";
+    print "Usage: findPathToRoot.pl [OPTIONS] CUI\n\n";
 
     print "Options:\n\n";
 
@@ -259,6 +259,6 @@ sub showVersion {
 #  function to output "ask for help" message when user's goofed
 ##############################################################################
 sub askHelp {
-    print STDERR "Type findShortestPath.pl --help for help.\n";
+    print STDERR "Type findPathToRoot.pl --help for help.\n";
 }
     

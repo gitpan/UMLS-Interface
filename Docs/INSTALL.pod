@@ -4,9 +4,9 @@
 #    $Id: INSTALL.pod,v 1.5 2008/12/02 14:24:54 btmcinnes Exp $ 
 ###########################################################################
 
-=head1 
+=head1 NAME
 
-UMLS-Interface
+UMLS-Interface Installation Guide
 
 =head1 TESTING PLATFORMS
 

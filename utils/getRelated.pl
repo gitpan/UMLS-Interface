@@ -1,9 +1,9 @@
 #! /usr/local/bin/perl 
 #!/usr/bin/perl 
 
-=head1 UMLS-Interface
+=head1 NAME
 
-getRelation.pl
+getRelation.pl - this programs returns all CUIs of a given relation
 
 =head1 SYNOPSIS
 
@@ -12,15 +12,15 @@ given a specified set of sources.
 
 =head1 USAGE
 
-Usage: getRelation.pl [OPTIONS] TERM
+Usage: getRelation.pl [OPTIONS] CUI
 
 =head1 INPUT
 
 =head2 Required Arguments:
 
-=head3 TERM
+=head3 CUI
 
-A term from the Unified Medical Language System
+A concept from the Unified Medical Language System
 
 =head2 Optional Arguments:
 

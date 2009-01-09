@@ -1,8 +1,8 @@
 #!/usr/bin/perl
 
-=head1 UMLS-Similarity
+=head1 NAME
 
-umlsCycles
+umlsCycles - this program marks problematic relations defined by the user
 
 =head1 SYNOPSIS
 

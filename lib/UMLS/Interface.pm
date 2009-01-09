@@ -43,9 +43,9 @@ use DBI;
 use bytes;
 use vars qw($VERSION);
 
-$VERSION = '0.01';
+$VERSION = '0.05';
 
-my $debug = 0;
+my $debug = 1;
 
 my %roots = ();
 
@@ -1830,6 +1830,8 @@ sub findShortestPath
     
     my $function = "findShortestPath";
    
+    print "In findShortestPath\n";
+
     # undefined input cannot go unpunished.
     if(!$concept1 || !$concept2) {
 	$self->{'errorString'} .= "\nWarning (UMLS::Interface->findShortestPath()) - ";

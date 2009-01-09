@@ -4,9 +4,9 @@
 #    $Id: README.pod,v 1.6 2009/01/08 21:01:18 btmcinnes Exp $ 
 #################################################################
 
-=head1 
+=head1 NAME
 
-UMLS::Interface
+UMLS::Interface README
 
 =head2 SYNOPSIS
 

@@ -1,13 +1,14 @@
 #! /usr/local/bin/perl 
 
-=head1 UMLS-Interface
+=head1 NAME
 
-findLeastCommonSubsumer.pl
+findLeastCommonSubsumer.pl - this programs retuns the 
+the least common subsummer between two concepts.
 
 =head1 SYNOPSIS
 
-This program takes in a CUIs and returns the shortest path 
-between them.
+This program takes in a CUIs and returns their least 
+common subsumer.
 
 =head1 USAGE
 
@@ -17,9 +18,9 @@ Usage: findLeastCommonSubsumer.pl [OPTIONS] CUI1 CUI2
 
 =head2 Required Arguments:
 
-=head3 TERM
+=head3 CUI1 and CUI2
 
-A term from the Unified Medical Language System
+A concepts (CUIs) from the Unified Medical Language System
 
 =head2 Optional Arguments:
 

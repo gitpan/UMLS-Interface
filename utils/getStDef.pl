@@ -1,9 +1,10 @@
 #! /usr/local/bin/perl 
 #!/usr/bin/perl 
 
-=head1 UMLS-Interface
+=head1 NAME
 
-getStDef.pl
+getStDef.pl - this program returns the definition of a semantic 
+type
 
 =head1 SYNOPSIS
 

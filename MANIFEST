@@ -32,7 +32,6 @@ META.yml			Module meta-data (added by MakeMaker)
 README
 t/access.t
 t/mysql.t
-UMLS-Interface-0.01.tar.gz
 utils/configuration
 utils/dropTemporaryTables.pl
 utils/findLeastCommonSubsumer.pl

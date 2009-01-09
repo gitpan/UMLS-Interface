@@ -1,9 +1,9 @@
 #! /usr/local/bin/perl 
 #!/usr/bin/perl 
 
-=head1 UMLS-Interface
+=head1 NAME
 
-getCuiDef.pl
+getCuiDef.pl - this program returns the definition of a concept.
 
 =head1 SYNOPSIS
 
