@@ -251,7 +251,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findPathToRoot.pl,v 1.5 2009/01/08 20:17:59 btmcinnes Exp $';
+    print '$Id: findPathToRoot.pl,v 1.6 2009/01/12 19:58:45 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

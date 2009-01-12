@@ -28,8 +28,6 @@ NAME
         documentation. However, it is highly recommended not messing around
         with other parameters, unless you know what you're doing.
 
-        Next set the UMLSINTERFACE environment variable
-
   DATABASE SETUP
         The interface assumes that the UMLS is present as a mysql database. 
         The names of these databases can be passed as configuration options 

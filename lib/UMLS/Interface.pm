@@ -1,5 +1,5 @@
 # UMLS::Interface version 0.01
-# (Last Updated $Id: Interface.pm,v 1.38 2009/01/08 21:26:44 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.41 2009/01/12 21:03:30 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # UMLS taxonomy of medical terms 
@@ -43,9 +43,9 @@ use DBI;
 use bytes;
 use vars qw($VERSION);
 
-$VERSION = '0.05';
+$VERSION = '0.07';
 
-my $debug = 1;
+my $debug = 0;
 
 my %roots = ();
 
@@ -330,22 +330,47 @@ sub _initialize
     my $ver = $version;
     $ver=~s/-/_/g;
     
-    my $umlsinterface = $ENV{UMLSINTERFACE};
-    
-    if(! (defined $umlsinterface) ) {
-	print STDERR "The UMLSINTERFACE environment variable has\n";
-	print STDERR "not been defined. Please enter the location\n";
-	print STDERR "of the UMLS-Interface package:\n";
+    my $umlsinterface = $ENV{UMLSINTERFACE_CONFIGFILE_DIR};
+
+    if(! (defined $umlsinterface) ) {    
+	my $answerFlag    = 0;
+	my $interfaceFlag = 0;
 	
-	$umlsinterface = <STDIN>; chomp $umlsinterface;
+	while(! ($interfaceFlag) ) {
+
+	    print STDERR "The UMLSINTERFACE_CONFIGFILE_DIR environment\n";
+	    print STDERR "variable has not been defined yet. Please \n";
+	    print STDERR "enter a location that the UMLS-Interface can\n";
+	    print STDERR "use to store its configuration files:\n";
+	    
+	    $umlsinterface = <STDIN>; chomp $umlsinterface;
+
+	    while(! ($answerFlag)) {
+		print STDERR "Is $umlsinterface the correct location?\n";
+		my $answer = <STDIN>; chomp $answer;
+		if($answer=~/(Y|N|y|n|yes|no|Yes|No)/) { 
+		    $answerFlag    = 1; 
+		    $interfaceFlag = 1;   
+		}
+	    }
+
+	    print STDERR "I am working on having the program set the environment\n";
+	    print STDERR "variable for you but that is not working yet. Until then\n";
+	    print STDERR "if you don't mind setting it after this run, that would\n";
+	    print STDERR "great. It can be set in csh as follows:\n\n";
+	    print STDERR " setenv UMLSINTERFACE_CONFIGFILE_DIR $umlsinterface\n\n";
+	    print STDERR "And in bash shell:\n\n";
+	    print STDERR " export UMLSINTERFACE_CONFIGFILE_DIR=$umlsinterface\n\n";
+	    print STDERR "I will work on getting it to set itself. Thanks!\n\n";
+	}
     }
     
     #  set table and cycle and upper level relations files
     $sourceDB   = "$ver";
-    $childFile  = "$umlsinterface/default_options/$ver";
-    $parentFile = "$umlsinterface/default_options/$ver";
-    $tableFile  = "$umlsinterface/default_options/$ver";
-    $cycleFile  = "$umlsinterface/default_options/$ver";
+    $childFile  = "$umlsinterface/$ver";
+    $parentFile = "$umlsinterface/$ver";
+    $tableFile  = "$umlsinterface/$ver";
+    $cycleFile  = "$umlsinterface/$ver";
     $tableName  = "$ver";
 
     foreach my $sab (sort keys %sab_names) {
@@ -1132,7 +1157,6 @@ sub _setDepth {
     if($debug) { print "Cycle file has been created\n"; }
         
     #  set the maximum depth
-    print "set maximum depth\n";
     my $d = $sdb->selectcol_arrayref("select max(DEPTH) from $tableName");
     if($self->checkError($function)) { return (); }
    
@@ -1700,8 +1724,6 @@ sub _initializeDepthFirstSearch
 	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
 	$self->{'errorString'} .= "Undefined input values.";
 	$self->{'errorCode'} = 2 if($self->{'errorCode'} < 1);
-
-	print "erroring : $concept : $d : $root\n";
 	return ();
 
     }
@@ -1830,8 +1852,6 @@ sub findShortestPath
     
     my $function = "findShortestPath";
    
-    print "In findShortestPath\n";
-
     # undefined input cannot go unpunished.
     if(!$concept1 || !$concept2) {
 	$self->{'errorString'} .= "\nWarning (UMLS::Interface->findShortestPath()) - ";
@@ -1890,7 +1910,6 @@ sub findLeastCommonSubsumer
 	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
 	$self->{'errorString'} .= "Undefined input values.";
 	$self->{'errorCode'} = 2 if($self->{'errorCode'} < 1);
-	print "returning undefined\n";
 	return undef;
     }
     
@@ -1953,7 +1972,6 @@ sub _findShortestPath
 	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
 	$self->{'errorString'} .= "Undefined input values.";
 	$self->{'errorCode'} = 2 if($self->{'errorCode'} < 1);
-	print "returning undefined\n";
 	return undef;
     }
     if($self->validCui($concept1)) {
@@ -2087,11 +2105,6 @@ sub _findShortestPath
     }
 
     ($lcs) = sort {$lcsLengths{$a} <=> $lcsLengths{$b}} keys(%lcsLengths);
-    print "$lcs\n";
-    print "@{$lcsPaths{$lcs}}\n";
-    foreach my $l (sort keys %lcsLengths) {
-	print "$l : $lcsLengths{$l}\n";
-    }
 
     # [trace]
     if($self->{'trace'}) {
@@ -2344,8 +2357,24 @@ sub dropTable
     
 }
 
+##############################################################################
+#  function to create a timestamp
+##############################################################################
+sub _timeStamp {
+
+    my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+
+    $year += 1900;
+    $mon++;
+    my $d = sprintf("%4d%2.2d%2.2d",$year,$mon,$mday);
+    my $t = sprintf("%2.2d%2.2d%2.2d",$hour,$min,$sec);
+    
+    my $stamp = $d . $t;
+
+    return $stamp;
+}
+
 sub _printTime {
-    my ($stamp);
     my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
 
     $year += 1900;

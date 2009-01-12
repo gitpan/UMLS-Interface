@@ -1,7 +1,7 @@
 ##################################################################
 #
 #    README for the UMLS-Interface Package
-#    $Id: README.pod,v 1.6 2009/01/08 21:01:18 btmcinnes Exp $ 
+#    $Id: README.pod,v 1.8 2009/01/12 20:08:17 btmcinnes Exp $ 
 #################################################################
 
 =head1 NAME
@@ -36,9 +36,6 @@ UMLS::Interface README
     details of these can be found in the ExtUtils::MakeMaker
     documentation. However, it is highly recommended not messing around
     with other parameters, unless you know what you're doing.
-
-    Next set the UMLSINTERFACE environment variable
-
 
 =head2 DATABASE SETUP
 

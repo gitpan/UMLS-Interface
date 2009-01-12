@@ -481,20 +481,6 @@ Stage 6 - Install UMLS-Interface and set environment variable
 
         http://search.cpan.org/dist/Test-Simple/lib/Test/Builder.pm#EXIT_CODES
 
-        The UMLSINTERFACE environment variable needs to be set to the location 
-        that the UMLS-Interface package is installed in order to gain access 
-        to the files in the default_options directory.
-
-        For example:
-
-          # in cshell
-          setenv UMLSINTERFACE /home/btmcinnes/UMLS-Interface
-
-          # in bash
-          export UMLSINTERFACE=/home/btmcinnes/UMLS-Interface
-
-        This can be added to your .cshrc or .bashrc file
-
 CONTACT US
     If you have any trouble installing and using UMLS-Interface, please
     contact us via the users mailing list :

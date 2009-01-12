@@ -1,7 +1,7 @@
 ###########################################################################
 #
 #    INSTALLATION Instructions for the UMLS-Interface Package
-#    $Id: INSTALL.pod,v 1.5 2008/12/02 14:24:54 btmcinnes Exp $ 
+#    $Id: INSTALL.pod,v 1.7 2009/01/12 20:08:17 btmcinnes Exp $ 
 ###########################################################################
 
 =head1 NAME
@@ -547,20 +547,6 @@ The usual way to install the package is to run the following commands:
     details, see:
 
     http://search.cpan.org/dist/Test-Simple/lib/Test/Builder.pm#EXIT_CODES
-
-    The UMLSINTERFACE environment variable needs to be set to the location 
-    that the UMLS-Interface package is installed in order to gain access 
-    to the files in the default_options directory.
-
-    For example:
-
-      # in cshell
-      setenv UMLSINTERFACE /home/btmcinnes/UMLS-Interface
-
-      # in bash
-      export UMLSINTERFACE=/home/btmcinnes/UMLS-Interface
-
-    This can be added to your .cshrc or .bashrc file
 
 =head1 CONTACT US
 

@@ -8,13 +8,17 @@ Plans for future versions of UMLS-Interface
 
 =head1 DESCRIPTION
 
-=head2 Version 0.03 ToDo
+=head2 Version 0.09 ToDo
 
 =over
 
 =item 1. Allow for back compatability of UMLS versions
 
-=item 2. Revise marking relation to not be considered
+=item 2. Get the program to set the configuration file
+         environmental variable or work something else out.
+
+=item 3. Fail gracefully in the test cases when the problem is 
+      	 that the username/password ect ... is not set 
 
 =head1 AUTHORS
 

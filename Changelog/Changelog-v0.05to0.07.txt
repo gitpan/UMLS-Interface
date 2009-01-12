@@ -1,0 +1,14 @@
+Changes made in UMLS-Interface version 0.05 during version 0.07
+
+Bridget McInnes  bthomson at cs.umn.edu
+Ted Pedersen 	 tpederse at umn.edu
+
+University of Minnesota 
+
+(1)     Removed the need for UMLSINTERFACE environment variable indicating 
+	the location of the UMLS. Now we prompt the user for the location 
+	that the config files should be stored and ask them to set a 
+	UMLSINTERFACE_CONFIGFILE_DIR variable.
+
+(Changelog-v0.05to0.07 Last Updated on 01/12/2009 by Bridget)
+
