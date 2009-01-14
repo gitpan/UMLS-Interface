@@ -2,7 +2,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<title>README.pod</title>
+<title>NAME</title>
 <meta http-equiv="content-type" content="text/html; charset=utf-8" />
 <link rev="made" href="mailto:root@localhost" />
 </head>
@@ -14,6 +14,7 @@
 
 <ul>
 
+	<li><a href="#name">NAME</a></li>
 	<ul>
 
 		<li><a href="#synopsis">SYNOPSIS</a></li>
@@ -28,7 +29,10 @@
 <!-- INDEX END -->
 
 <hr />
-<p>UMLS::Interface</p>
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>UMLS::Interface README</p>
 <p>
 </p>
 <h2><a name="synopsis">SYNOPSIS</a></h2>
@@ -70,11 +74,13 @@
     provided at initialization, then default values are used -- the 
     database for the UMLS is called 'umls'.</pre>
 <pre>
-    The UMLS database must contain four tables: 
+    The UMLS database must contain six tables: 
         1. MRREL
         2. MRCONSO
         3. MRSAB
-        4. MRDOC</pre>
+        4. MRDOC
+        5. MRDEF
+        6. SRDEF</pre>
 <pre>
     All other tables in the databases will be ignored, and any of these
     tables missing would raise an error.</pre>
@@ -104,7 +110,7 @@
                       system (such as PostgresSQL) could also be used,
                       as long as there exist Perl DBD drivers to
                       access the database.
-    'umls'         -&gt; Default value 'umls'. This option specifes the name
+    'umls'         -&gt; Default value 'umls'. This option specifies the name
                       of the UMLS database.
     'hostname'     -&gt; Default value 'localhost'. The name or the IP 
                       address of the machine on which the database 

@@ -61,6 +61,7 @@ INSTALLATION STAGES
                     -- MRSAB
                     -- MRDOC
                     -- SRDEF
+                    -- MRDEF
 
     Stage 6: Install UMLS-Interface and set environment variable
     More details on how to obtain and install appear below.
@@ -90,12 +91,10 @@ Stage 1: Install Programming Languages, if already installed go to Stage 2
 Stage 2 - Install CPAN modules, if already installed go to Stage 3
 CPAN MODULES
   DBI
+    CPAN modules, and will not be repeated in detail for each module.****
+
     UMLS-Interface uses DBI to access the mysql database containing the
     UMLS. DBI is freely available at http://search.cpan.org/~timb/DBI/
-
-    perl -MCPAN -e shell > install DBI
-
-    CPAN modules, and will not be repeated in detail for each module.****
 
     If you have supervisor access, or have configured MCPAN for local
     install, you can install via:
@@ -331,7 +330,7 @@ Stage 5 - Load UMLS into MySQL, if already installed go to Stage 6
                           query_cache_size  = 100M
 
   Step 3:  Populate the MySQL table using the load scripts
-   Step A: Find the MySQL load script
+   Step A: Find the MySQL load script for the Metathesaurus
                     Go to your Destination directory that you 
                     typed in Step C (this is where I said my 
                     source and destination directory were the 
@@ -346,7 +345,7 @@ Stage 5 - Load UMLS into MySQL, if already installed go to Stage 6
                     If you don't see this file - you need to start 
                     over. Step 3 - F did not get done properly.
 
-   Step B: Modify the MySQL load scripts
+   Step B: Modify the MySQL load scripts for the Metathesaurus
                In the populate_mysql_db.sh you need to modify the 
                following:
 
@@ -362,7 +361,7 @@ Stage 5 - Load UMLS into MySQL, if already installed go to Stage 6
                     password=<well I am not giving you my actual password>
                     db_name=umls
 
-   Step C:  Run the MySQL load scripts
+   Step C:  Run the MySQL load scripts for the Metathesaurus
                     Run this script by typing on the command line:
 
                         ./populate_mysql_db.sh
@@ -380,15 +379,65 @@ Stage 5 - Load UMLS into MySQL, if already installed go to Stage 6
             time to go do something else until sometime late tomorrow 
             (yes, unfortunately, tomorrow) evening ... 
 
-  Step D: Modify the my.cnf file (again)
+   Step D: Find the MySQL load script for the Semantic Network
+                    Go to your Destination directory that you 
+                    typed in Step C (this is where I said my 
+                    source and destination directory were the 
+                    same)
+
+                    go to the: <destination>/2008AA/NET
+
+                    In it you should see the file:
+
+                       populate_mysql_db.sh
+
+                    If you don't see this file - you need to start 
+                    over. Step 3 - F did not get done properly.
+
+   Step E: Modify the MySQL load script for the Semantic Network
+               This is the exact same modifications that were done 
+               in the Metathesaurus load script.
+
+               In the populate_mysql_db.sh you need to modify the 
+               following:
+
+                    MYSQL_HOME=<path to MYSQL_HOME>
+                    user=<username>
+                    password=<password>
+                    db_name=<db_name>
+
+               For example, I modified my file as follows:
+
+                    MYSQL_HOME=/usr/
+                    user=bthomson
+                    password=<well I am not giving you my actual password>
+                    db_name=umls
+
+   Step F:  Run the MySQL load script for the Semantic Network
+                    Run this script by typing on the command line:
+
+                        ./populate_mysql_db.sh
+
+                    If you get the following:
+
+                        ./populate_mysql_db.sh: Permission denied.
+
+                    You need to change your permissions and try again. To change 
+                    your permissions type:
+
+                         chmod 755 populate_mysql_db.sh
+
+            Now this should not take forever. It goes much much quicker!
+
+  Step G: Modify the my.cnf file (again)
             My 'my.cnf' file is located in the '/etc' directory. I found it by 
             typing "whereis my.cnf" on the command line. If you do not have a 
             my.cnf file check to see if you have a 'my.ini' file (which one 
             you have will depend on your system).
 
             This time you are modifying it so the that the UMLS-Interface 
-            package and the umlsCycles.pl program can automatically 
-            log into the umls database.
+            package (and the utils/ files) can automatically log into the 
+            umls database.
 
                 [client]
                 user            = <username>

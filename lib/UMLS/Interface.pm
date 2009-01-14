@@ -1,8 +1,8 @@
 # UMLS::Interface version 0.01
-# (Last Updated $Id: Interface.pm,v 1.41 2009/01/12 21:03:30 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.47 2009/01/14 18:43:11 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
-# UMLS taxonomy of medical terms 
+# Unified Medical Language System (UMLS)
 #
 # Copyright (c) 2004-2009,
 #
@@ -43,7 +43,7 @@ use DBI;
 use bytes;
 use vars qw($VERSION);
 
-$VERSION = '0.07';
+$VERSION = '0.09';
 
 my $debug = 0;
 
@@ -81,6 +81,7 @@ my $sourceDB  = "";
 my $tableName = "";
 my $tableFile = "";
 my $cycleFile = "";
+my $configFile= "";
 my %cycleHash = ();
 
 # UMLS-specific stuff ends ----------
@@ -267,6 +268,18 @@ sub _initialize
 	$self->{'errorCode'} = 2;
 	return;	
     }
+    if(!defined $tables{"MRDEF"}) {
+	$self->{'errorString'} .= "\nError (UMLS::Interface->_initialize()) - ";
+	$self->{'errorString'} .= "Table MRDEF not found in database.";
+	$self->{'errorCode'} = 2;
+	return;	
+    }
+    if(!defined $tables{"SRDEF"}) {
+	$self->{'errorString'} .= "\nError (UMLS::Interface->_initialize()) - ";
+	$self->{'errorString'} .= "Table SRDEF not found in database.";
+	$self->{'errorCode'} = 2;
+	return;	
+    }
     if(!defined $tables{"MRREL"}) {
 	$self->{'errorString'} .= "\nError (UMLS::Interface->_initialize()) - ";
 	$self->{'errorString'} .= "Table MRREL not found in database.";
@@ -354,6 +367,10 @@ sub _initialize
 		}
 	    }
 
+	    if(! (-e $umlsinterface) ) {
+		system "mkdir $umlsinterface";
+	    }
+
 	    print STDERR "I am working on having the program set the environment\n";
 	    print STDERR "variable for you but that is not working yet. Until then\n";
 	    print STDERR "if you don't mind setting it after this run, that would\n";
@@ -372,7 +389,8 @@ sub _initialize
     $tableFile  = "$umlsinterface/$ver";
     $cycleFile  = "$umlsinterface/$ver";
     $tableName  = "$ver";
-
+    $configFile = "$umlsinterface/$ver";
+    
     foreach my $sab (sort keys %sab_names) {
     	$tableFile  .= "_$sab";
     	$cycleFile  .= "_$sab";
@@ -380,6 +398,7 @@ sub _initialize
 	$childFile  .= "_$sab";
 	$parentFile .= "_$sab";
 	$sourceDB   .= "_$sab";
+	$configFile .= "_$sab";
     }
     
     while($relations=~/=\'(.*?)\'/g) {
@@ -390,6 +409,7 @@ sub _initialize
 	$childFile  .= "_$rel";
 	$parentFile .= "_$rel";
 	$sourceDB   .= "_$rel";
+	$configFile .= "_$rel";
     }
     
     $tableFile  .= "_table";
@@ -397,15 +417,32 @@ sub _initialize
     $tableName  .= "_table";
     $childFile  .= "_child";
     $parentFile .= "_parent";
-
+    $configFile .= "_config";
+    
     if($debug) {
 	print "Database  : $sourceDB\n";
 	print "Table File: $tableFile\n";
-	print "Cycle File: $cycleFile\n";
 	print "Table Name: $tableName\n";
 	print "Child File: $childFile\n";
 	print "ParentFile: $parentFile\n";
+	print "ConfigFile: $configFile\n"; 
     }
+    
+    open(CONFIG, ">$configFile") || 
+	die "Could not open configurationg file: $configFile\n";
+    
+    my @sarray = ();
+    my @rarray = ();
+    
+    print CONFIG "SAB :: include ";
+    while($sources=~/=\'(.*?)\'/g)   { push @sarray, $1; }
+    my $slist = join ", ", @sarray;
+    print CONFIG "$slist\n";
+
+    print CONFIG "REL :: include ";
+    while($relations=~/=\'(.*?)\'/g) { push @rarray, $1; }
+    my $rlist = join ", ", @rarray;
+    print CONFIG "$rlist\n";
 }
 
 ################# modified version from v0.01 2003
@@ -1315,13 +1352,17 @@ sub _config {
 		#if($rel=~/(RN)/) { push @children, $rel; }
 	    }
 
-	    for my $i (0..($#parents-1)) { 
-		$parentRelations .= "REL=\'$parents[$i]\' or "; 
-	    } $parentRelations .= "REL=\'$parents[$#parents]\'"; 
-	    
-	    for my $i (0..($#children-1)) { 
-		$childRelations .= "REL=\'$children[$i]\' or "; 
-	    } $childRelations .= "REL=\'$children[$#children]\'"; 
+	    if($#parents >= 0) {
+		for my $i (0..($#parents-1)) { 
+		    $parentRelations .= "REL=\'$parents[$i]\' or "; 
+		} $parentRelations .= "REL=\'$parents[$#parents]\'"; 
+	    }
+
+	    if($#children >= 0) {
+		for my $i (0..($#children-1)) { 
+		    $childRelations .= "REL=\'$children[$i]\' or "; 
+		} $childRelations .= "REL=\'$children[$#children]\'"; 
+	    }
 
 	}
 	if($includesabkeys > 0) {
@@ -1348,8 +1389,7 @@ sub _config {
 	    }
 	}
 	if($excludesabkeys > 0) {
-
-	    my $arrRef = $db->selectcol_arrayref("select distinct SAB from MRREL and ($relations)");
+	    my $arrRef = $db->selectcol_arrayref("select distinct SAB from MRREL where ($relations)");
 	    if($self->checkError($function)) { return (); }
 	   
 	    my $arrRefkeys = $#{$arrRef} + 1;
@@ -2396,60 +2436,41 @@ __END__
 
 =head1 NAME
 
-UMLS::Interface - Perl interface to the Unified Medical Language System
+UMLS::Interface - Perl interface to the Unified Medical Language System (UMLS)
 
 =head1 SYNOPSIS
 
+  #!/usr/bin/perl
+
   use UMLS::Interface;
 
-  my $interface = UMLS::Interface->new();
+  $umls = UMLS::Interface->new(); 
 
-  die "Initialization error.\n" if(!defined $interface);
+  die "Unable to create UMLS::Interface object.\n" if(!$umls);
 
-  ($errCode, $errString) = $interface->getError();
+  ($errCode, $errString) = $umls->getError();
 
-  my $rootID   = $interface->root();
+  die "$errString\n" if($errCode);
 
-  my $tDepth   = $interface->depth();
+  my $term1    = "blood";
+  my @tList1   = $umls->getConceptList($term1);
+  my $cui1     = pop @tList1;
 
-  my $ver      = $interface->version();
+  my $term2    = "cell";
+  my @tList2   = $umls->getConceptList($term2);
+  my $cui2     = pop @tList2;
 
-  my $bool     = $interface->validCui($CUI);
-  
-  my $bool     = $interface->exists($CUI);
+  my @path     = $umls->findShortestPath($cui1, $cui2);
 
-  my @sources  = $interface->getSab($CUI);
-  
-  my @children = $interface->getChildren($CUI);
-  
-  my @parents  = $interface->getParents($CUI);
-
-  my @cList    = $interface->getRelated($CUI, $relation);
-
-  my @tList    = $interface->getTermList($term);
-
-  my @cList    = $interface->getConceptList($CUI);
-
-  my @paths    = $interface->pathsToRoot($CUI);
-
-  my @path     = $interface->findShortestPath($CUI1, $CUI2);
-
-  my $lcs      = $interface->findLeastCommonSubsummer($CUI1, $CUI2);
-  
-  my @cuidefs  = $interface->getCuiDef($CUI);
-
-  my $stdef    = $interface->getStDef($ST);
-
-  $interface->dropTable();
-
-  $interface->disconnect();
+  print "The shortest path between $term1 ($cui1) and $term2 ($cui2):\n";
+  print "  => @path\n";
 
 =head1 ABSTRACT
 
 This package provides a Perl interface to the Unified Medical Language 
 System. The package is set up to access pre-specified sources of the UMLS
-present ina mysql database.  The package was essentially created for use 
-with the UMLS::Similarity package formeasuring the semantic relatedness 
+present in a mysql database.  The package was essentially created for use 
+with the UMLS::Similarity package for measuring the semantic relatedness 
 of concepts.
 
 =head1 INSTALL
@@ -2475,13 +2496,9 @@ with other parameters, unless you know what you're doing.
 
 =head1 DESCRIPTION
 
-This package provides a Perl interface to Snomed CT, a taxonomy of
-medical concepts. The package is set up to access Snomed CT present in
-a mysql database. Some perl programs also require access to the
-SEMCLUST database, which is a database of clusters of concepts. This
-interface provides access to SEMCLUST as well. The package was
-essentially created for use with the Semantic::Similarity package for
-measuring the semantic relatedness of concepts.
+This package provides a Perl interface to the Unified Medical Language 
+System (UMLS). The package is set up to access the UMLS in a mysql 
+database. 
 
 =head2 DATABASE SETUP
 
@@ -2491,11 +2508,13 @@ initialization. However, if the names of the databases are not
 provided at initialization, then default value is used -- the 
 database for the UMLS is called 'umls'. 
 
-The UMLS database must contain four tables: 
+The UMLS database must contain six tables: 
 	1. MRREL
 	2. MRCONSO
 	3. MRSAB
 	4. MRDOC
+        5. MRDEF
+        6. SRDEF
 
 All other tables in the databases will be ignored, and any of these
 tables missing would raise an error.
@@ -2536,7 +2555,7 @@ instantiating an instance. For example:
                     system (such as PostgresSQL) could also be used,
                     as long as there exist Perl DBD drivers to
                     access the database.
-  'umls'         -> Default value 'umls'. This option specifes the name
+  'umls'         -> Default value 'umls'. This option specifies the name
                     of the UMLS database.
   'hostname'     -> Default value 'localhost'. The name or the IP address
                     of the machine on which the database server is
@@ -2597,9 +2616,13 @@ or
 SAB :: include MSH
 REL :: exclude PAR, CHD
 
-=head1 SEE ALSO
+If you run the an example program in the utils/ directory, an 
+example of the default configuration file will be printed out 
+in the configuration directory (the configuration directory 
+can be specified during the first run - go run one and you 
+will see what I mean).
 
-Perl(1), Semantic::Similarity(3)
+=head1 SEE ALSO
 
 =head1 AUTHOR
 

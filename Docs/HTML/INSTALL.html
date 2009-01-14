@@ -2,7 +2,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<title>INSTALL.pod</title>
+<title>NAME</title>
 <meta http-equiv="content-type" content="text/html; charset=utf-8" />
 <link rev="made" href="mailto:root@localhost" />
 </head>
@@ -14,6 +14,7 @@
 
 <ul>
 
+	<li><a href="#name">NAME</a></li>
 	<li><a href="#testing_platforms">TESTING PLATFORMS</a></li>
 	<li><a href="#synopsis">SYNOPSIS</a></li>
 	<li><a href="#description">DESCRIPTION</a></li>
@@ -68,12 +69,15 @@
 		<li><a href="#step_3__populate_the_mysql_table_using_the_load_scripts">Step 3:	Populate the MySQL table using the load scripts</a></li>
 		<ul>
 
-			<li><a href="#step_a__find_the_mysql_load_script">Step A: Find the MySQL load script</a></li>
-			<li><a href="#step_b__modify_the_mysql_load_scripts">Step B: Modify the MySQL load scripts </a></li>
-			<li><a href="#step_c__run_the_mysql_load_scripts">Step C:  Run the MySQL load scripts</a></li>
+			<li><a href="#step_a__find_the_mysql_load_script_for_the_metathesaurus">Step A: Find the MySQL load script for the Metathesaurus</a></li>
+			<li><a href="#step_b__modify_the_mysql_load_scripts_for_the_metathesaurus">Step B: Modify the MySQL load scripts for the Metathesaurus</a></li>
+			<li><a href="#step_c__run_the_mysql_load_scripts_for_the_metathesaurus">Step C:  Run the MySQL load scripts for the Metathesaurus</a></li>
+			<li><a href="#step_d__find_the_mysql_load_script_for_the_semantic_network">Step D: Find the MySQL load script for the Semantic Network</a></li>
+			<li><a href="#step_e__modify_the_mysql_load_script_for_the_semantic_network">Step E: Modify the MySQL load script for the Semantic Network</a></li>
+			<li><a href="#step_f__run_the_mysql_load_script_for_the_semantic_network">Step F:  Run the MySQL load script for the Semantic Network</a></li>
 		</ul>
 
-		<li><a href="#step_d__modify_the_my_cnf_file__again_">Step D: Modify the my.cnf file (again)</a></li>
+		<li><a href="#step_g__modify_the_my_cnf_file__again_">Step G: Modify the my.cnf file (again)</a></li>
 	</ul>
 
 	<li><a href="#contact_us">CONTACT US</a></li>
@@ -81,7 +85,10 @@
 <!-- INDEX END -->
 
 <hr />
-<p>UMLS-Interface</p>
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>UMLS-Interface Installation Guide</p>
 <p>
 </p>
 <hr />
@@ -178,7 +185,8 @@ DBI</a></h2>
                 -- MRCONSO
                 -- MRSAB
                 -- MRDOC
-                -- SRDEF</pre>
+                -- SRDEF
+                -- MRDEF</pre>
 </dd>
 <dt><strong><a name="item_stage_6_3a_install_umls_2dinterface_and_set_enviro">Stage 6:  Install UMLS-Interface and set environment variable</a></strong></dt>
 
@@ -224,11 +232,9 @@ can be found here:</p>
 <p>
 </p>
 <h2><a name="dbi">DBI</a></h2>
+<p>CPAN modules, and will not be repeated in detail for each module.****</p>
 <p>UMLS-Interface uses DBI to access the mysql database containing the 
 UMLS. DBI is freely available at <a href="http://search.cpan.org/~timb/DBI/">http://search.cpan.org/~timb/DBI/</a></p>
-<p>perl -MCPAN -e shell
-&gt; install DBI</p>
-<p>CPAN modules, and will not be repeated in detail for each module.****</p>
 <p>If you have supervisor access, or have configured MCPAN for local 
 install, you can install via:</p>
 <p>perl -MCPAN -e shell
@@ -479,7 +485,7 @@ in the UMLS documentation:</p>
 <h2><a name="step_3__populate_the_mysql_table_using_the_load_scripts">Step 3:	Populate the MySQL table using the load scripts</a></h2>
 <p>
 </p>
-<h3><a name="step_a__find_the_mysql_load_script">Step A: Find the MySQL load script</a></h3>
+<h3><a name="step_a__find_the_mysql_load_script_for_the_metathesaurus">Step A: Find the MySQL load script for the Metathesaurus</a></h3>
 <pre>
                 Go to your Destination directory that you 
                 typed in Step C (this is where I said my 
@@ -496,7 +502,7 @@ in the UMLS documentation:</p>
                 over. Step 3 - F did not get done properly.</pre>
 <p>
 </p>
-<h3><a name="step_b__modify_the_mysql_load_scripts">Step B: Modify the MySQL load scripts</a></h3>
+<h3><a name="step_b__modify_the_mysql_load_scripts_for_the_metathesaurus">Step B: Modify the MySQL load scripts for the Metathesaurus</a></h3>
 <pre>
 
            In the populate_mysql_db.sh you need to modify the 
@@ -515,7 +521,7 @@ in the UMLS documentation:</p>
                 db_name=umls</pre>
 <p>
 </p>
-<h3><a name="step_c__run_the_mysql_load_scripts">Step C:  Run the MySQL load scripts</a></h3>
+<h3><a name="step_c__run_the_mysql_load_scripts_for_the_metathesaurus">Step C:  Run the MySQL load scripts for the Metathesaurus</a></h3>
 <pre>
                 Run this script by typing on the command line:</pre>
 <pre>
@@ -535,7 +541,63 @@ in the UMLS documentation:</p>
         (yes, unfortunately, tomorrow) evening ...</pre>
 <p>
 </p>
-<h2><a name="step_d__modify_the_my_cnf_file__again_">Step D: Modify the my.cnf file (again)</a></h2>
+<h3><a name="step_d__find_the_mysql_load_script_for_the_semantic_network">Step D: Find the MySQL load script for the Semantic Network</a></h3>
+<pre>
+                Go to your Destination directory that you 
+                typed in Step C (this is where I said my 
+                source and destination directory were the 
+                same)</pre>
+<pre>
+                go to the: &lt;destination&gt;/2008AA/NET</pre>
+<pre>
+                In it you should see the file:</pre>
+<pre>
+                   populate_mysql_db.sh</pre>
+<pre>
+                If you don't see this file - you need to start 
+                over. Step 3 - F did not get done properly.</pre>
+<p>
+</p>
+<h3><a name="step_e__modify_the_mysql_load_script_for_the_semantic_network">Step E: Modify the MySQL load script for the Semantic Network</a></h3>
+<pre>
+           This is the exact same modifications that were done 
+           in the Metathesaurus load script.</pre>
+<pre>
+           In the populate_mysql_db.sh you need to modify the 
+           following:</pre>
+<pre>
+                MYSQL_HOME=&lt;path to MYSQL_HOME&gt;
+                user=&lt;username&gt;
+                password=&lt;password&gt;
+                db_name=&lt;db_name&gt;</pre>
+<pre>
+           For example, I modified my file as follows:</pre>
+<pre>
+                MYSQL_HOME=/usr/
+                user=bthomson
+                password=&lt;well I am not giving you my actual password&gt;
+                db_name=umls</pre>
+<p>
+</p>
+<h3><a name="step_f__run_the_mysql_load_script_for_the_semantic_network">Step F:  Run the MySQL load script for the Semantic Network</a></h3>
+<pre>
+                Run this script by typing on the command line:</pre>
+<pre>
+                    ./populate_mysql_db.sh</pre>
+<pre>
+                If you get the following:</pre>
+<pre>
+                    ./populate_mysql_db.sh: Permission denied.</pre>
+<pre>
+                You need to change your permissions and try again. To change 
+                your permissions type:</pre>
+<pre>
+                     chmod 755 populate_mysql_db.sh</pre>
+<pre>
+        Now this should not take forever. It goes much much quicker!</pre>
+<p>
+</p>
+<h2><a name="step_g__modify_the_my_cnf_file__again_">Step G: Modify the my.cnf file (again)</a></h2>
 <pre>
         My 'my.cnf' file is located in the '/etc' directory. I found it by 
         typing &quot;whereis my.cnf&quot; on the command line. If you do not have a 
@@ -543,8 +605,8 @@ in the UMLS documentation:</p>
         you have will depend on your system).</pre>
 <pre>
         This time you are modifying it so the that the UMLS-Interface 
-        package and the umlsCycles.pl program can automatically 
-        log into the umls database.</pre>
+        package (and the utils/ files) can automatically log into the 
+        umls database.</pre>
 <pre>
             [client]
             user            = &lt;username&gt;
@@ -614,9 +676,13 @@ in the UMLS documentation:</p>
 <pre>
      perl -I/home/sid/lib/perl5/site_perl/5.8.3 similarity.pl</pre>
 <pre>
-    or</pre>
+    or
+
+</pre>
 <pre>
-     perl -I/home/sid/lib</pre>
+     perl -I/home/sid/lib
+
+</pre>
 <pre>
     Of course, you could also add the 'use lib' line to the top of the
     program yourself, but you might not want to do that. You will need to
@@ -625,7 +691,9 @@ in the UMLS documentation:</p>
     non-standard installations. However, if you need to modify other
     makefile options you should look at the ExtUtils::MakeMaker
     documentation. Modifying other makefile options is not recommended
-    unless you really, absolutely, and completely know what you're doing!</pre>
+    unless you really, absolutely, and completely know what you're doing!
+
+</pre>
 <pre>
     NOTE: If one (or more) of the tests run by 'make test' fails, you will
     see a summary of the tests that failed, followed by a message of the
@@ -633,9 +701,13 @@ in the UMLS documentation:</p>
     and 255 (inclusive). If the number is less than 255, then it indicates
     how many test failed (if more than 254 tests failed, then 254 will still
     be shown). If one or more tests died, then 255 will be shown. For more
-    details, see:</pre>
+    details, see:
+
+</pre>
 <pre>
-    <a href="http://search.cpan.org/dist/Test-Simple/lib/Test/Builder.pm#EXIT_CODES">http://search.cpan.org/dist/Test-Simple/lib/Test/Builder.pm#EXIT_CODES</a></pre>
+    <a href="http://search.cpan.org/dist/Test-Simple/lib/Test/Builder.pm#EXIT_CODES">http://search.cpan.org/dist/Test-Simple/lib/Test/Builder.pm#EXIT_CODES</a>
+
+</pre>
 <p>
 </p>
 <hr />

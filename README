@@ -35,11 +35,13 @@ NAME
         provided at initialization, then default values are used -- the 
         database for the UMLS is called 'umls'.
 
-        The UMLS database must contain four tables: 
+        The UMLS database must contain six tables: 
             1. MRREL
             2. MRCONSO
             3. MRSAB
             4. MRDOC
+            5. MRDEF
+            6. SRDEF
 
         All other tables in the databases will be ignored, and any of these
         tables missing would raise an error.
@@ -67,7 +69,7 @@ NAME
                           system (such as PostgresSQL) could also be used,
                           as long as there exist Perl DBD drivers to
                           access the database.
-        'umls'         -> Default value 'umls'. This option specifes the name
+        'umls'         -> Default value 'umls'. This option specifies the name
                           of the UMLS database.
         'hostname'     -> Default value 'localhost'. The name or the IP 
                           address of the machine on which the database 
