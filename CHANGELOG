@@ -1,0 +1,29 @@
+NAME
+    UMLS::Interface CHANGES
+
+  Changes from version 0.09 to 0.11
+    Modified the Changelog directory and tried to remember to add them to
+    the release!
+
+    Modified documenation - tried to get the misspelling and obvious errors
+    removed.
+
+    Removed the HTML documentation
+
+  Changes from version 0.03 to 0.09
+    Allowed the program to create the directory that we prompt the user for
+    (the location that the config files should be stored) if it doesn't
+    exist rather than requiring it be already created.
+
+    Modified the location of where the utils/ programs are installed. All of
+    them now get installed and they are all in the same location.
+
+    Found a bug in the code that reads the configuration file. Error would
+    occur if trying to exclude a source.
+
+  Changes from version 0.01 to 0.03
+    Removed the need for UMLSINTERFACE environment variable indicating the
+    location of the UMLS. Now we prompt the user for the location that the
+    config files should be stored and ask them to set a
+    UMLSINTERFACE_CONFIGFILE_DIR variable.
+

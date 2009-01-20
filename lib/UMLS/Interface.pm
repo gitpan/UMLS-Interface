@@ -1,5 +1,5 @@
 # UMLS::Interface version 0.01
-# (Last Updated $Id: Interface.pm,v 1.47 2009/01/14 18:43:11 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.51 2009/01/20 15:40:39 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -43,7 +43,7 @@ use DBI;
 use bytes;
 use vars qw($VERSION);
 
-$VERSION = '0.09';
+$VERSION = '0.11';
 
 my $debug = 0;
 
@@ -369,8 +369,9 @@ sub _initialize
 
 	    if(! (-e $umlsinterface) ) {
 		system "mkdir $umlsinterface";
+		system "chmod -R 0777 $umlsinterface";
 	    }
-
+	    
 	    print STDERR "I am working on having the program set the environment\n";
 	    print STDERR "variable for you but that is not working yet. Until then\n";
 	    print STDERR "if you don't mind setting it after this run, that would\n";
@@ -418,6 +419,8 @@ sub _initialize
     $childFile  .= "_child";
     $parentFile .= "_parent";
     $configFile .= "_config";
+    
+    system "chmod -R 777 $umlsinterface/*";
     
     if($debug) {
 	print "Database  : $sourceDB\n";
@@ -558,6 +561,7 @@ sub getRelated
 	return 1;
     }    
 
+    print "select distinct CUI2 from MRREL where CUI1='$concept' and REL='$rel' and ($sources) and CVF is null\n";
     #  return all the relations 'rel' for cui 'concept'
     my $arrRef = $db->selectcol_arrayref("select distinct CUI2 from MRREL where CUI1='$concept' and REL='$rel' and ($sources) and CVF is null");
     if($self->checkError($function)) { return(); }
@@ -1675,6 +1679,7 @@ sub getChildren
     }
     #  otherwise everything is normal so return its children
     else {
+	print "select distinct CUI2 from MRREL where CUI1='$concept' and ($childRelations) and ($sources) and CVF is null\n";
 	my $arrRef = $db->selectcol_arrayref("select distinct CUI2 from MRREL where CUI1='$concept' and ($childRelations) and ($sources) and CVF is null");
 	if($self->checkError($function)) { return (); }
 
@@ -2432,15 +2437,11 @@ sub _printTime {
 
 __END__
 
-# Plain-old-Documentation
-
 =head1 NAME
 
 UMLS::Interface - Perl interface to the Unified Medical Language System (UMLS)
 
 =head1 SYNOPSIS
-
-  #!/usr/bin/perl
 
   use UMLS::Interface;
 
