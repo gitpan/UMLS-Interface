@@ -1,5 +1,5 @@
 # UMLS::Interface version 0.01
-# (Last Updated $Id: Interface.pm,v 1.51 2009/01/20 15:40:39 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.55 2009/01/21 22:33:27 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -43,7 +43,7 @@ use DBI;
 use bytes;
 use vars qw($VERSION);
 
-$VERSION = '0.11';
+$VERSION = '0.13';
 
 my $debug = 0;
 
@@ -561,7 +561,7 @@ sub getRelated
 	return 1;
     }    
 
-    print "select distinct CUI2 from MRREL where CUI1='$concept' and REL='$rel' and ($sources) and CVF is null\n";
+    #print "select distinct CUI2 from MRREL where CUI1='$concept' and REL='$rel' and ($sources) and CVF is null\n";
     #  return all the relations 'rel' for cui 'concept'
     my $arrRef = $db->selectcol_arrayref("select distinct CUI2 from MRREL where CUI1='$concept' and REL='$rel' and ($sources) and CVF is null");
     if($self->checkError($function)) { return(); }
@@ -607,8 +607,17 @@ sub getTermList
 	return ();
     }    
 
+    my $arrRef = "";
     
-    my $arrRef = $db->selectcol_arrayref("select distinct STR from MRCONSO where CUI='$concept' and $sources");
+    #  if all the sources are specified it is quicker to do the query
+    #  without the sources tag because you want everything
+    if($sources eq "SAB='AIR' or SAB='AOD' or SAB='AOT' or SAB='CCS' or SAB='CSP' or SAB='CST' or SAB='FMA' or SAB='GO' or SAB='HL7V2.5' or SAB='HL7V3.0' or SAB='ICD9CM' or SAB='ICPC' or SAB='LNC' or SAB='MEDLINEPLUS' or SAB='MSH' or SAB='MTHCH' or SAB='MTHHH' or SAB='NCBI' or SAB='NCI' or SAB='OMIM' or SAB='PDQ' or SAB='PNDS' or SAB='SCTSPA' or SAB='SNOMEDCT' or SAB='USPMG' or SAB='UWDA'") {
+	$arrRef = $db->selectcol_arrayref("select distinct STR from MRCONSO where CUI='$concept'");
+    }
+    else {
+	$arrRef = $db->selectcol_arrayref("select distinct STR from MRCONSO where CUI='$concept' and $sources");
+    }
+    
     if($self->checkError($function)) { return(); }
 
 
@@ -1679,7 +1688,7 @@ sub getChildren
     }
     #  otherwise everything is normal so return its children
     else {
-	print "select distinct CUI2 from MRREL where CUI1='$concept' and ($childRelations) and ($sources) and CVF is null\n";
+	#print "select distinct CUI2 from MRREL where CUI1='$concept' and ($childRelations) and ($sources) and CVF is null\n";
 	my $arrRef = $db->selectcol_arrayref("select distinct CUI2 from MRREL where CUI1='$concept' and ($childRelations) and ($sources) and CVF is null");
 	if($self->checkError($function)) { return (); }
 
@@ -1857,6 +1866,80 @@ sub _depthFirstSearch
 	#  otherwise mark it and stop that path
 	else { $self->_storeCycle($child, $concept); }
     }
+}
+
+sub findMinimumDepth
+{
+    my $self = shift;
+    my $cui  = shift;
+
+    my $function = "findMinimumDepth";
+    
+    if(!$cui) {
+	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "Undefined input values.";
+	$self->{'errorCode'} = 2 if($self->{'errorCode'} < 1);
+	return ();
+    }
+
+    if($self->validCui($cui)) {
+	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "Incorrect input value ($cui).";
+	$self->{'errorCode'} = 2 if($self->{'errorCode'} < 1);
+	return undef;
+    } 
+    
+    my $paths = $self->pathsToRoot($cui);
+
+    my $firstPath = pop @{$paths};
+    my @firstNodes = split/\s+/, $firstPath;
+    my $minimum = $#firstNodes + 1;
+
+    foreach my $path (@{$paths}) {
+	my @nodes = split/\s+/, $path;
+	if($minimum > ($#nodes+1)) {
+	    $minimum = $#nodes + 1;
+	}
+    }
+
+    return $minimum;
+}
+
+sub findMaximumDepth
+{
+    my $self = shift;
+    my $cui  = shift;
+
+    my $function = "findMaximumDepth";
+    
+    if(!$cui) {
+	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "Undefined input values.";
+	$self->{'errorCode'} = 2 if($self->{'errorCode'} < 1);
+	return ();
+    }
+
+    if($self->validCui($cui)) {
+	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "Incorrect input value ($cui).";
+	$self->{'errorCode'} = 2 if($self->{'errorCode'} < 1);
+	return undef;
+    } 
+    
+    my $paths = $self->pathsToRoot($cui);
+
+    my $firstPath = pop @{$paths};
+    my @firstNodes = split/\s+/, $firstPath;
+    my $maximum = $#firstNodes + 1;
+
+    foreach my $path (@{$paths}) {
+	my @nodes = split/\s+/, $path;
+	if($maximum < ($#nodes+1)) {
+	    $maximum = $#nodes + 1;
+	}
+    }
+
+    return $maximum;
 }
 
 ################# new function as of v0.03
@@ -2497,9 +2580,16 @@ with other parameters, unless you know what you're doing.
 
 =head1 DESCRIPTION
 
-This package provides a Perl interface to the Unified Medical Language 
-System (UMLS). The package is set up to access the UMLS in a mysql 
-database. 
+This package provides a Perl interface to the Unified Medical 
+Language System (UMLS). The UMLS is a knowledge representation 
+framework encoded designed to support broad scope biomedical 
+research queries. There exists three major sources in the UMLS. 
+The Metathesaurus which is a taxonomy of medical concepts, the 
+Semantic Network which categorizes concepts in the Metathesaurus, 
+and the SPECIALIST Lexicon which contains a list of biomedical 
+and general English terms used in the biomedical domain. The 
+UMLS-Interface package is set up to access the Metathesaurus
+and the Semantic Network present in a mysql database.
 
 =head2 DATABASE SETUP
 

@@ -2,11 +2,16 @@ NAME
     UMLS::Interface README
 
   SYNOPSIS
-        This package provides a Perl interface to UMLS, a taxonomy of
-        medical concepts. The package is set up to access UMLS present in
-        a mysql database. The package was essentially created for use with
-        the Semantic::Similarity package for measuring the semantic
-        relatedness of concepts.
+        This package provides a Perl interface to the Unified Medical 
+        Language System (UMLS). The UMLS is a knowledge representation 
+        framework encoded designed to support broad scope biomedical 
+        research queries. There exists three major sources in the UMLS. 
+        The Metathesaurus which is a taxonomy of medical concepts, the 
+        Semantic Network which categorizes concepts in the Metathesaurus, 
+        and the SPECIALIST Lexicon which contains a list of biomedical 
+        and general English terms used in the biomedical domain. The 
+        UMLS-Interface package is set up to access the Metathesaurus
+        and the Semantic Network present in a mysql database.
 
   INSTALL
         To install the module, run the following magic commands:
@@ -21,7 +26,7 @@ NAME
         directories. To install in a non-standard directory, specify a prefix
         during the 'perl Makefile.PL' stage as:
 
-          perl Makefile.PL PREFIX=/home/sid
+          perl Makefile.PL PREFIX=/home/programs
 
         It is possible to modify other parameters during installation. The
         details of these can be found in the ExtUtils::MakeMaker
@@ -112,11 +117,15 @@ NAME
           findShortestPath()        -- Returns the shortest path between two CUIs
           findLeastCommonSubsumer() -- Returns the least common subsumer between
                                        two CUIs
-          getCuiDef                 -- Returns the definition(s) of a given CUI
-          getStDef                  -- Returns the definition of a given ST
-          dropTable                 -- Drops the temporary table created by 
+          getCuiDef()               -- Returns the definition(s) of a given CUI
+          getStDef()                -- Returns the definition of a given ST
+          dropTable()               -- Drops the temporary table created by 
                                        the UMLS-Interface module of path information
                                        for a specified set of sources
+          findMinimumDepth()        -- Returns the minimum depth of a given CUI
+                                       in the current view of the UMLS
+          findMaximumDepth()        -- Returns the maximum depth of a given CUI
+                                       in the current view of the UMLS
 
         These methods essentially expose an interface as required by the
         UMLS::Similarity modules. The UMLS::Similarity modules require

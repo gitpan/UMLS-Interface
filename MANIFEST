@@ -14,6 +14,8 @@ TODO
 utils/configuration
 utils/dropTemporaryTables.pl
 utils/findLeastCommonSubsumer.pl
+utils/findMaximumCuiDepth.pl
+utils/findMinimumCuiDepth.pl
 utils/findPathToRoot.pl
 utils/findShortestPath.pl
 utils/getChildren.pl
