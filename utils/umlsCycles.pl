@@ -306,7 +306,7 @@ sub showHelp() {
 
     print "--unmark                 Unmark the problematic relations\n\n";
 
-    print "--file FILE              File containing bad relations\n";
+    print "--file FILE              File containing bad relations\n\n";
   
     print "--version                Prints the version number\n\n";
  
@@ -317,7 +317,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: umlsCycles.pl,v 1.5 2009/01/12 19:58:45 btmcinnes Exp $';
+    print '$Id: umlsCycles.pl,v 1.6 2009/01/25 00:25:00 btmcinnes Exp $';
     print "\nCopyright (c) 2007, Ted Pedersen & Bridget McInnes\n";
 }
 

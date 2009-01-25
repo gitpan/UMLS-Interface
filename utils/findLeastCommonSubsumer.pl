@@ -238,8 +238,8 @@ sub minimalUsageNotes {
 sub showHelp() {
 
         
-    print "This is a utility that takes as input two CUIs\n";
-    print "and returns their least common subsumer.\n";
+    print "This is a utility that takes as input two CUIs and returns\n";
+    print "their least common subsumer.\n";
   
     print "Usage: findLeastCommonSubsumer.pl [OPTIONS] CUI1 CUI2\n\n";
 
@@ -255,7 +255,7 @@ sub showHelp() {
     
     print "--socket STRING          Socket used by mysql (DEFAULT: /tmp.mysql.sock)\n\n";
 
-    print "--config FILE            Configuration file\n";
+    print "--config FILE            Configuration file\n\n";
 
     print "--version                Prints the version number\n\n";
  
@@ -266,7 +266,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findLeastCommonSubsumer.pl,v 1.6 2009/01/12 19:58:45 btmcinnes Exp $';
+    print '$Id: findLeastCommonSubsumer.pl,v 1.7 2009/01/25 00:19:40 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

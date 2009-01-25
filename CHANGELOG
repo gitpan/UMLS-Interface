@@ -1,6 +1,42 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.13 to 0.15
+    Added three new functions for semantic types:
+
+          getSt       which returns the semantic type TUI of a given CUI
+          getStAbr    which returns the semantic type abbreviation 
+                      given the semantic type TUI
+          getStString which returns the semantic type string 
+                      given the semantic type abbreviation
+
+    Added a program to the utils/ directory:
+
+          getSt.pl    which returns the semantic type of a given CUI
+                      or TERM in the UMLS. This program uses the three 
+                      above functions.
+      
+    Added the function checkConceptExists which returns true or false
+    whether a concept exists in the current view of the UMLS (this is based
+    on the sources and relations that are being used). This function was
+    hidden but it seemed like it could be useful to others as well - it
+    became useful for me anyway :)
+
+    Modified the SYNOPSIS section in the Interface.pm module to include all
+    or at least most of the different functions available through the
+    Interface.pm module.
+
+    Fixed the permissions on the configuration file directory when it is
+    being created. And chmod the individual files after they were created.
+    Hopefully now they will be created with read and write privlidges so you
+    can see them if you install using the -MCPAN option.
+
+    Modified the findPathToRoot.pl and findShortestPath.pl to include the
+    term associated with the CUI in the path
+
+    I forgot to add the UMLS Root to the PATH in the pathToRoot function. It
+    is now added.
+
   Changes from version 0.11 to 0.13
     Speed up the getTermList() option when all of the sources are being used
 

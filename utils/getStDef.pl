@@ -1,4 +1,3 @@
-#! /usr/local/bin/perl 
 #!/usr/bin/perl 
 
 =head1 NAME
@@ -196,7 +195,6 @@ sub errorCheck
 {
     my $obj = shift;
     ($errCode, $errString) = $obj->getError();
-    print "ERRORCHECK: $errCode ($errString)\n";
     print STDERR "$errString\n" if($errCode);
     exit if($errCode > 1);
 }
@@ -235,7 +233,7 @@ sub showHelp() {
     
     print "--socket STRING          Socket used by mysql (DEFAULT: /tmp.mysql.sock)\n\n";
 
-    print "--config FILE            Configuration file\n";
+    print "--config FILE            Configuration file\n\n";
 
     print "--version                Prints the version number\n\n";
  
@@ -246,7 +244,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getStDef.pl,v 1.3 2009/01/12 19:58:45 btmcinnes Exp $';
+    print '$Id: getStDef.pl,v 1.5 2009/01/25 00:19:40 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

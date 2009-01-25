@@ -1,4 +1,3 @@
-#! /usr/local/bin/perl 
 #!/usr/bin/perl 
 
 =head1 NAME
@@ -111,7 +110,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s" );
+GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui" );
 
 
 #  if help is defined, print out help
@@ -181,21 +180,60 @@ else {
 }
 
 &errorCheck($umls);
-my $cui = shift;
+my $input = shift;
 
-if($umls->validCui($cui)) {
-    print STDERR "ERROR: The concept ($cui) is not valid.\n";
-    exit;
+my $flag = "cui";
+
+my @c = ();
+#  check if the input are CUIs or terms
+if(defined $opt_cui) {
+    push @c, $input;
+}
+elsif( ($input=~/C[0-9]+/) ) {
+    
+    print "The input appear to be CUIs. Is this true (y/n)?\n";
+    my $answer = <STDIN>; chomp $answer;
+    if($answer=~/y/) {
+	print "Please specify the --cui option next time.\n";
+	push @c, $input;
+    }
+    else {
+	@c = $umls->getConceptList($input); 
+	&errorCheck($umls);
+	$flag = "term";
+    }
+}
+else {
+    @c = $umls->getConceptList($input); 
+    &errorCheck($umls);
+    $flag = "term";
 }
 
 
-my $paths = $umls->pathsToRoot($cui);
+foreach my $cui (@c) {
+    if($umls->validCui($cui)) {
+	print STDERR "ERROR: The concept ($cui) is not valid.\n";
+	exit;
+    }
 
-&errorCheck($umls);
+    my $t = $input;
+    if($flag eq "term") {
+	($t) = $umls->getTermList($cui); 
+    }
+    
+    my $paths = $umls->pathsToRoot($cui);
+    &errorCheck($umls);
 
-print "The paths between $cui and the root:\n";
-foreach  $path (@{$paths}) {
-    print "  => $path\n";
+    print "The paths between $t ($cui) and the root:\n";
+    foreach  $path (@{$paths}) {
+	my @array = split/\s+/, $path;
+	print "  => ";
+	foreach my $element (@array) {
+	    my ($t) = $umls->getTermList($element); 
+	    print "$element ($t) ";
+	}
+	print "\n";
+    }
 }
 
 sub errorCheck
@@ -240,7 +278,7 @@ sub showHelp() {
     
     print "--socket STRING          Socket used by mysql (DEFAULT: /tmp.mysql.sock)\n\n";
 
-    print "--config FILE            Configuration file\n";
+    print "--config FILE            Configuration file\n\n";
 
     print "--version                Prints the version number\n\n";
  
@@ -251,7 +289,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findPathToRoot.pl,v 1.6 2009/01/12 19:58:45 btmcinnes Exp $';
+    print '$Id: findPathToRoot.pl,v 1.8 2009/01/25 00:19:40 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

@@ -23,6 +23,7 @@ utils/getCuiDef.pl
 utils/getParents.pl
 utils/getRelated.pl
 utils/getStDef.pl
+utils/getSts.pl
 utils/queryCui.pl
 utils/queryTerm.pl
 utils/umlsCycles.pl

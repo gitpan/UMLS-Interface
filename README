@@ -47,6 +47,7 @@ NAME
             4. MRDOC
             5. MRDEF
             6. SRDEF
+            7. MRSTY
 
         All other tables in the databases will be ignored, and any of these
         tables missing would raise an error.
@@ -118,7 +119,6 @@ NAME
           findLeastCommonSubsumer() -- Returns the least common subsumer between
                                        two CUIs
           getCuiDef()               -- Returns the definition(s) of a given CUI
-          getStDef()                -- Returns the definition of a given ST
           dropTable()               -- Drops the temporary table created by 
                                        the UMLS-Interface module of path information
                                        for a specified set of sources
@@ -126,10 +126,36 @@ NAME
                                        in the current view of the UMLS
           findMaximumDepth()        -- Returns the maximum depth of a given CUI
                                        in the current view of the UMLS
-
+          getSt()                   -- Returns the TUI(s) of the semantic type(s)
+                                       associated with a given CUI
+          getStAbr()                -- Returns the abbreviation of a semantic type 
+                                       given its cooresponding TUI
+          getStString()             -- Returns the name of the semantic type given 
+                                       its cooresponding abbreviation      
+          getStDef()                -- Returns the definition of a semantic type
+                                       given its cooresponding abbreviation
+          checkConceptExists()      -- Returns true or false (1 or 0) if a concept
+                                       exists given the current view of the UMLS
+  
         These methods essentially expose an interface as required by the
         UMLS::Similarity modules. The UMLS::Similarity modules require
         that any interface to a taxonomy provide the above methods.
+
+  CONTACT US
+      If you have any trouble installing and using UMLS-Interface, please 
+      contact us via the users mailing list : 
+
+        umls-similarity@yahoogroups.com
+
+      You can join this group by going to:
+
+        http://tech.groups.yahoo.com/group/umls-similarity/
+
+      You may also contact us directly if you prefer :
+
+        Bridget T. McInnes: bthomson at cs.umn.edu
+
+        Ted Pedersen      : tpederse at d.umn.edu
 
   SOFTWARE COPYRIGHT AND LICENSE
         Copyright (C) 2004-2009 Bridget T McInnes, Siddharth Patwardhan, Serguei 

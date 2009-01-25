@@ -1,4 +1,3 @@
-#! /usr/local/bin/perl 
 #!/usr/bin/perl 
 
 =head1 NAME
@@ -252,7 +251,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: queryCui.pl,v 1.7 2009/01/12 19:58:45 btmcinnes Exp $';
+    print '$Id: queryCui.pl,v 1.8 2009/01/24 15:16:34 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

@@ -228,8 +228,8 @@ sub minimalUsageNotes {
 sub showHelp() {
 
         
-    print "This is a utility that takes as input a cui\n";
-    print "and returns all of its possible children given";
+    print "This is a utility that takes as input a CUI\n";
+    print "and returns all of its possible children given\n";
     print "a specified set of sources\n\n";
   
     print "Usage: getChildren.pl [OPTIONS] CUI\n\n";
@@ -257,7 +257,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getChildren.pl,v 1.2 2009/01/12 19:58:45 btmcinnes Exp $';
+    print '$Id: getChildren.pl,v 1.3 2009/01/25 00:19:40 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

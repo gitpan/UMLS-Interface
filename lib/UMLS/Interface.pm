@@ -1,5 +1,5 @@
-# UMLS::Interface version 0.01
-# (Last Updated $Id: Interface.pm,v 1.55 2009/01/21 22:33:27 btmcinnes Exp $)
+# UMLS::Interface 
+# (Last Updated $Id: Interface.pm,v 1.61 2009/01/25 00:25:00 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -37,13 +37,14 @@
 
 package UMLS::Interface;
 
+use Fcntl;
 use strict;
 use warnings;
 use DBI;
 use bytes;
 use vars qw($VERSION);
 
-$VERSION = '0.13';
+$VERSION = '0.15';
 
 my $debug = 0;
 
@@ -368,18 +369,18 @@ sub _initialize
 	    }
 
 	    if(! (-e $umlsinterface) ) {
-		system "mkdir $umlsinterface";
-		system "chmod -R 0777 $umlsinterface";
+		system "mkdir -m 777 $umlsinterface";
 	    }
 	    
-	    print STDERR "I am working on having the program set the environment\n";
-	    print STDERR "variable for you but that is not working yet. Until then\n";
-	    print STDERR "if you don't mind setting it after this run, that would\n";
-	    print STDERR "great. It can be set in csh as follows:\n\n";
+	    print STDERR "We decided not to have the program set the environment\n";
+	    print STDERR "variable for you (if you are a previous user you might\n";
+	    print STDERR "remember we said we were going to do this). So please\n";
+	    print STDERR "set the UMLSINTERFACE_CONFIGFILE_DIR variable\n\n";
+	    print STDERR "It can be set in csh as follows:\n\n";
 	    print STDERR " setenv UMLSINTERFACE_CONFIGFILE_DIR $umlsinterface\n\n";
 	    print STDERR "And in bash shell:\n\n";
 	    print STDERR " export UMLSINTERFACE_CONFIGFILE_DIR=$umlsinterface\n\n";
-	    print STDERR "I will work on getting it to set itself. Thanks!\n\n";
+	    print STDERR "Thank you!\n\n";
 	}
     }
     
@@ -419,9 +420,7 @@ sub _initialize
     $childFile  .= "_child";
     $parentFile .= "_parent";
     $configFile .= "_config";
-    
-    system "chmod -R 777 $umlsinterface/*";
-    
+        
     if($debug) {
 	print "Database  : $sourceDB\n";
 	print "Table File: $tableFile\n";
@@ -430,22 +429,29 @@ sub _initialize
 	print "ParentFile: $parentFile\n";
 	print "ConfigFile: $configFile\n"; 
     }
+    if(! (-e $configFile)) {
+	
+	open(CONFIG, ">$configFile")||
+	    die "Could not open configuration g file: $configFile\n";
     
-    open(CONFIG, ">$configFile") || 
-	die "Could not open configurationg file: $configFile\n";
-    
-    my @sarray = ();
-    my @rarray = ();
-    
-    print CONFIG "SAB :: include ";
-    while($sources=~/=\'(.*?)\'/g)   { push @sarray, $1; }
-    my $slist = join ", ", @sarray;
-    print CONFIG "$slist\n";
+	my @sarray = ();
+	my @rarray = ();
+	
+	print CONFIG "SAB :: include ";
+	while($sources=~/=\'(.*?)\'/g)   { push @sarray, $1; }
+	my $slist = join ", ", @sarray;
+	print CONFIG "$slist\n";
+	
+	print CONFIG "REL :: include ";
+	while($relations=~/=\'(.*?)\'/g) { push @rarray, $1; }
+	my $rlist = join ", ", @rarray;
+	print CONFIG "$rlist\n";
+	
+	close CONFIG;
 
-    print CONFIG "REL :: include ";
-    while($relations=~/=\'(.*?)\'/g) { push @rarray, $1; }
-    my $rlist = join ", ", @rarray;
-    print CONFIG "$rlist\n";
+	my $temp = chmod 0777, $configFile;
+	
+    }
 }
 
 ################# modified version from v0.01 2003
@@ -597,6 +603,12 @@ sub getTermList
 	return ();
     } 
 
+    my %retHash = ();
+    if($concept eq $umlsRoot) {
+	$retHash{"**UMLS ROOT**"}++;
+	return keys(%retHash);    
+    }
+
     $self->{'traceString'} = "";
 
     my $db = $self->{'db'};
@@ -611,18 +623,15 @@ sub getTermList
     
     #  if all the sources are specified it is quicker to do the query
     #  without the sources tag because you want everything
-    if($sources eq "SAB='AIR' or SAB='AOD' or SAB='AOT' or SAB='CCS' or SAB='CSP' or SAB='CST' or SAB='FMA' or SAB='GO' or SAB='HL7V2.5' or SAB='HL7V3.0' or SAB='ICD9CM' or SAB='ICPC' or SAB='LNC' or SAB='MEDLINEPLUS' or SAB='MSH' or SAB='MTHCH' or SAB='MTHHH' or SAB='NCBI' or SAB='NCI' or SAB='OMIM' or SAB='PDQ' or SAB='PNDS' or SAB='SCTSPA' or SAB='SNOMEDCT' or SAB='USPMG' or SAB='UWDA'") {
+    if($sources eq "SAB='AIR' or SAB='AOD' or SAB='AOT' or SAB='CCS' or SAB='CSP' or SAB='CST' or SAB='FMA' or SAB='GO' or SAB='HL7V2.5' or SAB='HL7V3.0' or SAB='ICD9CM' or SAB='ICPC' or SAB='LNC' or SAB='MEDLINEPLUS' or SAB='MSH' or SAB='MTHCH' or SAB='MTHHH' or SAB='NCBI' or SAB='NCI' or SAB='OMIM' or SAB='PDQ' or SAB='PNDS' or SAB='SCTSPA' or SAB='SNOMEDCT' or SAB='USPMG' or SAB='UWDA' or SAB='SRC'") {
 	$arrRef = $db->selectcol_arrayref("select distinct STR from MRCONSO where CUI='$concept'");
     }
     else {
-	$arrRef = $db->selectcol_arrayref("select distinct STR from MRCONSO where CUI='$concept' and $sources");
+	$arrRef = $db->selectcol_arrayref("select distinct STR from MRCONSO where CUI='$concept' and ($sources or SAB='SRC')");
     }
     
     if($self->checkError($function)) { return(); }
 
-
-    
-    my %retHash = ();
     foreach my $tr (@{$arrRef}) {
         $tr =~ s/^\s+//;
         $tr =~ s/\s+$//;
@@ -704,7 +713,7 @@ sub pathsToRoot
     $self->{'traceString'} = "";
     
     #  check that concept1 and concept2 exist
-    if($self->_checkConceptExists($concept) eq 0) {
+    if($self->checkConceptExists($concept) eq 0) {
 	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
 	$self->{'errorString'} .= "Concept ($concept) doesn't exist.";
 	$self->{'errorCode'} = 2;
@@ -755,9 +764,14 @@ sub _updateTaxonomy {
     %childrenTaxonomy = ();
     
     # open the parent and child files to store the upper level taxonomy information
-    open(CHD, ">$childFile")  || die "Could not open $childFile\n";
-    open(PAR, ">$parentFile") || die "Could not open $parentFile\n";
-	
+    if(-e $childFile)  { system "rm -rf $childFile";  }
+    if(-e $parentFile) { system "rm -rf $parentFile"; }
+
+    open(CHD, ">$childFile")  || 
+	die "Could not open $childFile\n";
+    open(PAR, ">$parentFile") || 
+	die "Could not open $parentFile\n";
+
     #  select all the CUI1s from MRREL - takes approximately 6 minutes
     my $allCui1 = $db->selectcol_arrayref("select CUI1 from MRREL where ($relations) and ($sources) and (CVF is null)");
     if($self->checkError($function)) { return undef; }
@@ -769,7 +783,7 @@ sub _updateTaxonomy {
     
     if($debug) { print "Got all of the CUIs\n"; }
 		     
-    #  select all the CUI1s from MRREL that have a parent link
+    #  select all the CUI1s from MRREL that have a parent linkS
     my $parCuis = $db->selectcol_arrayref("select CUI1 from MRREL where ($parentRelations) and ($sources) and (CVF is null)");
     if($self->checkError($function)) { return undef; }
     
@@ -817,6 +831,8 @@ sub _updateTaxonomy {
     }
     
     close PAR; close CHD;
+    
+    my $temp = chmod 0777, $parentFile, $childFile;
     
     #  print out some information
     my $pkey = keys %parentTaxonomy;
@@ -1127,6 +1143,9 @@ sub _setDepth {
 	    
 	    if($debug) { print "Path table file exists\n"; }
 	    
+	    print "TABLE FILE: $tableFile\n";
+	    exit;
+
 	    #  create the table in the umls database
 	    my $ar1 = $sdb->do("CREATE TABLE IF NOT EXISTS $tableName (CUI char(8), DEPTH int, PATH varchar(1000))");
 	    if($self->checkError($function)) { return (); }
@@ -1192,6 +1211,8 @@ sub _setDepth {
 		}
 	    } 
 	    close CYCLE;
+
+	    my $temp = chmod 0777, $cycleFile;
 	    
 	    if($debug) { print "Cycle file has been created\n"; }
 	    
@@ -1436,9 +1457,6 @@ sub _config {
     else {
 
 	#  get the CUIs of the default sources
-	#my $icdcui = $self->_getSabCui('ICD9CM');
-	#my $sctcui = $self->_getSabCui('SNOMEDCT');
-	#my $ncicui = $self->_getSabCui('NCI');
 	my $mshcui = $self->_getSabCui('MSH');
 
 	if(! (defined $mshcui) ) {
@@ -1447,45 +1465,16 @@ sub _config {
 	    $self->{'errorString'} .= "SAB (MSH) is not valid. ";
 	    return ();
 	}
-	#if(! (defined $sctcui) ) {
-	    #$self->{'errorCode'} = 2;
-	    #$self->{'errorString'} .= "\nError (UMLS::Interface->_config()) - ";
-	    #$self->{'errorString'} .= "SAB (SNOMEDCT) is not valid. ";
-	    #return ();
-	#}
-	#if(! (defined $ncicui) ) {
-	    #$self->{'errorCode'} = 2;
-	    #$self->{'errorString'} .= "\nError (UMLS::Interface->_config()) - ";
-	    #$self->{'errorString'} .= "SAB (NCI) is not valid. ";
-	    #return ();
-	#}
-	
-	#  set default sources
-	#$sources = "SAB=\'ICD9CM\' or SAB=\'SNOMEDCT\' or SAB=\'NCI\'";
-	#$sources = "SAB=\'SNOMEDCT\'";
 	$sources = "SAB=\'MSH\'";
-	
-	#$sab_names{'ICD9CM'}++; 
-	#$sab_hash{$icdcui}++;
-
 	$sab_names{'MSH'}++; 
 	$sab_hash{$mshcui}++;
 	
-	#$sab_names{'SNOMEDCT'}++; 
-	#$sab_hash{$sctcui}++;
-	
 	#  set default relations
-	#$relations = "REL=\'CHD\' or REL=\'PAR\' or REL=\'RB\' or REL=\'RN\'";	
 	$relations = "REL=\'CHD\' or REL=\'PAR\'";
-	#$relations = "REL=\'RN\' or REL=\'RB\'";
-	
+
 	#  set default parent and child relations
-	#$parentRelations = "REL=\'PAR\' or REL=\'RB\'";
-	#$childRelations  = "REL=\'CHD\' or REL=\'RN\'";
 	$parentRelations = "REL=\'PAR\'";
 	$childRelations  = "REL=\'CHD\'";
-	#$parentRelations = "REL=\'RB\'";
-	#$childRelations  = "REL=\'RN\'";
     }
 
     if($debug) {
@@ -1791,11 +1780,18 @@ sub _initializeDepthFirstSearch
 
     open(TABLEFILE, ">$tableFile") || die "Could not open $tableFile";
     
+
     my @children = $self->getChildren($concept);
     foreach my $child (@children) {
-	my @array = (); my $path = \@array;
+	my @array = (); 
+	push @array, $umlsRoot; 
+	my $path  = \@array;
 	$self->_depthFirstSearch($child, $d,$path,*TABLEFILE);
     }
+    
+    close TABLEFILE;
+
+    my $temp = chmod 0777, $tableFile;
 }
 
 ################# new function as of v0.03
@@ -2003,8 +1999,8 @@ sub findShortestPath
     } 
 
     #  check that concept1 and concept2 exist
-    return () if(! (defined $self->_checkConceptExists($concept1)));
-    return () if(! (defined $self->_checkConceptExists($concept2)));
+    return () if(! (defined $self->checkConceptExists($concept1)));
+    return () if(! (defined $self->checkConceptExists($concept2)));
     
     #  determine the cycles and depth of the taxonomy if not already done
     my $depthCheck = $self->_setDepth();
@@ -2059,13 +2055,13 @@ sub findLeastCommonSubsumer
     $self->{'traceString'} = "" if($self->{'trace'});
     
     #  check that concept1 and concept2 exist
-    if($self->_checkConceptExists($concept1) eq 0) {
+    if($self->checkConceptExists($concept1) eq 0) {
 	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
 	$self->{'errorString'} .= "Concept ($concept1) doesn't exist.";
 	$self->{'errorCode'} = 2;
 	return undef;
     }
-    if($self->_checkConceptExists($concept2) eq 0) {
+    if($self->checkConceptExists($concept2) eq 0) {
 	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
 	$self->{'errorString'} .= "Concept ($concept2) doesn't exist.";
 	$self->{'errorCode'} = 2;
@@ -2120,13 +2116,13 @@ sub _findShortestPath
     $self->{'traceString'} = "" if($self->{'trace'});
     
     #  check that concept1 and concept2 exist
-    if($self->_checkConceptExists($concept1) eq 0) {
+    if($self->checkConceptExists($concept1) eq 0) {
 	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
 	$self->{'errorString'} .= "Concept ($concept1) doesn't exist.";
 	$self->{'errorCode'} = 2;
 	return undef;
     }
-    if($self->_checkConceptExists($concept2) eq 0) {
+    if($self->checkConceptExists($concept2) eq 0) {
 	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
 	$self->{'errorString'} .= "Concept ($concept2) doesn't exist.";
 	$self->{'errorCode'} = 2;
@@ -2262,14 +2258,14 @@ sub _findShortestPath
 }
 
 ################# added function as of v0.03
-sub _checkConceptExists {
+sub checkConceptExists {
 
     my $self    = shift;
     my $concept = shift;
 
     return () if(!defined $self || !ref $self);
     
-    my $function = "_checkConceptExists";
+    my $function = "checkConceptExists";
     #&_debug($function);
     
     if(!$concept) {
@@ -2344,6 +2340,102 @@ sub _getLCSfromTrees
 
 ################# added function as of v0.03
 # Subroutine to get the definition of a given CUI
+sub getSt
+{
+    my $self = shift;
+    my $cui   = shift;
+
+    my $function = "getSt";
+    &_debug($function);
+    
+    my $db = $self->{'db'};
+    if(!$db) {
+	$self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "A db is required.";
+	$self->{'errorCode'} = 2;
+	return undef;
+    }
+
+    if(!$cui) {
+	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "Undefined input values.";
+	$self->{'errorCode'} = 2 if($self->{'errorCode'} < 1);
+	return undef;
+    }
+
+    my $arrRef = $db->selectcol_arrayref("select TUI from MRSTY where CUI=\'$cui\'");
+    if($self->checkError($function)) { return (); }
+    
+    return (shift @{$arrRef});
+}
+
+
+################# added function as of v0.13
+# Subroutine to get the name of a semantic type given its abbreviation
+sub getStString
+{
+    my $self = shift;
+    my $st   = shift;
+
+    my $function = "getStString";
+    &_debug($function);
+    
+    my $db = $self->{'db'};
+    if(!$db) {
+	$self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "A db is required.";
+	$self->{'errorCode'} = 2;
+	return undef;
+    }
+
+    if(!$st) {
+	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "Undefined input values.";
+	$self->{'errorCode'} = 2 if($self->{'errorCode'} < 1);
+	return undef;
+    }
+
+    my $arrRef = $db->selectcol_arrayref("select STY_RL from SRDEF where ABR=\'$st\'");
+    if($self->checkError($function)) { return (); }
+    
+    return (shift @{$arrRef});
+} 
+
+
+################# added function as of v0.13
+# Subroutine to get the name of a semantic type given its TUI (UI)
+sub getStAbr
+{
+    my $self = shift;
+    my $st   = shift;
+
+    my $function = "getStString";
+    &_debug($function);
+    
+    my $db = $self->{'db'};
+    if(!$db) {
+	$self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "A db is required.";
+	$self->{'errorCode'} = 2;
+	return undef;
+    }
+
+    if(!$st) {
+	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "Undefined input values.";
+	$self->{'errorCode'} = 2 if($self->{'errorCode'} < 1);
+	return undef;
+    }
+
+    my $arrRef = $db->selectcol_arrayref("select ABR from SRDEF where UI=\'$st\'");
+    if($self->checkError($function)) { return (); }
+    
+    return (@{$arrRef});
+} 
+
+
+################# added function as of v0.03
+# Subroutine to get the definition of a given ST
 sub getStDef
 {
     my $self = shift;
@@ -2526,28 +2618,91 @@ UMLS::Interface - Perl interface to the Unified Medical Language System (UMLS)
 
 =head1 SYNOPSIS
 
-  use UMLS::Interface;
+use UMLS::Interface;
 
-  $umls = UMLS::Interface->new(); 
+$umls = UMLS::Interface->new(); 
 
-  die "Unable to create UMLS::Interface object.\n" if(!$umls);
+die "Unable to create UMLS::Interface object.\n" if(!$umls);
 
-  ($errCode, $errString) = $umls->getError();
+($errCode, $errString) = $umls->getError();
 
-  die "$errString\n" if($errCode);
+die "$errString\n" if($errCode);
 
-  my $term1    = "blood";
-  my @tList1   = $umls->getConceptList($term1);
-  my $cui1     = pop @tList1;
+my $term1    = "blood";
+my @tList1   = $umls->getConceptList($term1);
+my $cui1     = pop @tList1;
 
-  my $term2    = "cell";
-  my @tList2   = $umls->getConceptList($term2);
-  my $cui2     = pop @tList2;
+my $term2    = "cell";
+my @tList2   = $umls->getConceptList($term2);
+my $cui2     = pop @tList2;
 
-  my @path     = $umls->findShortestPath($cui1, $cui2);
+my $exists1  = $umls->checkConceptExists($cui1);
+my $exists2  = $umls->checkConceptExists($cui2);
 
-  print "The shortest path between $term1 ($cui1) and $term2 ($cui2):\n";
-  print "  => @path\n";
+if($exists1) { print "$term1($cui1) exists in your UMLS view.\n"; }
+else         { print "$term1($cui1) does not exist in your UMLS view.\n"; }
+
+if($exists2) { print "$term2($cui2) exists in your UMLS view.\n"; }
+else         { print "$term2($cui2) does not exist in your UMLS view.\n"; }
+print "\n";
+
+my @cList1   = $umls->getTermList($cui1);
+my @cList2   = $umls->getTermList($cui2);
+
+print "The terms associated with $term1 ($cui1):\n";
+foreach my $c1 (@cList1) {
+    print " => $c1\n";
+} print "\n";
+
+print "The terms associated with $term2 ($cui2):\n";
+foreach my $c2 (@cList2) {
+    print " => $c2\n";
+} print "\n";
+
+
+my $lcs = $umls->findLeastCommonSubsumer($cui1, $cui2);
+print "The least common subsumer between $term1 ($cui1) and \n";
+print "$term2 ($cui2) is $lcs\n\n";
+
+
+my @shortestpath = $umls->findShortestPath($cui1, $cui2);
+print "The shortest path between $term1 ($cui1) and $term2 ($cui2):\n";
+print "  => @shortestpath\n\n";
+
+my $pathstoroot   = $umls->pathsToRoot($cui1);
+print "The paths from $term1 ($cui1) and the root:\n";
+foreach  $path (@{$pathstoroot}) {
+    print "  => $path\n";
+} print "\n";
+
+my $mindepth = $umls->findMinimumDepth($cui1);
+my $maxdepth = $umls->findMaximumDepth($cui1);
+print "The minimum depth of $term1 ($cui1) is $mindepth\n";
+print "The maximum depth of $term1 ($cui1) is $maxdepth\n\n";
+
+my @children = $umls->getChildren($cui2); 
+print "The child(ren) of $term2 ($cui2) are: @children\n\n";
+
+my @parents = $umls->getParents($cui2);
+print "The parent(s) of $term2 ($cui2) are: @parents\n\n";
+
+my @definitions = $umls->getCuiDef($cui1);
+print "The definition(s) of $term1 ($cui1) are:\n";
+foreach $def (@definitions) {
+    print "  => $def\n"; $i++;
+} print "\n";
+
+print "The semantic type(s) of $term1 ($cui1) and the semantic\n";
+print "definition are:\n";
+my @sts = $umls->getSt($cui1);
+foreach my $st (@sts) {
+    my @abrs = $umls->getStAbr($st);
+    foreach my $abr (@abrs) {
+	my $string = $umls->getStString($abr);
+	my $def    = $umls->getStDef($abr);
+	print "  => $string ($abr) : $def\n";
+    }
+} print "\n";
 
 =head1 ABSTRACT
 
@@ -2605,8 +2760,9 @@ The UMLS database must contain six tables:
 	3. MRSAB
 	4. MRDOC
         5. MRDEF
-        6. SRDEF
-
+        6. MRSTY
+        7. SRDEF
+        
 All other tables in the databases will be ignored, and any of these
 tables missing would raise an error.
 
@@ -2714,6 +2870,10 @@ can be specified during the first run - go run one and you
 will see what I mean).
 
 =head1 SEE ALSO
+
+http://tech.groups.yahoo.com/group/umls-similarity/
+
+http://search.cpan.org/dist/UMLS-Similarity/
 
 =head1 AUTHOR
 

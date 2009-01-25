@@ -49,8 +49,10 @@ INSTALLATION STAGES
                     -- MRCONSO.RFF
                     -- MRSAB.RFF
                     -- MRDOC.RFF
+                    -- MRDEF.RFF
+                    -- MRSTY.RFF
                   - the following files in the NET directory
-                        --populate_mysql_db.sh script
+                        --populate_net_mysql_db.sh script
                         --SRDEF
           
     Stage 5: Load the UMLS into MySQL
@@ -62,6 +64,7 @@ INSTALLATION STAGES
                     -- MRDOC
                     -- SRDEF
                     -- MRDEF
+                    -- MRSTY
 
     Stage 6: Install UMLS-Interface and set environment variable
     More details on how to obtain and install appear below.
@@ -206,8 +209,9 @@ Stage 4 - Install UMLS, if already installed go to Stage 5
   REMINDER
     If you already have the UMLS installed, make certain that you have the
     populate_mysql_db.sh script in the META directory as well as the
-    MRREL.RFF, MRCONSO.RFF, MRSAB.RFF, and MRDOC.RFF files. If you do not
-    you will need to run the install program (MetamorphoSys) again.
+    MRREL.RFF, MRCONSO.RFF, MRSAB.RFF, MRDOC.RFF, MRDEF.RFF, MRSTY.RFF and
+    SRDEF.RFF files. If you do not you will need to run the install program
+    (MetamorphoSys) again.
 
   DESCRIPTION OF UMLS
     The UMLS is a freely available knowledge representation framework
@@ -389,7 +393,15 @@ Stage 5 - Load UMLS into MySQL, if already installed go to Stage 6
 
                     In it you should see the file:
 
-                       populate_mysql_db.sh
+                       LoadScripts.zip
+
+                    Unzip this file as follows:
+
+                       unzip LoadScripts.zip
+
+                    The following file then should appear:
+
+                       populate_net_mysql_db.sh
 
                     If you don't see this file - you need to start 
                     over. Step 3 - F did not get done properly.
@@ -398,7 +410,7 @@ Stage 5 - Load UMLS into MySQL, if already installed go to Stage 6
                This is the exact same modifications that were done 
                in the Metathesaurus load script.
 
-               In the populate_mysql_db.sh you need to modify the 
+               In the populate_net_mysql_db.sh you need to modify the 
                following:
 
                     MYSQL_HOME=<path to MYSQL_HOME>
@@ -416,16 +428,16 @@ Stage 5 - Load UMLS into MySQL, if already installed go to Stage 6
    Step F:  Run the MySQL load script for the Semantic Network
                     Run this script by typing on the command line:
 
-                        ./populate_mysql_db.sh
+                        ./populate_net_mysql_db.sh
 
                     If you get the following:
 
-                        ./populate_mysql_db.sh: Permission denied.
+                        ./populate_net_mysql_db.sh: Permission denied.
 
                     You need to change your permissions and try again. To change 
                     your permissions type:
 
-                         chmod 755 populate_mysql_db.sh
+                         chmod 755 populate_net_mysql_db.sh
 
             Now this should not take forever. It goes much much quicker!
 
@@ -530,14 +542,40 @@ Stage 6 - Install UMLS-Interface and set environment variable
 
         http://search.cpan.org/dist/Test-Simple/lib/Test/Builder.pm#EXIT_CODES
 
+        Now please set the UMLSINTERFACE_CONFIGFILE_DIR environment variable.
+        This will be the location where you don't mind the UMLS-Interface 
+        module writing out system files. The system files that created are:
+           
+               1. <UMLS_version>_<sources><relations>_config
+              
+                  which is an example configuration file of the 
+                  the current run
+              
+               2. <UMLS_version>_<sources><relations>_child
+                  <UMLS_version>_<sources><relations>_parent
+              
+                  this files store the upper level taxonomy which is 
+                  created when connecting multiple sources
+
+               3. <UMLS_version>_<sources><relations>_table
+              
+                  this file contains the path to the root for each 
+                  concept in the UMLS view. this information is stored 
+                  in a mysql database of the same name. This really 
+                  helps speed up the initialization.
+
 CONTACT US
     If you have any trouble installing and using UMLS-Interface, please
     contact us via the users mailing list :
 
-    umls-query-users@lists.sourceforge.net
+    umls-similarity@yahoogroups.com
+
+    You can join this group by going to:
+
+    http://tech.groups.yahoo.com/group/umls-similarity/
 
     You may also contact us directly if you prefer :
 
-    Bridget T. McInnes: bthomson@cs.umn.edu Ted Pedersen :
-    tpederse@d.umn.edu
+    Bridget T. McInnes: bthomson at cs.umn.edu Ted Pedersen : tpederse at
+    d.umn.edu
 
