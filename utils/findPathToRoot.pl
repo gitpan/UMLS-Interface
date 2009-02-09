@@ -2,24 +2,24 @@
 
 =head1 NAME
 
-findShortestPath.pl - this program 
+findPathToRoot.pl - this program 
 
 =head1 SYNOPSIS
 
-This program takes a CUI and returns all of possible 
+This program takes a CUI or a term and returns all of possible 
 paths to the root
 
 =head1 USAGE
 
-Usage: findPathToRoot.pl [OPTIONS] CUI
+Usage: findPathToRoot.pl [OPTIONS] [CUI|TERM]
 
 =head1 INPUT
 
 =head2 Required Arguments:
 
-=head3 CUI
+=head3 [CUI|TERM]
 
-A concept (CUI) from the Unified Medical Language System
+A concept (CUI) or a term from the Unified Medical Language System
 
 =head2 Optional Arguments:
 
@@ -55,7 +55,7 @@ Displays the version information.
 
 =head1 OUTPUT
 
-List of CUIs that are associated with the input term
+Path(s) from given CUIor term to the root
 
 =head1 SYSTEM REQUIREMENTS
 
@@ -71,13 +71,19 @@ List of CUIs that are associated with the input term
 
 =head1 COPYRIGHT
 
-Copyright (c) 2007-2008,
+Copyright (c) 2007-2009,
 
  Bridget T. McInnes, University of Minnesota
  bthomson at cs.umn.edu
     
  Ted Pedersen, University of Minnesota Duluth
  tpederse at d.umn.edu
+
+ Siddharth Patwardhan, University of Utah, Salt Lake City
+ sidd@cs.utah.edu
+ 
+ Serguei Pakhomov, University of Minnesota Twin Cities
+ pakh0002@umn.edu
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -106,7 +112,6 @@ this program; if not, write to:
 #                            COMMAND LINE OPTIONS AND USAGE
 #                           ================================
 
-
 use UMLS::Interface;
 use Getopt::Long;
 
@@ -129,7 +134,7 @@ if( defined $opt_version ) {
 
 # At least 1 term should be given on the command line.
 if(scalar(@ARGV) < 1) {
-    print STDERR "No term was specified on the command line";
+    print STDERR "No term was specified on the command line\n";
     &minimalUsageNotes();
     exit;
 }
@@ -180,60 +185,53 @@ else {
 }
 
 &errorCheck($umls);
-my $input = shift;
 
-my $flag = "cui";
+my $input = shift;
+my $term  = $input;
 
 my @c = ();
-#  check if the input are CUIs or terms
-if(defined $opt_cui) {
+if($input=~/C[0-9]+/) {
     push @c, $input;
-}
-elsif( ($input=~/C[0-9]+/) ) {
-    
-    print "The input appear to be CUIs. Is this true (y/n)?\n";
-    my $answer = <STDIN>; chomp $answer;
-    if($answer=~/y/) {
-	print "Please specify the --cui option next time.\n";
-	push @c, $input;
-    }
-    else {
-	@c = $umls->getConceptList($input); 
-	&errorCheck($umls);
-	$flag = "term";
-    }
+    ($term) = $umls->getTermList($input);
 }
 else {
-    @c = $umls->getConceptList($input); 
-    &errorCheck($umls);
-    $flag = "term";
+    @c = $umls->getConceptList($input);
 }
 
+&errorCheck($umls);
+
+my $printFlag = 0;
 
 foreach my $cui (@c) {
+
     if($umls->validCui($cui)) {
 	print STDERR "ERROR: The concept ($cui) is not valid.\n";
 	exit;
     }
 
-    my $t = $input;
-    if($flag eq "term") {
-	($t) = $umls->getTermList($cui); 
-    }
-    
     my $paths = $umls->pathsToRoot($cui);
     &errorCheck($umls);
-
-    print "The paths between $t ($cui) and the root:\n";
-    foreach  $path (@{$paths}) {
-	my @array = split/\s+/, $path;
-	print "  => ";
-	foreach my $element (@array) {
-	    my ($t) = $umls->getTermList($element); 
-	    print "$element ($t) ";
-	}
-	print "\n";
+    
+    if($#{$paths} < 0) {
+	print "There are no paths between $term ($cui) and the root.\n";
     }
+    else {
+	print "The paths between $term ($cui) and the root:\n";
+	foreach  $path (@{$paths}) {
+	    my @array = split/\s+/, $path;
+	    print "  => ";
+	    foreach my $element (@array) {
+		my ($t) = $umls->getTermList($element); 
+		print "$element ($t) ";
+	    } print "\n";
+	    
+	    $printFlag = 1;
+	}
+    }
+}
+
+if(! ($printFlag) ) {
+    print "There are not a path from the given $input to the root.\n";
 }
 
 sub errorCheck
@@ -250,7 +248,7 @@ sub errorCheck
 ##############################################################################
 sub minimalUsageNotes {
     
-    print "Usage: findPathToRoot.pl [OPTIONS] CUI\n";
+    print "Usage: findPathToRoot.pl [OPTIONS] [CUI|TERM]\n";
     &askHelp();
     exit;
 }
@@ -261,10 +259,10 @@ sub minimalUsageNotes {
 sub showHelp() {
 
         
-    print "This is a utility that takes as input a CUI\n";
-    print "and returns all possible paths to the root.\n\n";
+    print "This is a utility that takes as input a CUI or a \n";
+    print "term and returns all possible paths to the root.\n\n";
   
-    print "Usage: findPathToRoot.pl [OPTIONS] CUI\n\n";
+    print "Usage: findPathToRoot.pl [OPTIONS] [CUI|TERM]\n\n";
 
     print "Options:\n\n";
 
@@ -289,7 +287,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findPathToRoot.pl,v 1.8 2009/01/25 00:19:40 btmcinnes Exp $';
+    print '$Id: findPathToRoot.pl,v 1.11 2009/02/09 17:48:37 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

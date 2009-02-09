@@ -70,13 +70,19 @@ List of CUIs that are associated with the input term
 
 =head1 COPYRIGHT
 
-Copyright (c) 2007-2008,
+Copyright (c) 2007-2009,
 
  Bridget T. McInnes, University of Minnesota
  bthomson at cs.umn.edu
     
  Ted Pedersen, University of Minnesota Duluth
  tpederse at d.umn.edu
+
+ Siddharth Patwardhan, University of Utah, Salt Lake City
+ sidd@cs.utah.edu
+ 
+ Serguei Pakhomov, University of Minnesota Twin Cities
+ pakh0002@umn.edu
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -105,7 +111,6 @@ this program; if not, write to:
 #                            COMMAND LINE OPTIONS AND USAGE
 #                           ================================
 
-
 use UMLS::Interface;
 use Getopt::Long;
 
@@ -128,7 +133,7 @@ if( defined $opt_version ) {
 
 # At least 1 term should be given on the command line.
 if(scalar(@ARGV) < 1) {
-    print STDERR "No term was specified on the command line";
+    print STDERR "No term was specified on the command line\n";
     &minimalUsageNotes();
     exit;
 }
@@ -190,13 +195,14 @@ my @cuis = $umls->getConceptList($term);
 
 &errorCheck($umls);
 
-print "TERM: $input\n";
 if($#cuis < 0) {
-    print "No CUIs are associated with this term.\n";
+    print "No CUIs are associated with $input.\n";
 }
 else {
+    print "The CUIs associated with $term are:\n";
+    my $i = 1;
     foreach my $cui (@cuis) {
-	print "$cui\n";
+	print "$i. $cui\n"; $i++;
     }
 }
 
@@ -214,7 +220,7 @@ sub errorCheck
 ##############################################################################
 sub minimalUsageNotes {
     
-    print "Usage: queryTerm.pl [OPTIONS] TERM \n\n";
+    print "Usage: queryTerm.pl [OPTIONS] TERM \n";
     &askHelp();
     exit;
 }
@@ -253,7 +259,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: queryTerm.pl,v 1.10 2009/01/24 15:16:34 btmcinnes Exp $';
+    print '$Id: queryTerm.pl,v 1.13 2009/02/09 17:48:37 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

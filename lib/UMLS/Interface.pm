@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.61 2009/01/25 00:25:00 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.66 2009/02/09 18:17:49 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -44,7 +44,7 @@ use DBI;
 use bytes;
 use vars qw($VERSION);
 
-$VERSION = '0.15';
+$VERSION = '0.17';
 
 my $debug = 0;
 
@@ -72,8 +72,6 @@ my $parentRelations = "";
 my %parentTaxonomy   = ();
 my %childrenTaxonomy = ();
 
-my $childFile  = "";
-my $parentFile = "";
 
 #  trace variables
 my %trace = ();
@@ -83,6 +81,9 @@ my $tableName = "";
 my $tableFile = "";
 my $cycleFile = "";
 my $configFile= "";
+my $childFile  = "";
+my $parentFile = "";
+
 my %cycleHash = ();
 
 # UMLS-specific stuff ends ----------
@@ -228,11 +229,11 @@ sub _initialize
 
     #  create the database object...
     if(defined $username and defined $password) {
-	if($debug) { print "Connecting with username and password\n"; }
+	if($debug) { print STDERR "Connecting with username and password\n"; }
 	$db = DBI->connect("DBI:mysql:database=$database;mysql_socket=$socket;host=$hostname",$username, $password, {RaiseError => 1});
     }
     else {
-	if($debug) { print "Connecting using the my.cnf file\n"; }
+	if($debug) { print STDERR "Connecting using the my.cnf file\n"; }
 	my $dsn = "DBI:mysql:umls;mysql_read_default_group=client;";
 	$db = DBI->connect($dsn);
     } 
@@ -337,7 +338,7 @@ sub _initialize
 
 
     #  set the root nodes
-    if($debug) { print "Setting the root(s)\n"; }
+    if($debug) { print STDERR "Setting the root(s)\n"; }
     $self->_setRoots();
     
     #  get appropriate version output
@@ -360,11 +361,15 @@ sub _initialize
 	    $umlsinterface = <STDIN>; chomp $umlsinterface;
 
 	    while(! ($answerFlag)) {
-		print STDERR "Is $umlsinterface the correct location?\n";
+		print STDERR "  Is $umlsinterface the correct location? ";
 		my $answer = <STDIN>; chomp $answer;
-		if($answer=~/(Y|N|y|n|yes|no|Yes|No)/) { 
+		if($answer=~/[Yy]/) { 
 		    $answerFlag    = 1; 
 		    $interfaceFlag = 1;   
+		}
+		else {
+		    print STDERR "Please entire in location:\n";
+		    $umlsinterface = <STDIN>; chomp $umlsinterface;
 		}
 	    }
 
@@ -393,6 +398,8 @@ sub _initialize
     $tableName  = "$ver";
     $configFile = "$umlsinterface/$ver";
     
+    print STDERR "UMLS-Interface Configuration Information\n";
+    print STDERR "  Sources:\n";
     foreach my $sab (sort keys %sab_names) {
     	$tableFile  .= "_$sab";
     	$cycleFile  .= "_$sab";
@@ -401,8 +408,12 @@ sub _initialize
 	$parentFile .= "_$sab";
 	$sourceDB   .= "_$sab";
 	$configFile .= "_$sab";
+	print STDERR "    $sab\n";
+	
+	
     }
     
+    print STDERR "  Relations:\n";
     while($relations=~/=\'(.*?)\'/g) {
 	my $rel = $1;
 	$tableFile  .= "_$rel";
@@ -412,6 +423,7 @@ sub _initialize
 	$parentFile .= "_$rel";
 	$sourceDB   .= "_$rel";
 	$configFile .= "_$rel";
+	print STDERR "    $rel\n";
     }
     
     $tableFile  .= "_table";
@@ -420,15 +432,23 @@ sub _initialize
     $childFile  .= "_child";
     $parentFile .= "_parent";
     $configFile .= "_config";
-        
+    
+    print STDERR "  Configuration file:\n";
+    print STDERR "    $configFile\n\n";
+    
     if($debug) {
-	print "Database  : $sourceDB\n";
-	print "Table File: $tableFile\n";
-	print "Table Name: $tableName\n";
-	print "Child File: $childFile\n";
-	print "ParentFile: $parentFile\n";
-	print "ConfigFile: $configFile\n"; 
+	print STDERR "\nConfiguration file information:\n";
+	print STDERR " Table File     : $tableFile\n";
+	print STDERR " Child File     : $childFile\n";
+	print STDERR " Parent File    : $parentFile\n";
+	print STDERR " Config File    : $configFile\n"; 
+	print STDERR " Source(s)      : $sources\n";
+	print STDERR " Relation(s)    : $relations\n";
+	print STDERR " ChildRelations : $childRelations\n";
+	print STDERR " ParentRelations: $parentRelations\n";
     }
+    
+
     if(! (-e $configFile)) {
 	
 	open(CONFIG, ">$configFile")||
@@ -567,7 +587,7 @@ sub getRelated
 	return 1;
     }    
 
-    #print "select distinct CUI2 from MRREL where CUI1='$concept' and REL='$rel' and ($sources) and CVF is null\n";
+    #print STDERR "select distinct CUI2 from MRREL where CUI1='$concept' and REL='$rel' and ($sources) and CVF is null\n";
     #  return all the relations 'rel' for cui 'concept'
     my $arrRef = $db->selectcol_arrayref("select distinct CUI2 from MRREL where CUI1='$concept' and REL='$rel' and ($sources) and CVF is null");
     if($self->checkError($function)) { return(); }
@@ -730,8 +750,28 @@ sub pathsToRoot
     
     my $paths = $sdb->selectcol_arrayref("select PATH from $tableName where CUI=\'$concept\'");
     if($self->checkError($function)) { return (); }
-    
-    return $paths;
+
+    my @gpaths = ();
+    foreach my $path (@{$paths}) {
+	#C1274012|Ambiguous concept (inactive concept)
+	if($path=~/C1274012/) { next; }
+	#C1274013|Duplicate concept (inactive concept)
+	if($path=~/C1274013/) { next; }
+	#C1276325|Reason not stated concept (inactive concept)
+	if($path=~/C1276325/) { next; }
+	#C1274014|Outdated concept (inactive concept)
+	if($path=~/C1274014/) { next; }
+	#C1274015|Erroneous concept (inactive concept)
+	if($path=~/C1274015/) { next; }
+	#C1274021|Moved elsewhere (inactive concept)
+	if($path=~/C1274021/) { next; }
+
+	push @gpaths, $path;
+    }
+
+    my $rpaths = \@gpaths;
+
+    return $rpaths;
     
 }
 
@@ -781,13 +821,13 @@ sub _updateTaxonomy {
 		
     my @allCuis = (@{$allCui1}, @{$allCui2});
     
-    if($debug) { print "Got all of the CUIs\n"; }
+    if($debug) { print STDERR "Got all of the CUIs\n"; }
 		     
     #  select all the CUI1s from MRREL that have a parent linkS
     my $parCuis = $db->selectcol_arrayref("select CUI1 from MRREL where ($parentRelations) and ($sources) and (CVF is null)");
     if($self->checkError($function)) { return undef; }
     
-    if($debug) { print "Get all of the parent CUIs\n"; }
+    if($debug) { print STDERR "Get all of the parent CUIs\n"; }
     
     #  load the cuis that have a parent into a temporary hash
     my %parCuisHash = ();
@@ -839,9 +879,9 @@ sub _updateTaxonomy {
     my $ckey = keys %childrenTaxonomy;
 
     if($debug) {
-	print "Taxonomy is set:\n";
-	print "  parentTaxonomy: $pkey\n";
-	print "  childrenTaxonomy: $ckey\n\n";
+	print STDERR "Taxonomy is set:\n";
+	print STDERR "  parentTaxonomy: $pkey\n";
+	print STDERR "  childrenTaxonomy: $ckey\n\n";
     }
     
     return 0;
@@ -890,7 +930,7 @@ sub _setUpperLevelTaxonomy {
 	# mark the cycles;
 	my $cycleCheck = $self->_markCycles();
 	if(!defined $cycleCheck) { 
-	    print "$self->{'errorString'}\n";
+	    print STDERR "$self->{'errorString'}\n";
 	    return ();
 	}
 	
@@ -904,16 +944,16 @@ sub _setUpperLevelTaxonomy {
 	
 	my $allCui2 = $db->selectcol_arrayref("select CUI2 from MRREL where ($relations) and ($sources)");
 	if($self->checkError($function)) { return undef; }
-		
+	
 	my @allCuis = (@{$allCui1}, @{$allCui2});
 	
-	if($debug) { print "Got all of the CUIs\n"; }
+	if($debug) { print STDERR "Got all of the CUIs\n"; }
 		     
 	#  select all the CUI1s from MRREL that have a parent link
 	my $parCuis = $db->selectcol_arrayref("select CUI1 from MRREL where ($parentRelations) and ($sources)");
 	if($self->checkError($function)) { return undef; }
 	
-	if($debug) { print "Get all of the parent CUIs\n"; }
+	if($debug) { print STDERR "Get all of the parent CUIs\n"; }
 	
 	#  load the cuis that have a parent into a temporary hash
 	my %parCuisHash = ();
@@ -964,9 +1004,9 @@ sub _setUpperLevelTaxonomy {
     my $ckey = keys %childrenTaxonomy;
     
     if($debug) {
-	print "Taxonomy is set:\n";
-	print "  parentTaxonomy: $pkey\n";
-	print "  childrenTaxonomy: $ckey\n\n";
+	print STDERR "Taxonomy is set:\n";
+	print STDERR "  parentTaxonomy: $pkey\n";
+	print STDERR "  childrenTaxonomy: $ckey\n\n";
     }
 
     #&_printTime();
@@ -1029,6 +1069,8 @@ sub _markCycles
     #  check if cycle file was defined
     my $cyclefile = $self->{'cyclefile'};
     if(defined $cyclefile) {
+
+	print STDERR "Marking Cycles\n";
 
 	open(CYCLE, $cyclefile) || die "Could not open cycle file: $cyclefile\n";
 	while(<CYCLE>) {
@@ -1096,7 +1138,7 @@ sub _setDepth {
     #  set the upper level taxonomyIn 
     my $taxCheck = $self->_setUpperLevelTaxonomy();
     if(!defined $taxCheck) { 
-	print "$self->{'errorString'}\n";
+	print STDERR "$self->{'errorString'}\n";
 	return ();
     }
 
@@ -1135,16 +1177,15 @@ sub _setDepth {
 	$sdb = $self->_connectSourceDB();	
 	if($self->checkError($function)) { return (); }
 	
-	if($debug) { print "No Path table exists\n"; }
+	if($debug) { print STDERR "No Path table exists\n"; }
 	
 	#  check if tableFile exists in the default_options 
 	#  directory, if so load it into the database
 	if(-e $tableFile) {
 	    
-	    if($debug) { print "Path table file exists\n"; }
+	    if($debug) { print STDERR "Path table file exists\n"; }
 	    
-	    print "TABLE FILE: $tableFile\n";
-	    exit;
+	    print STDERR "TABLE FILE: $tableFile\n";
 
 	    #  create the table in the umls database
 	    my $ar1 = $sdb->do("CREATE TABLE IF NOT EXISTS $tableName (CUI char(8), DEPTH int, PATH varchar(1000))");
@@ -1165,24 +1206,25 @@ sub _setDepth {
 	#  information in the file and the database
 	else  {
 	    
-	    if($debug) { print "Neither the path table or file exists\n"; }
+	    if($debug) { print STDERR "Neither the path table or file exists\n"; }
 
 	    my $sourceList = "";
 	    foreach my $sab (sort keys %sab_names) { 
 		$sourceList .= "$sab, "; 
-	    }
+	    } chop $sourceList; chop $sourceList;
    
-	    print "You have requested the following sources $sourceList.\n";
-	    print "In order to use these an index needs to be created.\n";
-	    print "This could be very time consuming. If the index is not\n";
-	    print "created, you will not be able to use this command with\n";
-	    print "these sources.\n\n";
-	    print "Do you want to continue with index creation (y/n)";
+	    
+	    print STDERR "You have requested the following sources $sourceList.\n";
+	    print STDERR "In order to use these an index needs to be created.\n";
+	    print STDERR "This could be very time consuming. If the index is not\n";
+	    print STDERR "created, you will not be able to use this command with\n";
+	    print STDERR "these sources.\n\n";
+	    print STDERR "Do you want to continue with index creation (y/n)";
 	    
 	    my $answer = <STDIN>; chomp $answer;
 	    
 	    if($answer=~/(N|n)/) {
-		print "Exiting program now.\n\n";
+		print STDERR "Exiting program now.\n\n";
 		exit;
 	    }
 	    
@@ -1201,7 +1243,7 @@ sub _setDepth {
 		$self->_initializeDepthFirstSearch($root, 0, $root);
 	    }
 	    
-	    if($debug) { print "The depth first search is over\n"; }
+	    if($debug) { print STDERR "The depth first search is over\n"; }
 	    
 	    #  load cycle information into a file
 	    open(CYCLE, ">$cycleFile") || die "Could not open file $cycleFile"; 
@@ -1214,9 +1256,9 @@ sub _setDepth {
 
 	    my $temp = chmod 0777, $cycleFile;
 	    
-	    if($debug) { print "Cycle file has been created\n"; }
+	    if($debug) { print STDERR "Cycle file has been created\n"; }
 	    
-	    #if($debug) { print "Update taxonomy\n"; }
+	    #if($debug) { print STDERR "Update taxonomy\n"; }
 	    #$self->_updateTaxonomy();
 	}
 	
@@ -1225,7 +1267,7 @@ sub _setDepth {
 	if($self->checkError($function)) { return (); }
     }
 
-    if($debug) { print "Cycle file has been created\n"; }
+    if($debug) { print STDERR "Cycle file has been created\n"; }
         
     #  set the maximum depth
     my $d = $sdb->selectcol_arrayref("select max(DEPTH) from $tableName");
@@ -1238,7 +1280,7 @@ sub _debug
 {
 
     my $function = shift;
-    if($debug) { print "In $function\n"; }
+    if($debug) { print STDERR "In $function\n"; }
 }
 
 
@@ -1344,10 +1386,6 @@ sub _config {
 		
                 if($rel=~/(PAR|RB)/) { push @parents, $rel; }
 		if($rel=~/(CHD|RN)/) { push @children, $rel; }
-                #if($rel=~/(PAR)/) { push @parents, $rel; }
-		#if($rel=~/(CHD)/) { push @children, $rel; }
-		#if($rel=~/(RB)/) { push @parents, $rel; }
-		#if($rel=~/(RN)/) { push @children, $rel; }
 	    }
 	    
 	    for my $i (0..($#parents-1)) { 
@@ -1378,12 +1416,8 @@ sub _config {
 		if($relcount == $arrRefkeys) { $relations .="REL=\'$rel\'";     }
 		else                         { $relations .="REL=\'$rel\' or "; }
 
-		#if($rel=~/(PAR|RB)/) { push @parents, $rel; }
-		#if($rel=~/(CHD|RN)/) { push @children, $rel; }
-		if($rel=~/(PAR)/) { push @parents, $rel; }
-		if($rel=~/(CHD)/) { push @children, $rel; }
-		#if($rel=~/(RB)/) { push @parents, $rel; }
-		#if($rel=~/(RN)/) { push @children, $rel; }
+		if($rel=~/(PAR|RB)/) { push @parents, $rel; }
+		if($rel=~/(CHD|RN)/) { push @children, $rel; }
 	    }
 
 	    if($#parents >= 0) {
@@ -1478,10 +1512,10 @@ sub _config {
     }
 
     if($debug) {
-	print "SOURCE   : $sources\n";
-	print "RELATIONS: $relations\n";
-	print "PARENTS  : $parentRelations\n";
-	print "CHILDREN : $childRelations\n\n";
+	print STDERR "SOURCE   : $sources\n";
+	print STDERR "RELATIONS: $relations\n";
+	print STDERR "PARENTS  : $parentRelations\n";
+	print STDERR "CHILDREN : $childRelations\n\n";
     }
 }
 
@@ -1670,18 +1704,19 @@ sub getChildren
     if($concept eq $umlsRoot) {
 	return (keys %sab_hash);
     }
-    #  if the concept is a source cui return its children
-    #  in the childrenTaxonomy
-    elsif(exists $childrenTaxonomy{$concept}) {
-	return @{$childrenTaxonomy{$concept}};
-    }
     #  otherwise everything is normal so return its children
     else {
-	#print "select distinct CUI2 from MRREL where CUI1='$concept' and ($childRelations) and ($sources) and CVF is null\n";
 	my $arrRef = $db->selectcol_arrayref("select distinct CUI2 from MRREL where CUI1='$concept' and ($childRelations) and ($sources) and CVF is null");
 	if($self->checkError($function)) { return (); }
 
-	return @{$arrRef}; 
+	my @array = ();
+	if(exists $childrenTaxonomy{$concept}) {
+	    @array = (@{$childrenTaxonomy{$concept}}, @{$arrRef});
+	}
+	else {
+	    @array = @{$arrRef};
+	}
+	return @array; 
     }
 }
 
@@ -1722,27 +1757,29 @@ sub getParents
     }
     
     $self->{'traceString'} = "";
-    
-
-    #  if the cui does not have a parent return its 
-    #  source's cui
-    if(exists $parentTaxonomy{$concept}) {
-	return @{$parentTaxonomy{$concept}};
-    }
+        
     #  if the cui is a root return an empty array
-    elsif(exists $roots{$concept}) {
+    if(exists $roots{$concept}) {
 	my @returnarray = ();
 	return @returnarray; # empty array
     }
     #  if the cui is a source cui but not a root return the umls root
-    if( (exists $sab_hash{$concept}) and (! (exists $roots{$concept})) ) {
+    elsif( (exists $sab_hash{$concept}) and (! (exists $roots{$concept})) ) {
 	return "$umlsRoot";
     }
     #  otherwise everything is normal so return its parents
     else {
 	my $arrRef = $db->selectcol_arrayref("select distinct CUI2 from MRREL where CUI1='$concept' and ($parentRelations) and ($sources) and CVF is null");
 	if($self->checkError($function)) { return (); }
-	return @{$arrRef}; 
+	
+	my @array = ();
+	if(exists $parentTaxonomy{$concept}) {
+	    @array = (@{$parentTaxonomy{$concept}}, @{$arrRef});
+	}
+	else {
+	    @array = @{$arrRef};
+	}
+	return @array; 
     }
 }
 
@@ -1761,7 +1798,7 @@ sub _initializeDepthFirstSearch
     my $function = "_initializeDepthFirstSearch";
     &_debug($function);
 
-    if($debug) { print "$concept: $d: $root\n"; }
+    if($debug) { print STDERR "$concept: $d: $root\n"; }
     
     if(!(defined $concept) || !(defined $d) || !(defined $root)) {
 	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
@@ -1831,6 +1868,20 @@ sub _depthFirstSearch
     
     $d++;
     
+    #  if concept is one of the following just return
+    #C1274012|Ambiguous concept (inactive concept)
+    if($concept=~/C1274012/) { return; }
+    #C1274013|Duplicate concept (inactive concept)
+    if($concept=~/C1274013/) { return; }
+    #C1276325|Reason not stated concept (inactive concept)
+    if($concept=~/C1276325/) { return; }
+    #C1274014|Outdated concept (inactive concept)
+    if($concept=~/C1274014/) { return; }
+    #C1274015|Erroneous concept (inactive concept)
+    if($concept=~/C1274015/) { return; }
+    #C1274021|Moved elsewhere (inactive concept)
+    if($concept=~/C1274021/) { return; }
+
     my @path = @{$array};
     push @path, $concept;
     
@@ -1852,7 +1903,9 @@ sub _depthFirstSearch
 	#  check if child cui has already in the path
 	my $flag = 0;
 	foreach my $cui (@path) {
-	    if($cui eq $child) { $flag = 1; }
+	    if($cui eq $child) { 
+		$flag = 1; 
+	    }
 	}
 
 	#  if it isn't continue on with the depth first search
@@ -1885,12 +1938,18 @@ sub findMinimumDepth
 	return undef;
     } 
     
+    return () if(! (defined $self->checkConceptExists($cui)));
+
+    if(exists $parentTaxonomy{$cui}) { return 1; }
+
     my $paths = $self->pathsToRoot($cui);
+
+    if($#{$paths} < 0) { return (); }
 
     my $firstPath = pop @{$paths};
     my @firstNodes = split/\s+/, $firstPath;
     my $minimum = $#firstNodes + 1;
-
+    
     foreach my $path (@{$paths}) {
 	my @nodes = split/\s+/, $path;
 	if($minimum > ($#nodes+1)) {
@@ -1922,19 +1981,23 @@ sub findMaximumDepth
 	return undef;
     } 
     
+    return () if(! (defined $self->checkConceptExists($cui)));
+    
     my $paths = $self->pathsToRoot($cui);
+    
+    if($#{$paths} < 0) { return (); }
 
     my $firstPath = pop @{$paths};
     my @firstNodes = split/\s+/, $firstPath;
     my $maximum = $#firstNodes + 1;
-
+    
     foreach my $path (@{$paths}) {
 	my @nodes = split/\s+/, $path;
 	if($maximum < ($#nodes+1)) {
 	    $maximum = $#nodes + 1;
 	}
     }
-
+    
     return $maximum;
 }
 
@@ -2069,6 +2132,10 @@ sub findLeastCommonSubsumer
     }
     
     my($lcs, $path) = $self->_findShortestPath($concept1, $concept2);
+
+    if(! (defined $path)) {
+	undef $lcs;
+    }
 
     return $lcs;
 }
@@ -2549,14 +2616,14 @@ sub checkError
 }
 
 
-sub dropTable
+sub dropConfigTable
 {
     
     my $self    = shift;
 
     return () if(!defined $self || !ref $self);
 
-    my $function = "dropTable";
+    my $function = "dropConfigTable";
     &_debug($function);
 
     $self->_connectSourceDB();
@@ -2574,8 +2641,24 @@ sub dropTable
     my $cd = $sdb->do("drop database $sourceDB");
 
     return $sourceDB;
-    
 }
+
+sub removeConfigFiles
+{
+    my $self = shift;
+    return () if(!defined $self || !ref $self);
+    
+    my $function = "removeConfigFiles";
+    &_debug($function);
+    
+    system "rm $tableFile";
+    system "rm $childFile";
+    system "rm $parentFile";
+    system "rm $configFile";
+    system "rm $cycleFile";
+
+}
+    
 
 ##############################################################################
 #  function to create a timestamp
@@ -2603,7 +2686,7 @@ sub _printTime {
     my $d = sprintf("%4d%2.2d%2.2d",$year,$mon,$mday);
     my $t = sprintf("%2.2d%2.2d%2.2d",$hour,$min,$sec);
     
-    print "$t\n";
+    print STDERR "$t\n";
 
 }
 
@@ -2628,81 +2711,138 @@ die "Unable to create UMLS::Interface object.\n" if(!$umls);
 
 die "$errString\n" if($errCode);
 
+
 my $term1    = "blood";
+
 my @tList1   = $umls->getConceptList($term1);
+
 my $cui1     = pop @tList1;
 
+
 my $term2    = "cell";
+
 my @tList2   = $umls->getConceptList($term2);
+
 my $cui2     = pop @tList2;
 
+
 my $exists1  = $umls->checkConceptExists($cui1);
+
 my $exists2  = $umls->checkConceptExists($cui2);
 
+
 if($exists1) { print "$term1($cui1) exists in your UMLS view.\n"; }
+
 else         { print "$term1($cui1) does not exist in your UMLS view.\n"; }
 
+
 if($exists2) { print "$term2($cui2) exists in your UMLS view.\n"; }
+
 else         { print "$term2($cui2) does not exist in your UMLS view.\n"; }
+
 print "\n";
 
+
 my @cList1   = $umls->getTermList($cui1);
+
 my @cList2   = $umls->getTermList($cui2);
 
+
 print "The terms associated with $term1 ($cui1):\n";
+
 foreach my $c1 (@cList1) {
+
     print " => $c1\n";
+
 } print "\n";
 
+
 print "The terms associated with $term2 ($cui2):\n";
+
 foreach my $c2 (@cList2) {
+
     print " => $c2\n";
+
 } print "\n";
 
 
 my $lcs = $umls->findLeastCommonSubsumer($cui1, $cui2);
+
 print "The least common subsumer between $term1 ($cui1) and \n";
+
 print "$term2 ($cui2) is $lcs\n\n";
 
 
 my @shortestpath = $umls->findShortestPath($cui1, $cui2);
+
 print "The shortest path between $term1 ($cui1) and $term2 ($cui2):\n";
+
 print "  => @shortestpath\n\n";
 
+
 my $pathstoroot   = $umls->pathsToRoot($cui1);
+
 print "The paths from $term1 ($cui1) and the root:\n";
+
 foreach  $path (@{$pathstoroot}) {
+
     print "  => $path\n";
+
 } print "\n";
+
 
 my $mindepth = $umls->findMinimumDepth($cui1);
+
 my $maxdepth = $umls->findMaximumDepth($cui1);
+
 print "The minimum depth of $term1 ($cui1) is $mindepth\n";
+
 print "The maximum depth of $term1 ($cui1) is $maxdepth\n\n";
 
+
 my @children = $umls->getChildren($cui2); 
+
 print "The child(ren) of $term2 ($cui2) are: @children\n\n";
 
+
 my @parents = $umls->getParents($cui2);
+
 print "The parent(s) of $term2 ($cui2) are: @parents\n\n";
 
+
 my @definitions = $umls->getCuiDef($cui1);
+
 print "The definition(s) of $term1 ($cui1) are:\n";
+
 foreach $def (@definitions) {
+
     print "  => $def\n"; $i++;
+
 } print "\n";
 
+
 print "The semantic type(s) of $term1 ($cui1) and the semantic\n";
+
 print "definition are:\n";
+
 my @sts = $umls->getSt($cui1);
+
 foreach my $st (@sts) {
+
     my @abrs = $umls->getStAbr($st);
+
     foreach my $abr (@abrs) {
+
 	my $string = $umls->getStString($abr);
+
 	my $def    = $umls->getStDef($abr);
+
 	print "  => $string ($abr) : $def\n";
+
     }
+
 } print "\n";
+
 
 =head1 ABSTRACT
 

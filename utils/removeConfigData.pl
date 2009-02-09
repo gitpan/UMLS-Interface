@@ -2,19 +2,44 @@
 
 =head1 NAME
 
-dropTemporaryTables.pl - this program drops the temporary tables 
-that are created based on the default and/or configuration files.
+removeConfigData.pl - this program removes the temporary table 
+and associated files that are created based on the configuration 
+file.
 
 =head1 SYNOPSIS
 
-This program drops the temporary tables that are created based on the 
-the default or configuration files.
+This program removes the temporary table and associated files that 
+are created based on the configuration file.
 
 =head1 USAGE
 
-Usage: dropTemporaryTables.pl [OPTIONS]
+Usage: removeConfigData.pl [OPTIONS] CONFIGFILE
 
 =head1 INPUT
+
+=head2 CONFIGFILE
+
+This is the configuration file. The format of the configuration 
+file is as follows:
+
+SAB :: <include|exclude> <source1, source2, ... sourceN>
+
+REL :: <include|exclude> <relation1, relation2, ... relationN>
+
+For example, if we wanted to use the MSH vocabulary with only 
+the RB/RN relations, the configuration file would be:
+
+SAB :: include MSH
+REL :: include RB, RN
+
+or 
+
+SAB :: include MSH
+REL :: exclude PAR, CHD
+
+If you go to the configuration file directory, there will 
+be example configuration files for the different runs that 
+you have performed.
 
 =head2 Optional Arguments:
 
@@ -66,13 +91,19 @@ List of CUIs that are associated with the input term
 
 =head1 COPYRIGHT
 
-Copyright (c) 2007-2008,
+Copyright (c) 2007-2009,
 
  Bridget T. McInnes, University of Minnesota
  bthomson at cs.umn.edu
     
  Ted Pedersen, University of Minnesota Duluth
  tpederse at d.umn.edu
+
+ Siddharth Patwardhan, University of Utah, Salt Lake City
+ sidd@cs.utah.edu
+ 
+ Serguei Pakhomov, University of Minnesota Twin Cities
+ pakh0002@umn.edu
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -105,7 +136,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s" );
+GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s");
 
 
 #  if help is defined, print out help
@@ -122,6 +153,12 @@ if( defined $opt_version ) {
     exit;
 }
 
+# At least 1 CUI should be given on the command line.
+if(scalar(@ARGV) < 1) {
+    print STDERR "Configuration file was specified on the command line\n";
+    &minimalUsageNotes();
+    exit;
+}
 
 my $database = "umls";
 if(defined $opt_database) { $database = $opt_database; }
@@ -132,37 +169,22 @@ if(defined $opt_socket)   { $socket   = $opt_socket;   }
 
 my $umls = "";
 
-if(defined $opt_username and defined $opt_password and defined $opt_config) {
+my $config = shift;
+
+if(defined $opt_username and defined $opt_password) {
     $umls = UMLS::Interface->new({"driver" => "mysql", 
 				  "database" => "$database", 
 				  "username" => "$opt_username",  
 				  "password" => "$opt_password", 
 				  "hostname" => "$hostname", 
 				  "socket"   => "$socket",
-			          "config"   => "$opt_config"}); 
-    die "Unable to create UMLS::Interface object.\n" if(!$umls);
-    ($errCode, $errString) = $umls->getError();
-    die "$errString\n" if($errCode);
-}
-elsif(defined $opt_username and defined $opt_password) {    
-    $umls = UMLS::Interface->new({"driver" => "mysql", 
-				  "database" => "$database", 
-				  "username" => "$opt_username",  
-				  "password" => "$opt_password", 
-				  "hostname" => "$hostname", 
-				  "socket"   => "$socket"}); 
-    die "Unable to create UMLS::Interface object.\n" if(!$umls);
-    ($errCode, $errString) = $umls->getError();
-    die "$errString\n" if($errCode);
-}
-elsif(defined $opt_config) {
-    $umls = UMLS::Interface->new({"config" => "$opt_config"});
+			          "config"   => "$config"}); 
     die "Unable to create UMLS::Interface object.\n" if(!$umls);
     ($errCode, $errString) = $umls->getError();
     die "$errString\n" if($errCode);
 }
 else {
-    $umls = UMLS::Interface->new(); 
+    $umls = UMLS::Interface->new({"config" => "$config"});
     die "Unable to create UMLS::Interface object.\n" if(!$umls);
     ($errCode, $errString) = $umls->getError();
     die "$errString\n" if($errCode);
@@ -170,11 +192,11 @@ else {
 
 &errorCheck($umls);
 
-$umls->dropTable();
+$umls->dropConfigTable();
 
 &errorCheck($umls);
 
-print "Database $sourceDB is dropped with its tables.\n";
+$umls->removeConfigFiles();
 
 sub errorCheck
 {
@@ -190,7 +212,7 @@ sub errorCheck
 ##############################################################################
 sub minimalUsageNotes {
     
-    print "Usage: queryCui.pl [OPTIONS] CUI \n\n";
+    print "Usage: removeConfigData.pl [OPTIONS] CONFIGFILE \n\n";
     &askHelp();
     exit;
 }
@@ -201,10 +223,10 @@ sub minimalUsageNotes {
 sub showHelp() {
 
         
-    print "This is a utility drops the temporary database associated\n";
-    print "with the default or configuration file information\n\n";
+    print "This is a utility that removes the temporary database and \n";
+    print "files associated with the configuration file information.\n\n";
   
-    print "Usage: dropTemporaryTables.pl [OPTIONS]\n\n";
+    print "Usage: removeConfigData.pl [OPTIONS] CONFIGFILE\n\n";
 
     print "Options:\n\n";
 
@@ -218,8 +240,6 @@ sub showHelp() {
     
     print "--socket STRING          Socket used by mysql (DEFAULT: /tmp.mysql.sock)\n\n";
 
-    print "--config FILE            Configuration file\n\n";
-
     print "--version                Prints the version number\n\n";
  
     print "--help                   Prints this help message.\n\n";
@@ -229,7 +249,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: dropTemporaryTables.pl,v 1.6 2009/01/25 00:19:40 btmcinnes Exp $';
+    print '$Id: removeConfigData.pl,v 1.1 2009/02/09 17:48:37 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 
@@ -237,6 +257,6 @@ sub showVersion {
 #  function to output "ask for help" message when user's goofed
 ##############################################################################
 sub askHelp {
-    print STDERR "Type dropTemporaryTables.pl --help for help.\n";
+    print STDERR "Type removeConfigData.pl --help for help.\n";
 }
     

@@ -2,31 +2,26 @@
 
 =head1 NAME
 
-getCuiDef.pl - this program returns a concepts semantic type(s)
+getCuiDef.pl - this program returns a conceptssemantic type(s)
 
 =head1 SYNOPSIS
 
-This program takes in a CUI and returns its semantic type(s).
+This program takes in a CUI or a TERM and returns its semantic type(s).
 
 =head1 USAGE
 
-Usage: getSts.pl [OPTIONS] TERM
+Usage: getSts.pl [OPTIONS] [TERM|CUI\
 
 =head1 INPUT
 
 =head2 Required Arguments:
 
-=head3 TERM
+=head3 [TERM|CUI]
 
-Term from the Unified Medical Language System (UMLS)
+A Concept Unique Identifier (CUI) or a term from the Unified 
+Medical Language System (UMLS)
 
 =head2 Optional Arguments:
-
-=head3 --cui
-
-The TERM argument is actually a Concept Unique Identifier 
-(CUI) from the Unified Medical Language System (UMLS) rather 
-than a string.
 
 =head3 --username STRING
 
@@ -76,13 +71,19 @@ List of CUIs that are associated with the input term
 
 =head1 COPYRIGHT
 
-Copyright (c) 2007-2008,
+Copyright (c) 2007-2009,
 
  Bridget T. McInnes, University of Minnesota
  bthomson at cs.umn.edu
     
  Ted Pedersen, University of Minnesota Duluth
  tpederse at d.umn.edu
+
+ Siddharth Patwardhan, University of Utah, Salt Lake City
+ sidd@cs.utah.edu
+ 
+ Serguei Pakhomov, University of Minnesota Twin Cities
+ pakh0002@umn.edu
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -134,7 +135,7 @@ if( defined $opt_version ) {
 
 # At least 1 CUI should be given on the command line.
 if(scalar(@ARGV) < 1) {
-    print STDERR "No term was specified on the command line";
+    print STDERR "No term was specified on the command line\n";
     &minimalUsageNotes();
     exit;
 }
@@ -187,48 +188,53 @@ else {
 &errorCheck($umls);
 
 my $input = shift;
+my $term  = shift;
 
-my $flag = "cui";
-
-#  check if the input are CUIs or terms
-if(defined $opt_cui) {
-    if($umls->validCui($input)) {
-	print STDERR "ERROR: The concept ($input) is not valid.\n";
-	exit;
-    }
+my @c = ();
+if($input=~/C[0-9]/) {
     push @c, $input;
-}
-elsif( ($input=~/C[0-9]+/) ) {
-    print "The input appear to be CUIs. Is this true (y/n)?\n";
-    my $answer = <STDIN>; chomp $answer;
-    if($answer=~/y/) {
-	print "Please specify the --cui option next time.\n";
-	push @c, $input;
-    }
-    else {
-	@c = $umls->getConceptList($input); 
-	&errorCheck($umls);
-	$flag = "term";
-    }
+    ($term) = $umls->getTermList($input);
 }
 else {
-    @c = $umls->getConceptList($input); 
-    &errorCheck($umls);
-    $flag = "term";
+    @c = $umls->getConceptList($input);
 }
 
+&errorCheck($umls);
+
+my $printFlag = 0;
+
 foreach my $cui (@c) {
-    print "The semantic types associated with $cui:\n";
+    
+    if($umls->validCui($cui)) {
+	print STDERR "ERROR: The concept ($cui) is not valid.\n";
+	exit;
+    }
+    
     my @sts = $umls->getSt($cui);
     &errorCheck($umls);
-    foreach my $st (@sts) {
-	my @abrs = $umls->getStAbr($st);
-	foreach my $abr (@abrs) {
-	    my $string = $umls->getStString($abr);
+    
+    if($#sts < 0) {
+	print "There are no semantic types associated with $term ($cui)\n";
+    }
+    else {
+	foreach my $st (@sts) {
+	    my @abrs = $umls->getStAbr($st);
 	    &errorCheck($umls);
-	    print "  => $string ($abr)\n";
+	
+	    print "The semantic types associated with $term ($cui):\n";
+	    foreach my $abr (@abrs) {
+		my $string = $umls->getStString($abr);
+		&errorCheck($umls);
+		print "  $string ($abr)\n";
+	    }
 	}
     }
+    
+    $printFlag = 1;
+}
+
+if(! ($printFlag) ) {
+    print "There are no semantic types associated with $input\n";
 }
 
 sub errorCheck
@@ -245,7 +251,7 @@ sub errorCheck
 ##############################################################################
 sub minimalUsageNotes {
     
-    print "Usage: queryCui.pl [OPTIONS] CUI \n\n";
+    print "Usage: queryCui.pl [OPTIONS] [TERM|CUI] \n";
     &askHelp();
     exit;
 }
@@ -256,15 +262,13 @@ sub minimalUsageNotes {
 sub showHelp() {
 
         
-    print "This is a utility that takes as input a TERM \n";
-    print "(or a CUI) and returns all of its semantic types.\n\n";
+    print "This is a utility that takes as input a TERM or\n";
+    print "a CUI and returns all of its semantic types.\n\n";
   
-    print "Usage: getSts.pl [OPTIONS] TERM\n\n";
+    print "Usage: getSts.pl [OPTIONS] [TERM|CUI]\n\n";
 
     print "Options:\n\n";
     
-    print "--cui                    The input is a CUI rather than a term\n\n";
-
     print "--username STRING        Username required to access mysql\n\n";
 
     print "--password STRING        Password required to access mysql\n\n";
@@ -286,7 +290,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getSts.pl,v 1.2 2009/01/25 00:19:40 btmcinnes Exp $';
+    print '$Id: getSts.pl,v 1.4 2009/02/09 17:48:37 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

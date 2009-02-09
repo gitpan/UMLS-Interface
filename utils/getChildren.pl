@@ -1,4 +1,3 @@
-#! /usr/local/bin/perl 
 #!/usr/bin/perl 
 
 =head1 NAME
@@ -12,15 +11,15 @@ given a specified set of sources.
 
 =head1 USAGE
 
-Usage: getChildren.pl [OPTIONS] CUI
+Usage: getChildren.pl [OPTIONS] [CUI|TERM]
 
 =head1 INPUT
 
 =head2 Required Arguments:
 
-=head3 CUI
+=head3 [CUI|TERM]
 
-A concept (CUI) from the Unified Medical Language System
+A concept (CUI) or a term from the Unified Medical Language System
 
 =head2 Optional Arguments:
 
@@ -56,7 +55,8 @@ Displays the version information.
 
 =head1 OUTPUT
 
-List of parent CUIs
+List of children CUIs and their associated terms of the 
+given CUI or term
 
 =head1 SYSTEM REQUIREMENTS
 
@@ -72,13 +72,19 @@ List of parent CUIs
 
 =head1 COPYRIGHT
 
-Copyright (c) 2007-2008,
+Copyright (c) 2007-2009,
 
  Bridget T. McInnes, University of Minnesota
  bthomson at cs.umn.edu
     
  Ted Pedersen, University of Minnesota Duluth
  tpederse at d.umn.edu
+
+ Siddharth Patwardhan, University of Utah, Salt Lake City
+ sidd@cs.utah.edu
+ 
+ Serguei Pakhomov, University of Minnesota Twin Cities
+ pakh0002@umn.edu
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -130,7 +136,7 @@ if( defined $opt_version ) {
 
 # At least 1 term should be given on the command line.
 if(scalar(@ARGV) < 1) {
-    print STDERR "No term was specified on the command line";
+    print STDERR "No term was specified on the command line\n";
     &minimalUsageNotes();
     exit;
 }
@@ -182,25 +188,48 @@ else {
 
 &errorCheck($umls);
 
-my $cui  = shift;
+my $input = shift;
+my $term  = $input;
 
-if($umls->validCui($cui)) {
-    print STDERR "ERROR: The concept ($cui) is not valid.\n";
-    exit;
-}
-
-my @cuis = $umls->getChildren($cui); 
-
-&errorCheck($umls);
-
-print "CUI: $cui\n";
-if($#cuis < 0) {
-    print "This CUI does not have any children\n";
+my @c = ();
+if($input=~/C[0-9]+/) {
+    push @c, $input;
+    ($term) = $umls->getTermList($input);
 }
 else {
-    foreach my $cui (@cuis) {
-	print "$cui\n";
+    @c = $umls->getConceptList($input);
+}
+
+&errorCheck($umls);
+ 
+my $printFlag = 0;
+
+foreach my $cui (@c) {
+
+    if($umls->validCui($cui)) {
+	print STDERR "ERROR: The concept ($cui) is not valid.\n";
+	exit;
     }
+
+    my @children= $umls->getChildren($cui); 
+
+    &errorCheck($umls);
+
+    if($#children < 0) {
+	print "The term $term ($cui) does not have any children\n";
+    }
+    else {
+	print "The children of $term ($cui) are: \n";
+	foreach my $child (@children) {
+	    my ($t) = $umls->getTermList($child);
+	    print "  $t($child)\n";
+	} 
+    }
+    $printFlag = 1;
+}
+
+if(! ($printFlag) ) {
+    print "Input $input does not exist in this view of the UMLS.\n";
 }
 
 sub errorCheck
@@ -217,7 +246,7 @@ sub errorCheck
 ##############################################################################
 sub minimalUsageNotes {
     
-    print "Usage: getChildren.pl [OPTIONS] CUI \n\n";
+    print "Usage: getChildren.pl [OPTIONS] [CUI|TERM]\n";
     &askHelp();
     exit;
 }
@@ -228,11 +257,11 @@ sub minimalUsageNotes {
 sub showHelp() {
 
         
-    print "This is a utility that takes as input a CUI\n";
+    print "This is a utility that takes as input a CUI or a term\n";
     print "and returns all of its possible children given\n";
     print "a specified set of sources\n\n";
   
-    print "Usage: getChildren.pl [OPTIONS] CUI\n\n";
+    print "Usage: getChildren.pl [OPTIONS] [CUI|TERM]\n\n";
 
     print "Options:\n\n";
 
@@ -257,7 +286,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getChildren.pl,v 1.3 2009/01/25 00:19:40 btmcinnes Exp $';
+    print '$Id: getChildren.pl,v 1.6 2009/02/09 17:48:37 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

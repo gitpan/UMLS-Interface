@@ -1,2 +1,2 @@
 SAB :: include SNOMEDCT
-REL :: include CHD, PAR
+REL :: include PAR, CHD

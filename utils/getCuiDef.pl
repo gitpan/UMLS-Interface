@@ -2,23 +2,24 @@
 
 =head1 NAME
 
-getCuiDef.pl - this program returns the definition of a concept.
+getCuiDef.pl - this program returns the definition of a concept
+or a term.
 
 =head1 SYNOPSIS
 
-This program takes in a CUI and returns its definitions
+This program takes in a CUI or a term and returns its definitions
 
 =head1 USAGE
 
-Usage: getCuiDef.pl [OPTIONS] CUI
+Usage: getCuiDef.pl [OPTIONS] [CUI|TERM]
 
 =head1 INPUT
 
 =head2 Required Arguments:
 
-=head3 CUI
+=head3 [CUI|TERM}
 
-Concept Unique Identifier (CUI) from the Unified Medical 
+Concept Unique Identifier (CUI) or a term from the Unified Medical 
 Language System (UMLS)
 
 =head2 Optional Arguments:
@@ -71,13 +72,19 @@ List of CUIs that are associated with the input term
 
 =head1 COPYRIGHT
 
-Copyright (c) 2007-2008,
+Copyright (c) 2007-2009,
 
  Bridget T. McInnes, University of Minnesota
  bthomson at cs.umn.edu
     
  Ted Pedersen, University of Minnesota Duluth
  tpederse at d.umn.edu
+
+ Siddharth Patwardhan, University of Utah, Salt Lake City
+ sidd@cs.utah.edu
+ 
+ Serguei Pakhomov, University of Minnesota Twin Cities
+ pakh0002@umn.edu
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -129,7 +136,7 @@ if( defined $opt_version ) {
 
 # At least 1 CUI should be given on the command line.
 if(scalar(@ARGV) < 1) {
-    print STDERR "No term was specified on the command line";
+    print STDERR "No term was specified on the command line\n";
     &minimalUsageNotes();
     exit;
 }
@@ -181,23 +188,48 @@ else {
 
 &errorCheck($umls);
 
-my $cui = shift;
+my $input = shift;
+my $term  = $input;
 
-if($umls->validCui($cui)) {
-    print STDERR "ERROR: The concept ($cui) is not valid.\n";
-    exit;
+my @c = ();
+if($input=~/C[0-9]+/) {
+    push @c, $input;
+    ($term) = $umls->getConceptList($input);
+}
+else {
+    @c = $umls->getTermList($input);
 }
 
-my @defs = $umls->getCuiDef($cui); 
+my $printFlag = 0;
 
-&errorCheck($umls);
+foreach my $cui (@c) {
+    if($umls->validCui($cui)) {
+	print STDERR "ERROR: The concept ($cui) is not valid.\n";
+	exit;
+    }
 
-print "The definition(s) of $cui:\n";
-my $i = 1;
-foreach $def (@defs) {
-    print "$i. $def\n"; $i++;
+    my @defs = $umls->getCuiDef($cui); 
+
+    &errorCheck($umls);
+
+    if($#defs >= 0) {
+	print "The definition(s) of $term ($cui):\n";
+	my $i = 1;
+	foreach $def (@defs) {
+	    print "  $i. $def\n"; $i++;
+	}
+    }
+    else {
+	print "There are no definitions for $term ($cui)\n";
+    }
+
+    $printFlag = 1;
+
 }
 
+if(! ($printFlag) ) {
+    print "There are no definitions for $input\n";
+}
 sub errorCheck
 {
     my $obj = shift;
@@ -212,7 +244,7 @@ sub errorCheck
 ##############################################################################
 sub minimalUsageNotes {
     
-    print "Usage: queryCui.pl [OPTIONS] CUI \n\n";
+    print "Usage: queryCui.pl [OPTIONS] [CUI|TERM] \n";
     &askHelp();
     exit;
 }
@@ -223,10 +255,10 @@ sub minimalUsageNotes {
 sub showHelp() {
 
         
-    print "This is a utility that takes as input a CUI\n";
-    print "and returns all of its definitions.\n\n";
+    print "This is a utility that takes as input a term \n";
+    print "or a CUI and returns all of its definitions.\n\n";
   
-    print "Usage: getCuiDef.pl [OPTIONS] CUI\n\n";
+    print "Usage: getCuiDef.pl [OPTIONS] [CUI|TERM]\n\n";
 
     print "Options:\n\n";
 
@@ -251,7 +283,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getCuiDef.pl,v 1.6 2009/01/25 00:19:40 btmcinnes Exp $';
+    print '$Id: getCuiDef.pl,v 1.8 2009/02/09 17:48:37 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

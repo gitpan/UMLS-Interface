@@ -2,24 +2,25 @@
 
 =head1 NAME
 
-findMaximumCuiDepth.pl - this program returns the maximum depth of a given CUI
+findMaximumCuiDepth.pl - this program returns the maximum depth of a 
+given CUI or term
 
 =head1 SYNOPSIS
 
-This program takes in a CUI and returns its maximum depth
+This program takes in a CUI or a term and returns its maximum depth
 
 =head1 USAGE
 
-Usage: findCuiDepth.pl [OPTIONS] CUI
+Usage: findCuiDepth.pl [OPTIONS] [TERM|CUI]
 
 =head1 INPUT
 
 =head2 Required Arguments:
 
-=head3 CUI
+=head3 [TERM|CUI]
 
-Concept Unique Identifier (CUI) from the Unified Medical 
-Language System (UMLS)
+Concept Unique Identifier (CUI) or a term from the Unified 
+Medical Language System (UMLS)
 
 =head2 Optional Arguments:
 
@@ -55,7 +56,7 @@ Displays the version information.
 
 =head1 OUTPUT
 
-List of CUIs that are associated with the input term
+The maximum depth of a given CUI or input term
 
 =head1 SYSTEM REQUIREMENTS
 
@@ -71,13 +72,19 @@ List of CUIs that are associated with the input term
 
 =head1 COPYRIGHT
 
-Copyright (c) 2007-2008,
+Copyright (c) 2007-2009,
 
  Bridget T. McInnes, University of Minnesota
  bthomson at cs.umn.edu
     
  Ted Pedersen, University of Minnesota Duluth
  tpederse at d.umn.edu
+
+ Siddharth Patwardhan, University of Utah, Salt Lake City
+ sidd@cs.utah.edu
+ 
+ Serguei Pakhomov, University of Minnesota Twin Cities
+ pakh0002@umn.edu
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -129,7 +136,7 @@ if( defined $opt_version ) {
 
 # At least 1 CUI should be given on the command line.
 if(scalar(@ARGV) < 1) {
-    print STDERR "No term was specified on the command line";
+    print STDERR "No term was specified on the command line\n";
     &minimalUsageNotes();
     exit;
 }
@@ -181,17 +188,39 @@ else {
 
 &errorCheck($umls);
 
-my $cui = shift;
+my $input = shift;
+my $term  = $input;
 
-if($umls->validCui($cui)) {
-    print STDERR "ERROR: The concept ($cui) is not valid.\n";
-    exit;
+my @c = ();
+if($input=~/C[0-9]+/) {
+    push @c, $input;
+    ($term) = $umls->getTermList($input);
+}
+else {
+    @c = $umls->getConceptList($input);
 }
 
-my $depth = $umls->findMaximumDepth($cui);
 &errorCheck($umls);
 
-print "The depth for CUI ($cui) is $depth\n";
+my $printFlag = 0;
+
+foreach my $cui (@c) {
+    if($umls->validCui($cui)) {
+	print STDERR "ERROR: The concept ($cui) is not valid.\n";
+	exit;
+    }
+
+    my $depth = $umls->findMaximumDepth($cui);
+    &errorCheck($umls);
+
+    print "The depth of $term ($cui) is $depth\n";
+    
+    $printFlag = 1;
+}
+
+if(! ($printFlag) ) {
+    print "$input does not exist in this view of the UMLS.\n";
+}
 
 sub errorCheck
 {
@@ -207,7 +236,7 @@ sub errorCheck
 ##############################################################################
 sub minimalUsageNotes {
     
-    print "Usage: findMaximumCuiDepth.pl [OPTIONS] CUI \n\n";
+    print "Usage: findMaximumCuiDepth.pl [OPTIONS] [TERM|CUI] \n";
     &askHelp();
     exit;
 }
@@ -218,10 +247,10 @@ sub minimalUsageNotes {
 sub showHelp() {
 
         
-    print "This is a utility that takes as input a cui\n";
+    print "This is a utility that takes as input a CUI or a TERM\n";
     print "and returns its maximum depth.\n\n";
   
-    print "Usage: findMaximumCuiDepth.pl [OPTIONS] CUI\n\n";
+    print "Usage: findMaximumCuiDepth.pl [OPTIONS] [TERM|CUI]\n\n";
 
     print "Options:\n\n";
 
@@ -246,7 +275,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findMaximumCuiDepth.pl,v 1.1 2009/01/21 22:31:02 btmcinnes Exp $';
+    print '$Id: findMaximumCuiDepth.pl,v 1.3 2009/02/09 17:48:37 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

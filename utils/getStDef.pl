@@ -71,13 +71,19 @@ List of CUIs that are associated with the input term
 
 =head1 COPYRIGHT
 
-Copyright (c) 2007-2008,
+Copyright (c) 2007-2009,
 
  Bridget T. McInnes, University of Minnesota
  bthomson at cs.umn.edu
     
  Ted Pedersen, University of Minnesota Duluth
  tpederse at d.umn.edu
+
+ Siddharth Patwardhan, University of Utah, Salt Lake City
+ sidd@cs.utah.edu
+ 
+ Serguei Pakhomov, University of Minnesota Twin Cities
+ pakh0002@umn.edu
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -129,7 +135,7 @@ if( defined $opt_version ) {
 
 # At least 1 CUI should be given on the command line.
 if(scalar(@ARGV) < 1) {
-    print STDERR "No term was specified on the command line";
+    print STDERR "No term was specified on the command line\n";
     &minimalUsageNotes();
     exit;
 }
@@ -187,9 +193,13 @@ my $def = $umls->getStDef($st);
 
 &errorCheck($umls);
 
-print "The definition of the semantic type ($st):\n";
-print "=> $def\n"; 
-
+if($def=~/^\s*$/) {
+    print "There are no definitions for the semantic type ($st)\n";
+}
+else {
+    print "The definition of the semantic type ($st):\n";
+    print "$def\n"; 
+}
 
 sub errorCheck
 {
@@ -205,7 +215,7 @@ sub errorCheck
 ##############################################################################
 sub minimalUsageNotes {
     
-    print "Usage: queryCui.pl [OPTIONS] CUI \n\n";
+    print "Usage: queryCui.pl [OPTIONS] <semantic type> \n";
     &askHelp();
     exit;
 }
@@ -244,7 +254,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getStDef.pl,v 1.5 2009/01/25 00:19:40 btmcinnes Exp $';
+    print '$Id: getStDef.pl,v 1.7 2009/02/09 17:48:37 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

@@ -1,8 +1,58 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.15 to 0.17
+    1. In SNOMED CT there exist concepts that are used to show why a concept
+    is retired. Unfortunately, the relationship linking that reason to the
+    retired concept is 'is-a'. So you have for example 'stenosis' is-a
+    'non-current concept - ambiguous'. This is understandable in a plain
+    English sense but doesn't fit into the hierarchical sense of an 'is-a'
+    relationship. We now exclude these nodes:
+
+    C1274012|Ambiguous concept (inactive concept) C1276325|Reason not stated
+    concept (inactive concept) C1274013|Duplicate concept (inactive concept)
+    C1274014|Outdated concept (inactive concept) C1274015|Erroneous concept
+    (inactive concept) C1274021|Moved elsewhere (inactive concept)
+
+    If you have a strong reason why they should still be there send us an
+    email and we can probably work something else out.
+
+    2. When using the RB/RN and PAR/CHD relations not all of the upper level
+    taxonomy was being looked at to obtain the path information. This has
+    been fixed.
+
+    3. Moved the dropTemporaryTables.pl program to removeConfigData.pl and
+    added the functionality to drop the files associated with the
+    configuration data as well.
+
+    4. The UMLS-Interface module was not accepting the a configuration file
+    if the first one was printed out incorrectly. We fixed this.
+
+    5. Added configuration file information printed out to STDERR containing
+    source, relation and configuration file location information.
+
+    6. Added a file option to the findShortestPath.pl program:
+
+       --inputfile FILE
+
+       A file containing pairs of concepts or terms in the following format:
+
+        term1<>term2 
+    
+        or 
+
+        cui1<>cui2
+
+        or 
+
+        cui1<>term2 
+
+        or 
+
+        term1<>cui2
+
   Changes from version 0.13 to 0.15
-    Added three new functions for semantic types:
+    1. Added three new functions for semantic types:
 
           getSt       which returns the semantic type TUI of a given CUI
           getStAbr    which returns the semantic type abbreviation 
@@ -10,65 +60,66 @@ NAME
           getStString which returns the semantic type string 
                       given the semantic type abbreviation
 
-    Added a program to the utils/ directory:
+    2. Added a program to the utils/ directory:
 
           getSt.pl    which returns the semantic type of a given CUI
                       or TERM in the UMLS. This program uses the three 
                       above functions.
       
-    Added the function checkConceptExists which returns true or false
+    3. Added the function checkConceptExists which returns true or false
     whether a concept exists in the current view of the UMLS (this is based
     on the sources and relations that are being used). This function was
     hidden but it seemed like it could be useful to others as well - it
     became useful for me anyway :)
 
-    Modified the SYNOPSIS section in the Interface.pm module to include all
-    or at least most of the different functions available through the
+    4. Modified the SYNOPSIS section in the Interface.pm module to include
+    all or at least most of the different functions available through the
     Interface.pm module.
 
-    Fixed the permissions on the configuration file directory when it is
+    5. Fixed the permissions on the configuration file directory when it is
     being created. And chmod the individual files after they were created.
     Hopefully now they will be created with read and write privlidges so you
     can see them if you install using the -MCPAN option.
 
-    Modified the findPathToRoot.pl and findShortestPath.pl to include the
+    6. Modified the findPathToRoot.pl and findShortestPath.pl to include the
     term associated with the CUI in the path
 
-    I forgot to add the UMLS Root to the PATH in the pathToRoot function. It
-    is now added.
+    7. I forgot to add the UMLS Root to the PATH in the pathToRoot function.
+    It is now added.
 
   Changes from version 0.11 to 0.13
-    Speed up the getTermList() option when all of the sources are being used
+    1. Speed up the getTermList() option when all of the sources are being
+    used
 
-    Modified documentation
+    2. Modified documentation
 
-    Added the function findMinimumDepth and findMaximumDepth which returns
-    the minimum and maximum depth of a CUI respectively given the view of
-    the UMLS
+    3. Added the function findMinimumDepth and findMaximumDepth which
+    returns the minimum and maximum depth of a CUI respectively given the
+    view of the UMLS
 
   Changes from version 0.09 to 0.11
-    Modified the Changelog directory and tried to remember to add them to
+    1. Modified the Changelog directory and tried to remember to add them to
     the release!
 
-    Modified documenation - tried to get the misspelling and obvious errors
-    removed.
+    2. Modified documenation - tried to get the misspelling and obvious
+    errors removed.
 
-    Removed the HTML documentation
+    3. Removed the HTML documentation
 
   Changes from version 0.03 to 0.09
-    Allowed the program to create the directory that we prompt the user for
-    (the location that the config files should be stored) if it doesn't
+    1. Allowed the program to create the directory that we prompt the user
+    for (the location that the config files should be stored) if it doesn't
     exist rather than requiring it be already created.
 
-    Modified the location of where the utils/ programs are installed. All of
-    them now get installed and they are all in the same location.
+    2. Modified the location of where the utils/ programs are installed. All
+    of them now get installed and they are all in the same location.
 
-    Found a bug in the code that reads the configuration file. Error would
-    occur if trying to exclude a source.
+    3. Found a bug in the code that reads the configuration file. Error
+    would occur if trying to exclude a source.
 
   Changes from version 0.01 to 0.03
-    Removed the need for UMLSINTERFACE environment variable indicating the
-    location of the UMLS. Now we prompt the user for the location that the
-    config files should be stored and ask them to set a
+    1. Removed the need for UMLSINTERFACE environment variable indicating
+    the location of the UMLS. Now we prompt the user for the location that
+    the config files should be stored and ask them to set a
     UMLSINTERFACE_CONFIGFILE_DIR variable.
 

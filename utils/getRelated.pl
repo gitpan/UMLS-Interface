@@ -6,20 +6,24 @@ getRelation.pl - this programs returns all CUIs of a given relation
 
 =head1 SYNOPSIS
 
-This program takes in a cui and returns all of its relation
+This program takes in a CUI or a term and returns all of its relation
 given a specified set of sources.
 
 =head1 USAGE
 
-Usage: getRelation.pl [OPTIONS] CUI
+Usage: getRelation.pl [OPTIONS] [CUI|TERM] REL
 
 =head1 INPUT
 
 =head2 Required Arguments:
 
-=head3 CUI
+=head3 [CUI|TERM]
 
-A concept from the Unified Medical Language System
+A concept or a term from the Unified Medical Language System
+
+=head3 REL
+
+The relation of the given CUI or term.
 
 =head2 Optional Arguments:
 
@@ -55,7 +59,7 @@ Displays the version information.
 
 =head1 OUTPUT
 
-List of parent CUIs
+List of related CUIs
 
 =head1 SYSTEM REQUIREMENTS
 
@@ -71,13 +75,19 @@ List of parent CUIs
 
 =head1 COPYRIGHT
 
-Copyright (c) 2007-2008,
+Copyright (c) 2007-2009,
 
  Bridget T. McInnes, University of Minnesota
  bthomson at cs.umn.edu
     
  Ted Pedersen, University of Minnesota Duluth
  tpederse at d.umn.edu
+
+ Siddharth Patwardhan, University of Utah, Salt Lake City
+ sidd@cs.utah.edu
+ 
+ Serguei Pakhomov, University of Minnesota Twin Cities
+ pakh0002@umn.edu
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -129,7 +139,7 @@ if( defined $opt_version ) {
 
 # At least 1 term should be given on the command line.
 if(scalar(@ARGV) < 1) {
-    print STDERR "No term was specified on the command line";
+    print STDERR "No term was specified on the command line\n";
     &minimalUsageNotes();
     exit;
 }
@@ -181,24 +191,51 @@ else {
 
 &errorCheck($umls);
 
-my $cui  = shift;
-my $rel  = shift;
+my $input  = shift;
+my $rel    = shift;
+my $term   = $input;
 
-
-my @cuis = $umls->getRelated($cui, $rel); 
+my @c = ();
+if($input=~/C[0-9]+/) {
+    push @c, $input;
+    ($term) = $umls->getTermList($input);
+}
+else {
+    @c = $umls->getConceptList($input);
+}
 
 &errorCheck($umls);
 
-print "CUI: $input\n";
-if($#cuis < 0) {
-    print "No CUIs are associated with this term.\n";
-}
-else {
-    foreach my $cui (@cuis) {
-	print "$cui\n";
+my $printFlag = 0;
+
+foreach my $cui (@c) {
+
+    if($umls->validCui($cui)) {
+	print STDERR "ERROR: The concept ($cui) is not valid.\n";
+	exit;
     }
+    
+    my @cuis = $umls->getRelated($cui, $rel); 
+    
+    &errorCheck($umls);
+    
+    if($#cuis < 0) {
+	print "No CUIs are associated with $term ($cui) given the relation ($rel).\n";
+    }
+    else {
+	print "The related ($rel) CUIs to $term ($cui):\n";
+	foreach my $related_cui (@cuis) {
+	    my ($t) = $umls->getTermList($related_cui);
+	    print "  $t ($related_cui)\n";
+	}
+    }
+    $printFlag = 1;
 }
 
+if(! ($printFlag) ) {
+    print "No CUIs are associated with $input given the relation ($rel).\n";
+}
+	    
 sub errorCheck
 {
     my $obj = shift;
@@ -213,7 +250,7 @@ sub errorCheck
 ##############################################################################
 sub minimalUsageNotes {
     
-    print "Usage: getRelation.pl [OPTIONS] CUI \n\n";
+    print "Usage: getRelation.pl [OPTIONS] [CUI|TERM] REL\n";
     &askHelp();
     exit;
 }
@@ -224,11 +261,11 @@ sub minimalUsageNotes {
 sub showHelp() {
 
         
-    print "This is a utility that takes as input a CUI\n";
-    print "and returns all of its possible relation given\n";
+    print "This is a utility that takes as input a CUI or a \n";
+    print "term and returns all of its possible relation given\n";
     print "a specified set of sources\n\n";
   
-    print "Usage: getRelation.pl [OPTIONS] CUI\n\n";
+    print "Usage: getRelation.pl [OPTIONS] [CUI|TERM] REL\n\n";
 
     print "Options:\n\n";
 
@@ -253,7 +290,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getRelated.pl,v 1.4 2009/01/25 00:19:40 btmcinnes Exp $';
+    print '$Id: getRelated.pl,v 1.8 2009/02/09 18:17:12 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

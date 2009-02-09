@@ -93,13 +93,19 @@ overall averages are stored in the OverallAverage file.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2007,
+Copyright (c) 200 - 2009
 
  Bridget T. McInnes, University of Minnesota
  bthomson at cs.umn.edu
     
  Ted Pedersen, University of Minnesota Duluth
  tpederse at d.umn.edu
+
+ Siddharth Patwardhan, University of Utah, Salt Lake City
+ sidd@cs.utah.edu
+ 
+ Serguei Pakhomov, University of Minnesota Twin Cities
+ pakh0002@umn.edu
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -317,7 +323,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: umlsCycles.pl,v 1.6 2009/01/25 00:25:00 btmcinnes Exp $';
+    print '$Id: umlsCycles.pl,v 1.7 2009/02/09 17:48:37 btmcinnes Exp $';
     print "\nCopyright (c) 2007, Ted Pedersen & Bridget McInnes\n";
 }
 

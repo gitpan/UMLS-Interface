@@ -5,28 +5,30 @@ SYNOPSIS
     Plans for future versions of UMLS-Interface
 
 DESCRIPTION
-  Version 0.13 ToDo
     1. Allow for back compatability of UMLS versions
-    2. Get the program to set the configuration file environmental variable
-    or work something else out.
-    3. Fail gracefully in the test cases when the problem is that the
+    2. Fail gracefully in the test cases when the problem is that the
     username/password ect ... is not set
+    3. concurrency control so that while a table is in the process of being
+    created it can not be used by used by another program.
+    4. better concurrency control so that multiple versions of the same
+    table are not constructed at the same time.
 
 AUTHORS
-        Bridget T. McInnes <bthomson at cs.umn.edu>
+    Bridget McInnes <bthomson at cs.umn.edu>
+
+    Ted Pedersen <tpederse at d.umn.edu>
 
 SEE ALSO
 COPYRIGHT
-        Copyright (C) 2007-2009 Ted Pedersen, Bridget T. McInnes, Sid
-        Patwardhan, Serguei Pakhomov
+    Copyright (C) 2007-2009 Ted Pedersen, Bridget T. McInnes, Sid
+    Patwardhan, Serguei Pakhomov
 
-        Permission is granted to copy, distribute and/or modify this
-        document under the terms of the GNU Free Documentation License,
-        Version 1.2 or any later version published by the Free Software
-        Foundation; with no Invariant Sections, no Front-Cover Texts, and no
-        Back-Cover Texts.
+    Permission is granted to copy, distribute and/or modify this document
+    under the terms of the GNU Free Documentation License, Version 1.2 or
+    any later version published by the Free Software Foundation; with no
+    Invariant Sections, no Front-Cover Texts, and no Back-Cover Texts.
 
-        Note: a copy of the GNU Free Documentation License is available on
-        the web at <http://www.gnu.org/copyleft/fdl.html> and is included in
-        this distribution as FDL.txt.
+    Note: a copy of the GNU Free Documentation License is available on the
+    web at <http://www.gnu.org/copyleft/fdl.html> and is included in this
+    distribution as FDL.txt.
 
