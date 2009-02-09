@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-getCuiDef.pl - this program returns a conceptssemantic type(s)
+getCuiDef.pl - This program returns a concepts semantic type(s).
 
 =head1 SYNOPSIS
 
@@ -290,7 +290,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getSts.pl,v 1.4 2009/02/09 17:48:37 btmcinnes Exp $';
+    print '$Id: getSts.pl,v 1.5 2009/02/09 22:49:54 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-queryCui.pl - this program returns all associated terms of a concept
+queryCui.pl - This program returns all associated terms of a concept.
 
 =head1 SYNOPSIS
 
@@ -262,7 +262,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: queryCui.pl,v 1.10 2009/02/09 17:48:37 btmcinnes Exp $';
+    print '$Id: queryCui.pl,v 1.11 2009/02/09 22:49:54 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

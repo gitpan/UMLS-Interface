@@ -2,12 +2,12 @@
 
 =head1 NAME
 
-getStDef.pl - this program returns the definition of a semantic 
-type
+getStDef.pl - This program returns the definition of a semantic 
+type.
 
 =head1 SYNOPSIS
 
-This program takes in a semantic type (ST) and returns its definition
+This program takes in a semantic type (ST) and returns its definition.
 
 =head1 USAGE
 
@@ -254,7 +254,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getStDef.pl,v 1.7 2009/02/09 17:48:37 btmcinnes Exp $';
+    print '$Id: getStDef.pl,v 1.8 2009/02/09 22:49:54 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

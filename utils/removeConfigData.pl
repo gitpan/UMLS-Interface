@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-removeConfigData.pl - this program removes the temporary table 
+removeConfigData.pl - This program removes the temporary table 
 and associated files that are created based on the configuration 
 file.
 
@@ -249,7 +249,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: removeConfigData.pl,v 1.1 2009/02/09 17:48:37 btmcinnes Exp $';
+    print '$Id: removeConfigData.pl,v 1.2 2009/02/09 22:49:54 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

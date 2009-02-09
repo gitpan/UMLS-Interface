@@ -1,6 +1,10 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.17 to 0.19
+    1. Modified the documentation in the utils/ programs. The descriptions
+    were just a mess
+
   Changes from version 0.15 to 0.17
     1. In SNOMED CT there exist concepts that are used to show why a concept
     is retired. Unfortunately, the relationship linking that reason to the

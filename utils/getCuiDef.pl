@@ -2,12 +2,12 @@
 
 =head1 NAME
 
-getCuiDef.pl - this program returns the definition of a concept
+getCuiDef.pl - This program returns the definition of a concept
 or a term.
 
 =head1 SYNOPSIS
 
-This program takes in a CUI or a term and returns its definitions
+This program takes in a CUI or a term and returns its definitions.
 
 =head1 USAGE
 
@@ -283,7 +283,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getCuiDef.pl,v 1.8 2009/02/09 17:48:37 btmcinnes Exp $';
+    print '$Id: getCuiDef.pl,v 1.9 2009/02/09 22:49:54 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

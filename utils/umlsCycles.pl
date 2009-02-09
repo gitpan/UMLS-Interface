@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-umlsCycles - this program marks problematic relations defined by the user
+umlsCycles.pl - This program marks problematic relations defined by the user.
 
 =head1 SYNOPSIS
 
@@ -323,7 +323,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: umlsCycles.pl,v 1.7 2009/02/09 17:48:37 btmcinnes Exp $';
+    print '$Id: umlsCycles.pl,v 1.9 2009/02/09 22:49:54 btmcinnes Exp $';
     print "\nCopyright (c) 2007, Ted Pedersen & Bridget McInnes\n";
 }
 

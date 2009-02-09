@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-getRelation.pl - this programs returns all CUIs of a given relation
+getRelation.pl - This programs returns all CUIs of a given relation.
 
 =head1 SYNOPSIS
 
@@ -290,7 +290,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getRelated.pl,v 1.8 2009/02/09 18:17:12 btmcinnes Exp $';
+    print '$Id: getRelated.pl,v 1.9 2009/02/09 22:49:54 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

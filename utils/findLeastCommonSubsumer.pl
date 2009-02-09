@@ -2,8 +2,8 @@
 
 =head1 NAME
 
-findLeastCommonSubsumer.pl - program finds the least common subsumer 
-between two concepts
+findLeastCommonSubsumer.pl - This program finds the least common subsumer 
+between two concepts.
 
 =head1 SYNOPSIS
 
@@ -313,7 +313,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findLeastCommonSubsumer.pl,v 1.10 2009/02/09 18:16:09 btmcinnes Exp $';
+    print '$Id: findLeastCommonSubsumer.pl,v 1.11 2009/02/09 22:49:54 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

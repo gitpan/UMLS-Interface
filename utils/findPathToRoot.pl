@@ -2,12 +2,13 @@
 
 =head1 NAME
 
-findPathToRoot.pl - this program 
+findPathToRoot.pl - This program returns all possible paths 
+from a given CUI to the root.
 
 =head1 SYNOPSIS
 
 This program takes a CUI or a term and returns all of possible 
-paths to the root
+paths to the root.
 
 =head1 USAGE
 
@@ -287,7 +288,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findPathToRoot.pl,v 1.11 2009/02/09 17:48:37 btmcinnes Exp $';
+    print '$Id: findPathToRoot.pl,v 1.12 2009/02/09 22:49:54 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

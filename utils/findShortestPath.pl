@@ -2,7 +2,8 @@
 
 =head1 NAME
 
-findShortestPath.pl - program finds the shoretst path between two concepts
+findShortestPath.pl - This program finds the shoretest path between two 
+concepts.
 
 =head1 SYNOPSIS
 
@@ -366,7 +367,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findShortestPath.pl,v 1.12 2009/02/09 18:16:09 btmcinnes Exp $';
+    print '$Id: findShortestPath.pl,v 1.13 2009/02/09 22:49:54 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

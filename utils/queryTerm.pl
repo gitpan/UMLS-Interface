@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-queryTerm.pl - this program returns all the CUIs of a term
+queryTerm.pl - This program returns all the CUIs of a term.
 
 =head1 SYNOPSIS
 
@@ -259,7 +259,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: queryTerm.pl,v 1.13 2009/02/09 17:48:37 btmcinnes Exp $';
+    print '$Id: queryTerm.pl,v 1.14 2009/02/09 22:49:54 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

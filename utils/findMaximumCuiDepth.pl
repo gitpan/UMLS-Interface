@@ -2,12 +2,12 @@
 
 =head1 NAME
 
-findMaximumCuiDepth.pl - this program returns the maximum depth of a 
-given CUI or term
+findMaximumCuiDepth.pl - This program returns the maximum depth of a 
+given CUI or term.
 
 =head1 SYNOPSIS
 
-This program takes in a CUI or a term and returns its maximum depth
+This program takes in a CUI or a term and returns its maximum depth.
 
 =head1 USAGE
 
@@ -275,7 +275,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findMaximumCuiDepth.pl,v 1.3 2009/02/09 17:48:37 btmcinnes Exp $';
+    print '$Id: findMaximumCuiDepth.pl,v 1.4 2009/02/09 22:49:54 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

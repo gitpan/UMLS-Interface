@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-getParents.pl - this program returns all of a concepts parents
+getParents.pl - This program returns all of a concepts parents.
 
 =head1 SYNOPSIS
 
@@ -286,7 +286,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getParents.pl,v 1.6 2009/02/09 17:48:37 btmcinnes Exp $';
+    print '$Id: getParents.pl,v 1.7 2009/02/09 22:49:54 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 
