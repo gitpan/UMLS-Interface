@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.67 2009/02/09 22:51:51 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.69 2009/02/18 18:20:23 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -44,7 +44,7 @@ use DBI;
 use bytes;
 use vars qw($VERSION);
 
-$VERSION = '0.19';
+$VERSION = '0.21';
 
 my $debug = 0;
 
@@ -76,13 +76,17 @@ my %childrenTaxonomy = ();
 #  trace variables
 my %trace = ();
 
-my $sourceDB  = "";
-my $tableName = "";
-my $tableFile = "";
-my $cycleFile = "";
-my $configFile= "";
+my $sourceDB   = "";
+my $tableName  = "";
+my $parentTable= "";
+my $childTable = "";
+my $tableFile  = "";
+my $cycleFile  = "";
+my $configFile = "";
 my $childFile  = "";
 my $parentFile = "";
+
+my $markFlag   = 0;
 
 my %cycleHash = ();
 
@@ -377,10 +381,7 @@ sub _initialize
 		system "mkdir -m 777 $umlsinterface";
 	    }
 	    
-	    print STDERR "We decided not to have the program set the environment\n";
-	    print STDERR "variable for you (if you are a previous user you might\n";
-	    print STDERR "remember we said we were going to do this). So please\n";
-	    print STDERR "set the UMLSINTERFACE_CONFIGFILE_DIR variable\n\n";
+	    print STDERR "Please set the UMLSINTERFACE_CONFIGFILE_DIR variable:\n\n";
 	    print STDERR "It can be set in csh as follows:\n\n";
 	    print STDERR " setenv UMLSINTERFACE_CONFIGFILE_DIR $umlsinterface\n\n";
 	    print STDERR "And in bash shell:\n\n";
@@ -390,24 +391,31 @@ sub _initialize
     }
     
     #  set table and cycle and upper level relations files
-    $sourceDB   = "$ver";
+    
     $childFile  = "$umlsinterface/$ver";
     $parentFile = "$umlsinterface/$ver";
     $tableFile  = "$umlsinterface/$ver";
     $cycleFile  = "$umlsinterface/$ver";
-    $tableName  = "$ver";
     $configFile = "$umlsinterface/$ver";
     
+    $sourceDB   = "$ver";
+    $tableName  = "$ver";
+    $parentTable= "$ver";
+    $childTable = "$ver";
+        
     print STDERR "UMLS-Interface Configuration Information\n";
     print STDERR "  Sources:\n";
     foreach my $sab (sort keys %sab_names) {
     	$tableFile  .= "_$sab";
     	$cycleFile  .= "_$sab";
-	$tableName  .= "_$sab";
 	$childFile  .= "_$sab";
 	$parentFile .= "_$sab";
-	$sourceDB   .= "_$sab";
 	$configFile .= "_$sab";
+	$sourceDB   .= "_$sab";
+	$tableName  .= "_$sab";
+	$parentTable.= "_$sab";
+	$childTable .= "_$sab";
+	
 	print STDERR "    $sab\n";
 	
 	
@@ -417,21 +425,26 @@ sub _initialize
     while($relations=~/=\'(.*?)\'/g) {
 	my $rel = $1;
 	$tableFile  .= "_$rel";
-	$cycleFile  .= "_$rel";
-	$tableName  .= "_$rel";
+	$cycleFile  .= "_$rel";	
 	$childFile  .= "_$rel";
 	$parentFile .= "_$rel";
-	$sourceDB   .= "_$rel";
 	$configFile .= "_$rel";
+	$sourceDB   .= "_$rel";
+	$tableName  .= "_$rel";	
+	$parentTable.= "_$rel";
+	$childTable .= "_$rel";
+	
 	print STDERR "    $rel\n";
     }
     
     $tableFile  .= "_table";
     $cycleFile  .= "_cycle";
-    $tableName  .= "_table";
     $childFile  .= "_child";
     $parentFile .= "_parent";
     $configFile .= "_config";
+    $tableName  .= "_table";
+    $parentTable.= "_parent";
+    $childTable .= "_child";
     
     print STDERR "  Configuration file:\n";
     print STDERR "    $configFile\n\n";
@@ -723,6 +736,8 @@ sub pathsToRoot
     #  determine the cycles and depth of the taxonomy if not already done
     my $depthCheck = $self->_setDepth();
     
+    if($debug) { print STDERR "Finished in _setDepth\n"; }
+
     if(!$concept) {
 	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
 	$self->{'errorString'} .= "Undefined input values.";
@@ -890,33 +905,99 @@ sub _updateTaxonomy {
 sub _setUpperLevelTaxonomy {
     
     my $self = shift;
-
-    return undef if(!defined $self || !ref $self);
-
+    
     my $function = "_setUpperLevelTaxonomy";
     &_debug($function);
-    #&_printTime();
+    
+    return undef if(!defined $self || !ref $self);
+    
+    #  set the sourceDB handler
+    my $sdb = $self->{'sdb'};
+    if(!$sdb) {
+	$self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "A db is required.";
+	$self->{'errorCode'} = 2;
+	return ();
+    }    
+    
+    #  check if the parent and child tables exist and if they do just return
+    if($self->_checkTableExists($childTable) and $self->_checkTableExists($parentTable)) {
+	
+	if($debug) { print STDERR "Tables $childTable and $parentTable exist\n"; }
 
+	#  set the parent taxonomy
+	my $sql = qq{ SELECT CUI1, CUI2 FROM $parentTable};
+	my $sth = $sdb->prepare( $sql );
+	$sth->execute();
+	my($cui1, $cui2);
+	$sth->bind_columns( undef, \$cui1, \$cui2 );
+	while( $sth->fetch() ) {
+	    push @{$parentTaxonomy{$cui1}}, $cui2;    
+	} $sth->finish();
+	
+	
+	#  set the child taxonomy
+	$sql = qq{ SELECT CUI1, CUI2 FROM $childTable};
+	$sth = $sdb->prepare( $sql );
+	$sth->execute();
+	$sth->bind_columns( undef, \$cui1, \$cui2 );
+	while( $sth->fetch() ) {
+	    push @{$childrenTaxonomy{$cui1}}, $cui2;    
+	} $sth->finish();
+	
+	return 1;
+	
+    }
+    
+    
+    #  create parent table
+    my $ar1 = $sdb->do("CREATE TABLE IF NOT EXISTS $parentTable (CUI1 char(8), CUI2 char(8))");
+    if($self->checkError($function)) { return (); }
+    
+    #  create child table
+    my $ar2 = $sdb->do("CREATE TABLE IF NOT EXISTS $childTable (CUI1 char(8), CUI2 char(8))");
+    if($self->checkError($function)) { return (); }
+    
+    #  if the parent and child files exist just load them into the database
     if( (-e $childFile) and (-e $parentFile) ) {
-
+	
+	if($debug) { print STDERR "The child and parent files exist\n"; }
+	
+	#  open parent and child files
 	open(PAR, $parentFile) || die "Could not open $parentFile\n";	
 	open(CHD, $childFile)  || die "Could not open $childFile\n";
 	
+	#  load parent table
 	while(<PAR>) {
 	    chomp;
 	    if($_=~/^\s*$/) { next; }
-	    my ($cui, $sab_cui) = split/\s+/;
-	    push @{$parentTaxonomy{$cui}}, $sab_cui;
+	    my ($cui1, $cui2) = split/\s+/;
+
+	    my $arrRef = $sdb->do("INSERT INTO $parentTable (CUI1, CUI2) VALUES ('$cui1', '$cui2')");	    
+	    if($self->checkError($function)) { return (); }   
 	}
 
+	#  load child table
 	while(<CHD>) {
 	    chomp;
 	    if($_=~/^\s*$/) { next; }
-	    my ($sab_cui, $cui) = split/\s+/;
-	    push @{$childrenTaxonomy{$sab_cui}}, $cui;
+	    my ($cui1, $cui2) = split/\s+/;
+	    my $arrRef = $sdb->do("INSERT INTO $childTable (CUI1, CUI2) VALUES ('$cui1', '$cui2')");	    
+	    if($self->checkError($function)) { return (); }
 	}
+	close PAR; close CHD; 
     }
     else {
+	
+	if($debug) { print STDERR "Neither the parent nor the child files exist\n"; }
+	
+	#  mark the CVF relations if they haven't been done yet
+	if($markFlag == 0) {
+	    $self->_resetCVF();
+	    $self->_markCVF();
+	}
+
+	#  set up the database
 	my $db = $self->{'db'};
 	if(!$db) {
 	    $self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
@@ -927,18 +1008,11 @@ sub _setUpperLevelTaxonomy {
 	
 	$self->{'traceString'} = "";
 	
-	# mark the cycles;
-	my $cycleCheck = $self->_markCycles();
-	if(!defined $cycleCheck) { 
-	    print STDERR "$self->{'errorString'}\n";
-	    return ();
-	}
-	
 	# open the parent and child files to store the upper level taxonomy information
 	open(CHD, ">$childFile")  || die "Could not open $childFile\n";
 	open(PAR, ">$parentFile") || die "Could not open $parentFile\n";
 	
-	#  select all the CUI1s from MRREL - takes approximately 6 minutes
+	#  select all the CUI1s from MRREL 
 	my $allCui1 = $db->selectcol_arrayref("select CUI1 from MRREL where ($relations) and ($sources)");
 	if($self->checkError($function)) { return undef; }
 	
@@ -984,6 +1058,12 @@ sub _setUpperLevelTaxonomy {
 		
 		push @{$parentTaxonomy{$cui}}, $sab_cui;
 		push @{$childrenTaxonomy{$sab_cui}}, $cui;
+
+		my $arrRef1 = $sdb->do("INSERT INTO $parentTable (CUI1, CUI2) VALUES ('$cui', '$sab_cui'");	    
+		if($self->checkError($function)) { return (); }   		
+
+		my $arrRef2 = $sdb->do("INSERT INTO $parentTable (CUI1, CUI2) VALUES ('$sab_cui', '$cui'");	    
+		if($self->checkError($function)) { return (); }   		
 		
 		print PAR "$cui $sab_cui\n";
 		print CHD "$sab_cui $cui\n";
@@ -994,6 +1074,11 @@ sub _setUpperLevelTaxonomy {
 	foreach my $sab_cui (sort keys %sab_hash) {
 	    push @{$parentTaxonomy{$sab_cui}}, $umlsRoot;
 	    print PAR "$sab_cui $umlsRoot\n";
+	    my $arrRef = $sdb->do("INSERT INTO $parentTable (CUI1, CUI2) VALUES ('$sab_cui', '$umlsRoot')");	    
+	    if($self->checkError($function)) { return (); }   		
+	    
+
+	    
 	}
 	
 	close PAR; close CHD;
@@ -1041,16 +1126,15 @@ sub _connectSourceDB {
     return $sdb;
 }
 
-sub _markCycles
-{
+sub _createSourceDB {
+    
     my $self = shift;
-
+    
     return () if(!defined $self || !ref $self);
-
-    my $function = "_markCycles";
+    
+    my $function = "_createSourceDB";
     &_debug($function);
-    #&_printTime();
-
+    
     #  check that the database exists
     my $db = $self->{'db'};
     if(!$db) {
@@ -1060,55 +1144,143 @@ sub _markCycles
 	return ();
     }    
     
-    #  reset the cycle information back to null
-    my $ara = $db->do("update MRREL set CVF=NULL where CVF=1");
+    #  show all of the databases
+    my $sth = $db->prepare("show databases");
+    $sth->execute();
+    if($sth->err()) {
+	$self->{'errorString'} .= "\nError (UMLS::Interface->_initialize()) - ";
+	$self->{'errorString'} .= "Unable run query: ".($sth->errstr());
+	$self->{'errorCode'} = 2;
+	return ();
+    }
     
-    #  set the cycle information for CUIs that a relation with themselves
-    my $arb = $db->do("update MRREL set CVF=1 where CUI1=CUI2");
+    #  get all the databases in mysql
+    my $database  = "";
+    my %databases = ();
+    while(($database) = $sth->fetchrow()) {
+	$databases{$database} = 1;
+    }
+    $sth->finish();
+    
+    #  if the database doesn't exist create it
+    if(! defined $databases{$sourceDB}) {
+	print STDERR "$sourceDB doesn't exist - creating\n";
+	my $cd = $db->do("create database $sourceDB");
+    }
+}
 
-    #  check if cycle file was defined
+sub _markCycles
+{
+    my $self = shift;
+
+    return () if(!defined $self || !ref $self);
+
+    my $function = "_markCycles";
+    &_debug($function);
+
+    #  get cycle file
     my $cyclefile = $self->{'cyclefile'};
-    if(defined $cyclefile) {
+    
+    if(! (defined $cyclefile)) { 
 
-	print STDERR "Marking Cycles\n";
+	if($debug) { print STDERR "No cyclefile ... returning.\n"; }
+	return 1;; 
+    }
+    
+    if($debug) { print STDERR "cyclefile ... setting up marking cycles.\n"; }
+    
+    #  check that the database exists
+    my $db = $self->{'db'};
+    if(!$db) {
+	$self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "A db is required.";
+	$self->{'errorCode'} = 2;
+	return ();
+    }    
+    
+    if($debug) { print STDERR "Marking Cycles\n"; }
+    
+    open(CYCLE, $cyclefile) || die "Could not open cycle file: $cyclefile\n";
 
-	open(CYCLE, $cyclefile) || die "Could not open cycle file: $cyclefile\n";
-	while(<CYCLE>) {
-	    chomp;
-	    my @array = split/\|/;
-
-	    my $cui1 = $array[0];
-	    my $cui2 = $array[1];
-	    my $rel  = $array[2];
-	    my $real = $array[3];
+    while(<CYCLE>) {
+	chomp;
+	my @array = split/\|/;
+	
+	my $cui1 = $array[0];
+	my $cui2 = $array[1];
+	my $rel  = $array[2];
+	my $real = $array[3];
+	
+	if($rel=~/$relations/) {
 	    
-	    if($rel=~/$relations/) {
-		
-		if($rel=/PAR/) {
-		    my $ara = $db->do("update MRREL set CVF=1 where CUI1='$cui1' and CUI2='$cui2' and REL='PAR' and ($sources)");
-		    my $arb = $db->do("update MRREL set CVF=1 where CUI2='$cui1' and CUI2='$cui1' and REL='CHD' and ($sources)");
-		}
-		
-		if($rel=/RB/) {
-		    my $ara = $db->do("update MRREL set CVF=1 where CUI1='$cui1' and CUI2='$cui2' and REL='RB' and ($sources)");
-		    my $arb = $db->do("update MRREL set CVF=1 where CUI2='$cui1' and CUI2='$cui1' and REL='RN' and ($sources)");
-		}
-		
-		if($rel=/CHD/) {
-		    my $ara = $db->do("update MRREL set CVF=1 where CUI1='$cui1' and CUI2='$cui2' and REL='CHD' and ($sources)");
-		    my $arb = $db->do("update MRREL set CVF=1 where CUI2='$cui1' and CUI2='$cui1' and REL='PAR' and ($sources)");
-		}
-
-		if($rel=/RN/) {
-		    my $ara = $db->do("update MRREL set CVF=1 where CUI1='$cui1' and CUI2='$cui2' and REL='RN' and ($sources)");
-		    my $arb = $db->do("update MRREL set CVF=1 where CUI2='$cui1' and CUI2='$cui1' and REL='RB' and ($sources)");
-		}
-		
+	    if($rel=/PAR/) {
+		my $ara = $db->do("update MRREL set CVF=1 where CUI1='$cui1' and CUI2='$cui2' and REL='PAR' and ($sources)");
+		my $arb = $db->do("update MRREL set CVF=1 where CUI2='$cui1' and CUI2='$cui1' and REL='CHD' and ($sources)");
 	    }
+	    
+	    if($rel=/RB/) {
+		my $ara = $db->do("update MRREL set CVF=1 where CUI1='$cui1' and CUI2='$cui2' and REL='RB' and ($sources)");
+		my $arb = $db->do("update MRREL set CVF=1 where CUI2='$cui1' and CUI2='$cui1' and REL='RN' and ($sources)");
+	    }
+	    
+	    if($rel=/CHD/) {
+		my $ara = $db->do("update MRREL set CVF=1 where CUI1='$cui1' and CUI2='$cui2' and REL='CHD' and ($sources)");
+		my $arb = $db->do("update MRREL set CVF=1 where CUI2='$cui1' and CUI2='$cui1' and REL='PAR' and ($sources)");
+	    }
+	    
+	    if($rel=/RN/) {
+		my $ara = $db->do("update MRREL set CVF=1 where CUI1='$cui1' and CUI2='$cui2' and REL='RN' and ($sources)");
+		my $arb = $db->do("update MRREL set CVF=1 where CUI2='$cui1' and CUI2='$cui1' and REL='RB' and ($sources)");
+	    }
+	    
 	}
     }
+}
 
-    #&_printTime();
+
+sub _checkTableExists {
+    
+    my $self  = shift;
+    my $table = shift;
+
+    return () if(!defined $self || !ref $self);
+    
+    my $function = "_checkTableExists";
+    &_debug($function);
+    
+    #  check that the database exists
+    my $sdb = $self->{'sdb'};
+    if(!$sdb) {
+	$self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "A db is required.";
+	$self->{'errorCode'} = 2;
+	return ();
+    }    
+    
+    my $sth = $sdb->prepare("show tables");
+    $sth->execute();
+    if($sth->err()) {
+	$self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "Unable run query: ".($sth->errstr());
+	$self->{'errorCode'} = 2;
+	return;
+    }
+    
+    my $t      = "";
+    my %tables = ();
+    while(($t) = $sth->fetchrow()) {
+	$tables{$t} = 1;
+    }
+    $sth->finish();
+    
+    if(!defined $tables{$table}) { 
+	if($debug) { print STDERR "  returning 0 ... $table does not exist\n"; } 
+	return 0; 
+    }
+    else                         { 
+	if($debug) { print STDERR "  returning 1 ... $table exists \n"; }
+	return 1; 
+    }
 }
 
 ################# new function as of v0.03
@@ -1131,64 +1303,50 @@ sub _setDepth {
 	$self->{'errorCode'} = 2;
 	return ();
     }    
-
+    
+    #  create and connect to sourceDB 
+    $self->_createSourceDB();
+    if($self->checkError($function)) { return (); }	
+    $self->_connectSourceDB();
+    if($self->checkError($function)) { return (); }	
+    
     #  set the auxillary database that holds the path information
     my $sdb = $self->{'sdb'};
+    if(!$sdb) {
+	$self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "A db is required.";
+	$self->{'errorCode'} = 2;
+	return ();
+    }    
 
-    #  set the upper level taxonomyIn 
+    # mark the cycles;
+    my $cycleCheck = $self->_markCycles();
+    if(!defined $cycleCheck) { 
+	print STDERR "$self->{'errorString'}\n";
+	return ();
+    }
+    
+    #  set the upper level taxonomy
     my $taxCheck = $self->_setUpperLevelTaxonomy();
     if(!defined $taxCheck) { 
 	print STDERR "$self->{'errorString'}\n";
 	return ();
     }
-
-    #  get teh version
-    my $version = $self->version();
     
-    #  get the tables from the umls database
-    my $sth = $db->prepare("show databases");
-    $sth->execute();
-    if($sth->err()) {
-	$self->{'errorString'} .= "\nError (UMLS::Interface->_initialize()) - ";
-	$self->{'errorString'} .= "Unable run query: ".($sth->errstr());
-	$self->{'errorCode'} = 2;
-	return ();
-    }
     
-    my $database  = "";
-    my %databases = ();
-    while(($database) = $sth->fetchrow()) {
-	$databases{$database} = 1;
-    }
-    $sth->finish();
-    
-    #my $ar3 = $db->do("update MRREL set CVF=NULL where CVF=1");
-    
-    #  check to see if tableFile is loaded into 
-    #  the database if it isn't get it loaded
-    #  otherwise just connect to it
-    if(defined $databases{$sourceDB}) {
-	$sdb = $self->_connectSourceDB();	
-	if($self->checkError($function)) { return (); }
-    }
-    else {
-	#  create the source database and set up connection
-	my $cd = $db->do("create database $sourceDB");
-	$sdb = $self->_connectSourceDB();	
-	if($self->checkError($function)) { return (); }
+    if(! ($self->_checkTableExists($tableName))) {
 	
-	if($debug) { print STDERR "No Path table exists\n"; }
+	if($debug) { print STDERR "Table $tableName doesn't exist\n"; }
+	
 	
 	#  check if tableFile exists in the default_options 
 	#  directory, if so load it into the database
 	if(-e $tableFile) {
 	    
-	    if($debug) { print STDERR "Path table file exists\n"; }
+	    if($debug) { print STDERR "Table file exists for $tableFile\n"; }
 	    
-	    print STDERR "TABLE FILE: $tableFile\n";
-
 	    #  create the table in the umls database
-	    my $ar1 = $sdb->do("CREATE TABLE IF NOT EXISTS $tableName (CUI char(8), DEPTH int, PATH varchar(1000))");
+	    my $ar1 = $sdb->do("CREATE TABLE IF NOT EXISTS $tableName (CUI char(8), DEPTH int, PATH varchar(450))");
 	    if($self->checkError($function)) { return (); }
 	    
 	    #  load the path information into the table
@@ -1228,8 +1386,14 @@ sub _setDepth {
 		exit;
 	    }
 	    
+	    #  mark the CVF relations if they haven't been done yet
+	    if($markFlag == 0) {
+		$self->_resetCVF();
+		$self->_markCVF();
+	    }
+
 	    #  create the table in the umls database
-	    my $ar1 = $sdb->do("CREATE TABLE IF NOT EXISTS $tableName (CUI char(8), DEPTH int, PATH varchar(1000))");
+	    my $ar1 = $sdb->do("CREATE TABLE IF NOT EXISTS $tableName (CUI char(8), DEPTH int, PATH varchar(450))");
 	    if($self->checkError($function)) { return (); }
 	    
 	    my $ar8 = $db->do("update MRREL  set CVF=NULL where CVF=1");
@@ -1258,17 +1422,13 @@ sub _setDepth {
 	    
 	    if($debug) { print STDERR "Cycle file has been created\n"; }
 	    
-	    #if($debug) { print STDERR "Update taxonomy\n"; }
-	    #$self->_updateTaxonomy();
 	}
 	
 	#  create index on the newly formed table
 	my $index = $sdb->do("create index CUIINDEX on $tableName (CUI)");
 	if($self->checkError($function)) { return (); }
     }
-
-    if($debug) { print STDERR "Cycle file has been created\n"; }
-        
+    
     #  set the maximum depth
     my $d = $sdb->selectcol_arrayref("select max(DEPTH) from $tableName");
     if($self->checkError($function)) { return (); }
@@ -2078,6 +2238,57 @@ sub findShortestPath
     return @{$path};
 }   
 
+sub _resetCVF 
+{
+    my $self = shift;
+
+    return () if(!defined $self || !ref $self);
+
+    my $function = "_resetCVF";
+    &_debug($function);
+    
+
+    #  check that the database exists
+    my $db = $self->{'db'};
+    if(!$db) {
+	$self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "A db is required.";
+	$self->{'errorCode'} = 2;
+	return ();
+    }    
+    
+    #  reset the cycle information back to null
+    if($debug) { print STDERR "Resetting CVF to NULL.\n"; }
+    my $ara = $db->do("update MRREL set CVF=NULL where CVF=1");
+
+    $markFlag = 0;
+}
+
+sub _markCVF {
+    my $self = shift;
+
+    return () if(!defined $self || !ref $self);
+
+    my $function = "_markCVF";
+    &_debug($function);
+    
+
+    #  check that the database exists
+    my $db = $self->{'db'};
+    if(!$db) {
+	$self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "A db is required.";
+	$self->{'errorCode'} = 2;
+	return ();
+    }    
+    
+    #  set the cycle information for CUIs that a relation with themselves
+    if($debug) { print STDERR "Setting CVF = 1 where CUI1=CUI2\n"; }
+    my $arb = $db->do("update MRREL set CVF=1 where CUI1=CUI2");
+    
+    $markFlag = 1;
+}
+
 ################# added function as of v0.03
 ################# modified from Semantic-Similarity
 sub findLeastCommonSubsumer
@@ -2651,11 +2862,21 @@ sub removeConfigFiles
     my $function = "removeConfigFiles";
     &_debug($function);
     
-    system "rm $tableFile";
-    system "rm $childFile";
-    system "rm $parentFile";
-    system "rm $configFile";
-    system "rm $cycleFile";
+    if(-e $tableFile) {
+	system "rm $tableFile";
+    }
+    if(-e $childFile) {
+	system "rm $childFile";
+    }
+    if(-e $parentFile) {
+	system "rm $parentFile";
+    }
+    if(-e $configFile) {
+	system "rm $configFile";
+    }
+    if(-e $cycleFile) {
+	system "rm $cycleFile";
+    }
 
 }
     
@@ -2701,147 +2922,147 @@ UMLS::Interface - Perl interface to the Unified Medical Language System (UMLS)
 
 =head1 SYNOPSIS
 
-use UMLS::Interface;
+ use UMLS::Interface;
 
-$umls = UMLS::Interface->new(); 
+ $umls = UMLS::Interface->new(); 
 
-die "Unable to create UMLS::Interface object.\n" if(!$umls);
+ die "Unable to create UMLS::Interface object.\n" if(!$umls);
 
-($errCode, $errString) = $umls->getError();
+ ($errCode, $errString) = $umls->getError();
 
-die "$errString\n" if($errCode);
+ die "$errString\n" if($errCode);
 
 
-my $term1    = "blood";
+ my $term1    = "blood";
 
-my @tList1   = $umls->getConceptList($term1);
+ my @tList1   = $umls->getConceptList($term1);
 
-my $cui1     = pop @tList1;
+ my $cui1     = pop @tList1;
 
 
-my $term2    = "cell";
+ my $term2    = "cell";
 
-my @tList2   = $umls->getConceptList($term2);
+ my @tList2   = $umls->getConceptList($term2);
 
-my $cui2     = pop @tList2;
+ my $cui2     = pop @tList2;
 
 
-my $exists1  = $umls->checkConceptExists($cui1);
+ my $exists1  = $umls->checkConceptExists($cui1);
 
-my $exists2  = $umls->checkConceptExists($cui2);
+ my $exists2  = $umls->checkConceptExists($cui2);
 
 
-if($exists1) { print "$term1($cui1) exists in your UMLS view.\n"; }
+ if($exists1) { print "$term1($cui1) exists in your UMLS view.\n"; }
 
-else         { print "$term1($cui1) does not exist in your UMLS view.\n"; }
+ else         { print "$term1($cui1) does not exist in your UMLS view.\n"; }
 
 
-if($exists2) { print "$term2($cui2) exists in your UMLS view.\n"; }
+ if($exists2) { print "$term2($cui2) exists in your UMLS view.\n"; }
 
-else         { print "$term2($cui2) does not exist in your UMLS view.\n"; }
+ else         { print "$term2($cui2) does not exist in your UMLS view.\n"; }
 
-print "\n";
+ print "\n";
 
 
-my @cList1   = $umls->getTermList($cui1);
+ my @cList1   = $umls->getTermList($cui1);
 
-my @cList2   = $umls->getTermList($cui2);
+ my @cList2   = $umls->getTermList($cui2);
 
 
-print "The terms associated with $term1 ($cui1):\n";
+ print "The terms associated with $term1 ($cui1):\n";
 
-foreach my $c1 (@cList1) {
+ foreach my $c1 (@cList1) {
 
-    print " => $c1\n";
+     print " => $c1\n";
 
-} print "\n";
+ } print "\n";
 
 
-print "The terms associated with $term2 ($cui2):\n";
+ print "The terms associated with $term2 ($cui2):\n";
 
-foreach my $c2 (@cList2) {
+ foreach my $c2 (@cList2) {
 
-    print " => $c2\n";
+     print " => $c2\n";
 
-} print "\n";
+ } print "\n";
 
 
-my $lcs = $umls->findLeastCommonSubsumer($cui1, $cui2);
+ my $lcs = $umls->findLeastCommonSubsumer($cui1, $cui2);
 
-print "The least common subsumer between $term1 ($cui1) and \n";
+ print "The least common subsumer between $term1 ($cui1) and \n";
 
-print "$term2 ($cui2) is $lcs\n\n";
+ print "$term2 ($cui2) is $lcs\n\n";
 
 
-my @shortestpath = $umls->findShortestPath($cui1, $cui2);
+ my @shortestpath = $umls->findShortestPath($cui1, $cui2);
 
-print "The shortest path between $term1 ($cui1) and $term2 ($cui2):\n";
+ print "The shortest path between $term1 ($cui1) and $term2 ($cui2):\n";
 
-print "  => @shortestpath\n\n";
+ print "  => @shortestpath\n\n";
 
 
-my $pathstoroot   = $umls->pathsToRoot($cui1);
+ my $pathstoroot   = $umls->pathsToRoot($cui1);
 
-print "The paths from $term1 ($cui1) and the root:\n";
+ print "The paths from $term1 ($cui1) and the root:\n";
 
-foreach  $path (@{$pathstoroot}) {
+ foreach  $path (@{$pathstoroot}) {
 
-    print "  => $path\n";
+     print "  => $path\n";
 
-} print "\n";
+ } print "\n";
 
 
-my $mindepth = $umls->findMinimumDepth($cui1);
+ my $mindepth = $umls->findMinimumDepth($cui1);
 
-my $maxdepth = $umls->findMaximumDepth($cui1);
+ my $maxdepth = $umls->findMaximumDepth($cui1);
 
-print "The minimum depth of $term1 ($cui1) is $mindepth\n";
+ print "The minimum depth of $term1 ($cui1) is $mindepth\n";
 
-print "The maximum depth of $term1 ($cui1) is $maxdepth\n\n";
+ print "The maximum depth of $term1 ($cui1) is $maxdepth\n\n";
 
 
-my @children = $umls->getChildren($cui2); 
+ my @children = $umls->getChildren($cui2); 
 
-print "The child(ren) of $term2 ($cui2) are: @children\n\n";
+ print "The child(ren) of $term2 ($cui2) are: @children\n\n";
 
 
-my @parents = $umls->getParents($cui2);
+ my @parents = $umls->getParents($cui2);
 
-print "The parent(s) of $term2 ($cui2) are: @parents\n\n";
+ print "The parent(s) of $term2 ($cui2) are: @parents\n\n";
 
 
-my @definitions = $umls->getCuiDef($cui1);
+ my @definitions = $umls->getCuiDef($cui1);
 
-print "The definition(s) of $term1 ($cui1) are:\n";
+ print "The definition(s) of $term1 ($cui1) are:\n";
 
-foreach $def (@definitions) {
+ foreach $def (@definitions) {
+ 
+     print "  => $def\n"; $i++;
 
-    print "  => $def\n"; $i++;
+ } print "\n";
 
-} print "\n";
 
+ print "The semantic type(s) of $term1 ($cui1) and the semantic\n";
 
-print "The semantic type(s) of $term1 ($cui1) and the semantic\n";
+ print "definition are:\n";
 
-print "definition are:\n";
+ my @sts = $umls->getSt($cui1);
 
-my @sts = $umls->getSt($cui1);
+ foreach my $st (@sts) {
 
-foreach my $st (@sts) {
+     my @abrs = $umls->getStAbr($st);
 
-    my @abrs = $umls->getStAbr($st);
+     foreach my $abr (@abrs) {
 
-    foreach my $abr (@abrs) {
+	 my $string = $umls->getStString($abr);
 
-	my $string = $umls->getStString($abr);
+	 my $def    = $umls->getStDef($abr);
 
-	my $def    = $umls->getStDef($abr);
+	 print "  => $string ($abr) : $def\n";
 
-	print "  => $string ($abr) : $def\n";
+     }
 
-    }
-
-} print "\n";
+ } print "\n";
 
 
 =head1 ABSTRACT

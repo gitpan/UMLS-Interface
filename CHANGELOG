@@ -1,6 +1,20 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.19 to 0.21
+    1. Added check to see if program files exist prior to removing them just
+    in case they don't exist an error isn't going to display
+
+    2. Had an error in getCuiDef.pl when the input was a term. This has been
+    fixed.
+
+    3. Modified the upper level taxonomy to be written to tables in its
+    appropriate database.
+
+    4. Add the program removeConfigData.pl which will remove the database
+    and all of the associated files created by the program given a specified
+    configuration.
+
   Changes from version 0.17 to 0.19
     1. Modified the documentation in the utils/ programs. The descriptions
     were just a mess

@@ -197,7 +197,7 @@ if($input=~/C[0-9]+/) {
     ($term) = $umls->getConceptList($input);
 }
 else {
-    @c = $umls->getTermList($input);
+    @c = $umls->getConceptList($input);
 }
 
 my $printFlag = 0;
@@ -283,7 +283,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getCuiDef.pl,v 1.9 2009/02/09 22:49:54 btmcinnes Exp $';
+    print '$Id: getCuiDef.pl,v 1.10 2009/02/11 23:32:25 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

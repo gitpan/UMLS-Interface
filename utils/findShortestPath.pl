@@ -153,6 +153,33 @@ if( defined $opt_version ) {
     exit;
 }
 
+my @fileArray = ();
+if(defined $opt_infile) {
+    open(FILE, $opt_infile) || die "Could not open infile: $opt_infile\n";
+    while(<FILE>) {
+	chomp;
+	if($_=~/^\s*$/) { next; }
+	push @fileArray, $_;
+    }
+    close FILE;
+}
+else {
+    
+    # At least 2 terms and/or cuis should be given on the command line.
+    if(scalar(@ARGV) < 2) {
+	print STDERR "Two terms and/or CUIs are required\n";
+	&minimalUsageNotes();
+	exit;
+    }
+    
+
+    my $i1 = shift;
+    my $i2 = shift;
+
+    my $string = "$i1<>$i2";
+    push @fileArray, $string;
+}
+
 my $database = "umls";
 if(defined $opt_database) { $database = $opt_database; }
 my $hostname = "localhost";
@@ -200,38 +227,10 @@ else {
 
 &errorCheck($umls);
 
-my @fileArray = ();
-if(defined $opt_infile) {
-    open(FILE, $opt_infile) || die "Could not open infile: $opt_infile\n";
-    while(<FILE>) {
-	chomp;
-	if($_=~/^\s*$/) { next; }
-	push @fileArray, $_;
-    }
-    close FILE;
-}
-else {
-    
-    # At least 2 terms and/or cuis should be given on the command line.
-    if(scalar(@ARGV) < 2) {
-	print STDERR "Two terms and/or CUIs are required\n";
-	&minimalUsageNotes();
-	exit;
-    }
-    
-
-    my $i1 = shift;
-    my $i2 = shift;
-
-    my $string = "$i1<>$i2";
-    push @fileArray, $string;
-}
 
 foreach my $element (@fileArray) {
     
     my ($input1, $input2) = split/<>/, $element;
-
-    print STDERR "$input1 $input2\n";
     
     my $flag1 = "cui";
     my $flag2 = "cui";
@@ -367,7 +366,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findShortestPath.pl,v 1.13 2009/02/09 22:49:54 btmcinnes Exp $';
+    print '$Id: findShortestPath.pl,v 1.15 2009/02/18 18:20:26 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 
