@@ -136,6 +136,11 @@ NAME
                                        given its cooresponding abbreviation
           checkConceptExists()      -- Returns true or false (1 or 0) if a concept
                                        exists given the current view of the UMLS
+          getRelated()              -- Returns all the CUIs related to a specified 
+	                               CUI given a specified relation REL
+	  getRelations()            -- Returns all the relations in the MRREL file 
+	                               associated with a given CUI
+	
   
         These methods essentially expose an interface as required by the
         UMLS::Similarity modules. The UMLS::Similarity modules require

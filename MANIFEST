@@ -21,9 +21,11 @@ utils/getChildren.pl
 utils/getCuiDef.pl
 utils/getParents.pl
 utils/getRelated.pl
+utils/getRelations.pl
 utils/getStDef.pl
 utils/getSts.pl
 utils/queryCui.pl
 utils/queryTerm.pl
 utils/removeConfigData.pl
+utils/synopsis.pl
 utils/umlsCycles.pl

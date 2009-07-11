@@ -1,6 +1,14 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.21 to 0.23
+1. Added a getRelation function which returns all the possible 
+   relations in the MRREL file given a specified CUI and 
+   source. There is a corresponding util program getRelation.pl 
+   to show how this is used.
+2. Modified checking the existance of the UMLS tables. Before it 
+   was expecting the table names to be all capatalized but now 
+   they can be in lower case as well.
   Changes from version 0.19 to 0.21
     1. Added check to see if program files exist prior to removing them just
     in case they don't exist an error isn't going to display

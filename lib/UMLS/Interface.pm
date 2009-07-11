@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.69 2009/02/18 18:20:23 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.72 2009/05/28 17:37:13 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -44,7 +44,7 @@ use DBI;
 use bytes;
 use vars qw($VERSION);
 
-$VERSION = '0.21';
+$VERSION = '0.23';
 
 my $debug = 0;
 
@@ -268,43 +268,43 @@ sub _initialize
     }
     $sth->finish();
 
-    if(!defined $tables{"MRCONSO"}) {
+    if(!defined $tables{"MRCONSO"} and !defined $tables{"mrconso"}) {
 	$self->{'errorString'} .= "\nError (UMLS::Interface->_initialize()) - ";
 	$self->{'errorString'} .= "Table MRCONSO not found in database.";
 	$self->{'errorCode'} = 2;
 	return;	
     }
-    if(!defined $tables{"MRDEF"}) {
+    if(!defined $tables{"MRDEF"} and !defined $tables{"mrdef"}) {
 	$self->{'errorString'} .= "\nError (UMLS::Interface->_initialize()) - ";
 	$self->{'errorString'} .= "Table MRDEF not found in database.";
 	$self->{'errorCode'} = 2;
 	return;	
     }
-    if(!defined $tables{"SRDEF"}) {
+    if(!defined $tables{"SRDEF"} and !defined $tables{"srdef"}) {
 	$self->{'errorString'} .= "\nError (UMLS::Interface->_initialize()) - ";
 	$self->{'errorString'} .= "Table SRDEF not found in database.";
 	$self->{'errorCode'} = 2;
 	return;	
     }
-    if(!defined $tables{"MRREL"}) {
+    if(!defined $tables{"MRREL"} and !defined $tables{"mrrel"}) {
 	$self->{'errorString'} .= "\nError (UMLS::Interface->_initialize()) - ";
 	$self->{'errorString'} .= "Table MRREL not found in database.";
 	$self->{'errorCode'} = 2;
 	return;	
     }
-    if(!defined $tables{"MRDOC"}) {
+       if(!defined $tables{"MRDOC"} and !defined $tables{"mrdoc"}) {
 	$self->{'errorString'} .= "\nError (UMLS::Interface->_initialize()) - ";
 	$self->{'errorString'} .= "Table MRDOC not found in database.";
 	$self->{'errorCode'} = 2;
 	return;	
     }
-    if(!defined $tables{"MRSAB"}) {
+    if(!defined $tables{"MRSAB"} and !defined $tables{"mrsab"}) {
 	$self->{'errorString'} .= "\nError (UMLS::Interface->_initialize()) - ";
 	$self->{'errorString'} .= "Table MRSAB not found in database.";
 	$self->{'errorCode'} = 2;
 	return;	
     }
-
+    
     #  get the version info...
     $arrRef = $db->selectcol_arrayref("select EXPL from MRDOC where VALUE = \'mmsys.version\'");
     if($db->err()) {
@@ -704,6 +704,7 @@ sub getConceptList
 	return ();
     }    
     
+    #print STDERR "select distinct CUI from MRCONSO where STR='$term' and ($sources)\n";
     my $arrRef = $db->selectcol_arrayref("select distinct CUI from MRCONSO where STR='$term' and ($sources)");
     if($self->checkError($function)) { return (); }
     
@@ -1224,7 +1225,7 @@ sub _markCycles
 	    }
 	    
 	    if($rel=/CHD/) {
-		my $ara = $db->do("update MRREL set CVF=1 where CUI1='$cui1' and CUI2='$cui2' and REL='CHD' and ($sources)");
+		my $ara = $db->do("update MRREL set CVF=1 where CUI1='$cui1' and CUI2='_$cui2' and REL='CHD' and ($sources)");
 		my $arb = $db->do("update MRREL set CVF=1 where CUI2='$cui1' and CUI2='$cui1' and REL='PAR' and ($sources)");
 	    }
 	    
@@ -1269,11 +1270,14 @@ sub _checkTableExists {
     my $t      = "";
     my %tables = ();
     while(($t) = $sth->fetchrow()) {
-	$tables{$t} = 1;
+	$tables{lc($t)} = 1;
+	if($debug) {
+	    print STDERR "Table: $t\n";
+	}
     }
     $sth->finish();
     
-    if(!defined $tables{$table}) { 
+    if(!defined $tables{lc($table)}) { 
 	if($debug) { print STDERR "  returning 0 ... $table does not exist\n"; } 
 	return 0; 
     }
@@ -1424,8 +1428,9 @@ sub _setDepth {
 	    
 	}
 	
+	my $indexname = "$tableName" . "_CUIINDEX";
 	#  create index on the newly formed table
-	my $index = $sdb->do("create index CUIINDEX on $tableName (CUI)");
+	my $index = $sdb->do("create index $indexname on $tableName (CUI)");
 	if($self->checkError($function)) { return (); }
     }
     
@@ -1944,6 +1949,49 @@ sub getParents
 }
 
 ################# new function as of v0.03
+#  Returns the relations of a concept given a specified source
+sub getRelations
+{
+    my $self    = shift;
+    my $concept = shift;
+
+    return () if(!defined $self || !ref $self);
+    
+    my $function = "getRelations";
+    #&_debug($function);
+
+    if(!$concept) {
+	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "Undefined input values.";
+	$self->{'errorCode'} = 2 if($self->{'errorCode'} < 1);
+	return ();
+    }
+
+    if($self->validCui($concept)) {
+	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "Incorrect input value ($concept).";
+	$self->{'errorCode'} = 2 if($self->{'errorCode'} < 1);
+	return undef;
+    } 
+    
+    my $db = $self->{'db'};
+    if(!$db) {
+	$self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "A db is required.";
+	$self->{'errorCode'} = 2;
+	return ();
+    }
+    
+    $self->{'traceString'} = "";
+    
+    my $arrRef = $db->selectcol_arrayref("select distinct REL from MRREL where (CUI1='$concept' or CUI2='$concept') and ($sources) and CVF is null");
+    
+    if($self->checkError($function)) { return (); }
+    
+    return @{$arrRef};
+}
+
+################# new function as of v0.03
 #  Depth First Search (DFS) in order to determine 
 #  the maximum depth of the taxonomy 
 sub _initializeDepthFirstSearch
@@ -2083,6 +2131,20 @@ sub findMinimumDepth
     my $cui  = shift;
 
     my $function = "findMinimumDepth";
+
+    return () if(!defined $self || !ref $self);
+
+    #  determine the cycles and depth of the taxonomy if not already done
+    my $depthCheck = $self->_setDepth();
+
+    my $sdb = $self->{'sdb'};
+
+    if(!$sdb) {
+	$self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "A db is required.";
+	$self->{'errorCode'} = 2;
+	return ();
+    }    
     
     if(!$cui) {
 	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
@@ -2101,23 +2163,18 @@ sub findMinimumDepth
     return () if(! (defined $self->checkConceptExists($cui)));
 
     if(exists $parentTaxonomy{$cui}) { return 1; }
-
-    my $paths = $self->pathsToRoot($cui);
-
-    if($#{$paths} < 0) { return (); }
-
-    my $firstPath = pop @{$paths};
-    my @firstNodes = split/\s+/, $firstPath;
-    my $minimum = $#firstNodes + 1;
     
-    foreach my $path (@{$paths}) {
-	my @nodes = split/\s+/, $path;
-	if($minimum > ($#nodes+1)) {
-	    $minimum = $#nodes + 1;
-	}
+    my $depths = $sdb->selectcol_arrayref("select DEPTH from $tableName where CUI=\'$cui\'");
+    if($self->checkError($function)) { return (); }
+    
+    my $min = shift @{$depths};
+    foreach my $depth (@{$depths}) {
+	if($depth < $min) { $min = $depth; }
     }
+    
+    $min++;
 
-    return $minimum;
+    return $min;
 }
 
 sub findMaximumDepth
@@ -2126,6 +2183,21 @@ sub findMaximumDepth
     my $cui  = shift;
 
     my $function = "findMaximumDepth";
+
+
+    return () if(!defined $self || !ref $self);
+
+    #  determine the cycles and depth of the taxonomy if not already done
+    my $depthCheck = $self->_setDepth();
+
+    my $sdb = $self->{'sdb'};
+
+    if(!$sdb) {
+	$self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "A db is required.";
+	$self->{'errorCode'} = 2;
+	return ();
+    }    
     
     if(!$cui) {
 	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
@@ -2143,22 +2215,17 @@ sub findMaximumDepth
     
     return () if(! (defined $self->checkConceptExists($cui)));
     
-    my $paths = $self->pathsToRoot($cui);
+    my $depths = $sdb->selectcol_arrayref("select DEPTH from $tableName where CUI=\'$cui\'");
+    if($self->checkError($function)) { return (); }
     
-    if($#{$paths} < 0) { return (); }
-
-    my $firstPath = pop @{$paths};
-    my @firstNodes = split/\s+/, $firstPath;
-    my $maximum = $#firstNodes + 1;
-    
-    foreach my $path (@{$paths}) {
-	my @nodes = split/\s+/, $path;
-	if($maximum < ($#nodes+1)) {
-	    $maximum = $#nodes + 1;
-	}
+    my $max = shift @{$depths};
+    foreach my $depth (@{$depths}) {
+	if($depth > $max) { $max = $depth; }
     }
+
+    $max++;
     
-    return $maximum;
+    return $max;
 }
 
 ################# new function as of v0.03
@@ -2780,6 +2847,7 @@ sub getCuiDef
 
     $self->{'traceString'} = "";
     
+    #my $arrRef = $db->selectcol_arrayref("select DEF from MRDEF where CUI=\'$concept\' and $sources");
     my $arrRef = $db->selectcol_arrayref("select DEF from MRDEF where CUI=\'$concept\'");
     if($self->checkError($function)) { return (); }
     
