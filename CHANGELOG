@@ -1,6 +1,25 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.23 to 0.25
+    1. Fixed mysql error that was occuring in UMLS-Interface
+
+        DBD::mysql::db do failed: You have an error in your SQL syntax; 
+        check the manual that corresponds to your MySQL server version 
+        for the right syntax to use near '' at line 1 at 
+        /usr/local/share/perl/5.10.0/UMLS/Interface.pm line 1063, <STDIN> 
+        line 2.
+
+       This was also happening on line 1066 - both should be fixed now.
+
+    2. Updated INSTALL documentation - nothing major just some clean up
+
+    3. Added a --forcerun option which will bypass any questions about
+    whether or not you would like to set up an index on a specified set of
+    relations/sources
+
+    4. Updated the documentation of the programs in the util/ directory
+
   Changes from version 0.21 to 0.23
 1. Added a getRelation function which returns all the possible 
    relations in the MRREL file given a specified CUI and 
@@ -64,8 +83,8 @@ NAME
        A file containing pairs of concepts or terms in the following format:
 
         term1<>term2 
-    
-        or 
+        
+    or 
 
         cui1<>cui2
 
@@ -91,7 +110,7 @@ NAME
           getSt.pl    which returns the semantic type of a given CUI
                       or TERM in the UMLS. This program uses the three 
                       above functions.
-      
+
     3. Added the function checkConceptExists which returns true or false
     whether a concept exists in the current view of the UMLS (this is based
     on the sources and relations that are being used). This function was

@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-getRelation.pl - This programs returns all CUIs of a given relation.
+getRelated.pl - This programs returns all CUIs of a given relation.
 
 =head1 SYNOPSIS
 
@@ -11,7 +11,7 @@ given a specified set of sources.
 
 =head1 USAGE
 
-Usage: getRelation.pl [OPTIONS] [CUI|TERM] REL
+Usage: getRelated.pl [OPTIONS] [CUI|TERM] REL
 
 =head1 INPUT
 
@@ -250,7 +250,7 @@ sub errorCheck
 ##############################################################################
 sub minimalUsageNotes {
     
-    print "Usage: getRelation.pl [OPTIONS] [CUI|TERM] REL\n";
+    print "Usage: getRelated.pl [OPTIONS] [CUI|TERM] REL\n";
     &askHelp();
     exit;
 }
@@ -261,11 +261,11 @@ sub minimalUsageNotes {
 sub showHelp() {
 
         
-    print "This is a utility that takes as input a CUI or a \n";
-    print "term and returns all of its possible relation given\n";
+    print "This is a utility that takes as input a CUI (or a \n";
+    print "term) and a relation and returns all the related CUIs \n";
     print "a specified set of sources\n\n";
   
-    print "Usage: getRelation.pl [OPTIONS] [CUI|TERM] REL\n\n";
+    print "Usage: getRelated.pl [OPTIONS] [CUI|TERM] REL\n\n";
 
     print "Options:\n\n";
 
@@ -290,7 +290,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getRelated.pl,v 1.9 2009/02/09 22:49:54 btmcinnes Exp $';
+    print '$Id: getRelated.pl,v 1.10 2009/10/13 18:46:06 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 
@@ -298,6 +298,6 @@ sub showVersion {
 #  function to output "ask for help" message when user's goofed
 ##############################################################################
 sub askHelp {
-    print STDERR "Type getRelation.pl --help for help.\n";
+    print STDERR "Type getRelated.pl --help for help.\n";
 }
     

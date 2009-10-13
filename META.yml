@@ -1,11 +1,14 @@
-# http://module-build.sourceforge.net/META-spec.html
-#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
-name:         UMLS-Interface
-version:      0.23
-version_from: lib/UMLS/Interface.pm
-installdirs:  site
-requires:
+--- #YAML:1.0
+name:                UMLS-Interface
+version:             0.25
+abstract:            Perl interface to the Unified Medical Language System (UMLS)
+license:             ~
+author:              
+    - Bridget McInnes <bthomson@cs.umn.edu>, Ted Pedersen <tpederse@d.umn.edu>, Serguei Pakhomov <pakh0002@umn.edu>, Siddharth Patwardhan <sidd@cs.utah.edu>
+generated_by:        ExtUtils::MakeMaker version 6.42
+distribution_type:   module
+requires:     
     DBI:                           0
-
-distribution_type: module
-generated_by: ExtUtils::MakeMaker version 6.30_01
+meta-spec:
+    url:     http://module-build.sourceforge.net/META-spec-v1.3.html
+    version: 1.3

@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-getCuiDef.pl - This program returns a concepts semantic type(s).
+getSts.pl - This program returns a concepts semantic type(s).
 
 =head1 SYNOPSIS
 
@@ -10,7 +10,7 @@ This program takes in a CUI or a TERM and returns its semantic type(s).
 
 =head1 USAGE
 
-Usage: getSts.pl [OPTIONS] [TERM|CUI\
+Usage: getSts.pl [OPTIONS] [TERM|CUI]
 
 =head1 INPUT
 
@@ -251,7 +251,7 @@ sub errorCheck
 ##############################################################################
 sub minimalUsageNotes {
     
-    print "Usage: queryCui.pl [OPTIONS] [TERM|CUI] \n";
+    print "Usage: getSts.pl [OPTIONS] [TERM|CUI] \n";
     &askHelp();
     exit;
 }
@@ -290,7 +290,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getSts.pl,v 1.5 2009/02/09 22:49:54 btmcinnes Exp $';
+    print '$Id: getSts.pl,v 1.7 2009/10/13 19:11:43 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 
@@ -298,6 +298,6 @@ sub showVersion {
 #  function to output "ask for help" message when user's goofed
 ##############################################################################
 sub askHelp {
-    print STDERR "Type queryCui.pl --help for help.\n";
+    print STDERR "Type getSts.pl --help for help.\n";
 }
     

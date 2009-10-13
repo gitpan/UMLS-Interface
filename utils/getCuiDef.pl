@@ -244,7 +244,7 @@ sub errorCheck
 ##############################################################################
 sub minimalUsageNotes {
     
-    print "Usage: queryCui.pl [OPTIONS] [CUI|TERM] \n";
+    print "Usage: getCuiDef.pl [OPTIONS] [CUI|TERM] \n";
     &askHelp();
     exit;
 }
@@ -283,7 +283,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getCuiDef.pl,v 1.10 2009/02/11 23:32:25 btmcinnes Exp $';
+    print '$Id: getCuiDef.pl,v 1.11 2009/10/13 18:46:06 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 
@@ -291,6 +291,6 @@ sub showVersion {
 #  function to output "ask for help" message when user's goofed
 ##############################################################################
 sub askHelp {
-    print STDERR "Type queryCui.pl --help for help.\n";
+    print STDERR "Type getCuiDef.pl --help for help.\n";
 }
     

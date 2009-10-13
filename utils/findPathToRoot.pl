@@ -46,6 +46,11 @@ The socket your mysql is using. DEFAULT: /tmp/mysql.sock
 
 Database contain UMLS DEFAULT: umls
 
+=head4 --forcerun
+
+This option will bypass any command prompts such as asking 
+if you would like to continue with the index creation. 
+
 =head4 --help
 
 Displays the quick summary of program options.
@@ -116,7 +121,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui" );
+GetOptions( "version", "help", "forcerun", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui");
 
 
 #  if help is defined, print out help
@@ -144,46 +149,32 @@ my $database = "umls";
 if(defined $opt_database) { $database = $opt_database; }
 my $hostname = "localhost";
 if(defined $opt_hostname) { $hostname = $opt_hostname; }
-my $socket   = "/tmp/mysql.sock";
+my $socket   = "/var/run/mysqld/mysqld.sock";
 if(defined $opt_socket)   { $socket   = $opt_socket;   }
 
 my $umls = "";
 
-if(defined $opt_username and defined $opt_password and defined $opt_config) {
-    $umls = UMLS::Interface->new({"driver" => "mysql", 
-				  "database" => "$database", 
-				  "username" => "$opt_username",  
-				  "password" => "$opt_password", 
-				  "hostname" => "$hostname", 
-				  "socket"   => "$socket",
-			          "config"   => "$opt_config"}); 
-    die "Unable to create UMLS::Interface object.\n" if(!$umls);
-    ($errCode, $errString) = $umls->getError();
-    die "$errString\n" if($errCode);
+my %option_hash = ();
+
+if(defined $opt_config) {
+    $option_hash{"config"} = $opt_config;
 }
-elsif(defined $opt_username and defined $opt_password) {
-    $umls = UMLS::Interface->new({"driver" => "mysql", 
-				  "database" => "$database", 
-				  "username" => "$opt_username",  
-				  "password" => "$opt_password", 
-				  "hostname" => "$hostname", 
-				  "socket"   => "$socket"}); 
-    die "Unable to create UMLS::Interface object.\n" if(!$umls);
-    ($errCode, $errString) = $umls->getError();
-    die "$errString\n" if($errCode);
+if(defined $opt_forcerun) {
+    $option_hash{"forcerun"} = $opt_forcerun;
 }
-elsif(defined $opt_config) {
-    $umls = UMLS::Interface->new({"config" => "$opt_config"});
-    die "Unable to create UMLS::Interface object.\n" if(!$umls);
-    ($errCode, $errString) = $umls->getError();
-    die "$errString\n" if($errCode);
+if(defined $opt_username and defined $opt_password) {
+    $option_hash{"driver"}   = "mysql";
+    $option_hash{"database"} = $database;
+    $option_hash{"username"} = $opt_username;
+    $option_hash{"password"} = $opt_password;
+    $option_hash{"hostname"} = $hostname;
+    $option_hash{"socket"}   = $socket;
 }
-else {
-    $umls = UMLS::Interface->new(); 
-    die "Unable to create UMLS::Interface object.\n" if(!$umls);
-    ($errCode, $errString) = $umls->getError();
-    die "$errString\n" if($errCode);
-}
+
+$umls = UMLS::Interface->new(\%option_hash); 
+die "Unable to create UMLS::Interface object.\n" if(!$umls);
+($errCode, $errString) = $umls->getError();
+die "$errString\n" if($errCode);
 
 &errorCheck($umls);
 
@@ -279,6 +270,11 @@ sub showHelp() {
 
     print "--config FILE            Configuration file\n\n";
 
+    print "--forcerun               This option will bypass any command \n";
+    print "                         prompts such as asking if you would \n";
+    print "                         like to continue with the index \n";
+    print "                         creation. \n\n";
+
     print "--version                Prints the version number\n\n";
  
     print "--help                   Prints this help message.\n\n";
@@ -288,7 +284,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findPathToRoot.pl,v 1.12 2009/02/09 22:49:54 btmcinnes Exp $';
+    print '$Id: findPathToRoot.pl,v 1.13 2009/10/13 14:07:10 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

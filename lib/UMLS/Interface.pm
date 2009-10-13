@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.72 2009/05/28 17:37:13 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.76 2009/10/13 18:46:03 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -44,7 +44,7 @@ use DBI;
 use bytes;
 use vars qw($VERSION);
 
-$VERSION = '0.23';
+$VERSION = '0.25';
 
 my $debug = 0;
 
@@ -87,6 +87,8 @@ my $childFile  = "";
 my $parentFile = "";
 
 my $markFlag   = 0;
+
+my $option_forcerun = 0;
 
 my %cycleHash = ();
 
@@ -216,6 +218,12 @@ sub _initialize
     my $password     = $params->{'password'};
     my $config       = $params->{'config'};
     my $cyclefile    = $params->{'cyclefile'};
+    my $forcerun     = $params->{'forcerun'};
+
+    #  check if a forced run has been identified
+    if(defined $forcerun) {
+	$option_forcerun = 1;
+    }
     
     #  to store the database object
     my $db;
@@ -448,6 +456,7 @@ sub _initialize
     
     print STDERR "  Configuration file:\n";
     print STDERR "    $configFile\n\n";
+
     
     if($debug) {
 	print STDERR "\nConfiguration file information:\n";
@@ -462,9 +471,17 @@ sub _initialize
     }
     
 
+    #  check if the mrconso table is lower cased. this means 
+    #  that the dbi program is returning all of the table 
+    #  lower cased the ones that we create need to be lowered
+    $tableName   = lc($tableName);
+    $parentTable = lc($parentTable);
+    $childTable  = lc($childTable);
+    
+
     if(! (-e $configFile)) {
 	
-	open(CONFIG, ">$configFile")||
+	open(CONFIG, ">$configFile") ||
 	    die "Could not open configuration g file: $configFile\n";
     
 	my @sarray = ();
@@ -1060,11 +1077,14 @@ sub _setUpperLevelTaxonomy {
 		push @{$parentTaxonomy{$cui}}, $sab_cui;
 		push @{$childrenTaxonomy{$sab_cui}}, $cui;
 
-		my $arrRef1 = $sdb->do("INSERT INTO $parentTable (CUI1, CUI2) VALUES ('$cui', '$sab_cui'");	    
+		my $arrRef1 = $sdb->do("INSERT INTO $parentTable (CUI1, CUI2) VALUES ('$cui', '$sab_cui')");	    
 		if($self->checkError($function)) { return (); }   		
-
-		my $arrRef2 = $sdb->do("INSERT INTO $parentTable (CUI1, CUI2) VALUES ('$sab_cui', '$cui'");	    
-		if($self->checkError($function)) { return (); }   		
+		
+		
+		
+		my $arrRef2 = $sdb->do("INSERT INTO $parentTable (CUI1, CUI2) VALUES ('$sab_cui', '$cui')");	    
+		if($self->checkError($function)) { return (); } 
+		
 		
 		print PAR "$cui $sab_cui\n";
 		print CHD "$sab_cui $cui\n";
@@ -1381,13 +1401,19 @@ sub _setDepth {
 	    print STDERR "This could be very time consuming. If the index is not\n";
 	    print STDERR "created, you will not be able to use this command with\n";
 	    print STDERR "these sources.\n\n";
-	    print STDERR "Do you want to continue with index creation (y/n)";
+
+	    if($option_forcerun == 0) {
+		print STDERR "Do you want to continue with index creation (y/n)";
 	    
-	    my $answer = <STDIN>; chomp $answer;
+		my $answer = <STDIN>; chomp $answer;
 	    
-	    if($answer=~/(N|n)/) {
-		print STDERR "Exiting program now.\n\n";
-		exit;
+		if($answer=~/(N|n)/) {
+		    print STDERR "Exiting program now.\n\n";
+		    exit;
+		}
+	    }
+	    else {
+		print "Running index ... \n";
 	    }
 	    
 	    #  mark the CVF relations if they haven't been done yet

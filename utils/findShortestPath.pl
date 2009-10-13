@@ -136,7 +136,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui", "infile=s" );
+GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui", "infile=s", "forcerun" );
 
 
 #  if help is defined, print out help
@@ -188,42 +188,27 @@ my $socket   = "/tmp/mysql.sock";
 if(defined $opt_socket)   { $socket   = $opt_socket;   }
 
 my $umls = "";
+my %option_hash = ();
 
-if(defined $opt_username and defined $opt_password and defined $opt_config) {
-    $umls = UMLS::Interface->new({"driver" => "mysql", 
-				  "database" => "$database", 
-				  "username" => "$opt_username",  
-				  "password" => "$opt_password", 
-				  "hostname" => "$hostname", 
-				  "socket"   => "$socket",
-			          "config"   => "$opt_config"}); 
-    die "Unable to create UMLS::Interface object.\n" if(!$umls);
-    ($errCode, $errString) = $umls->getError();
-    die "$errString\n" if($errCode);
+if(defined $opt_config) {
+    $option_hash{"config"} = $opt_config;
 }
-elsif(defined $opt_username and defined $opt_password) {
-    $umls = UMLS::Interface->new({"driver" => "mysql", 
-				  "database" => "$database", 
-				  "username" => "$opt_username",  
-				  "password" => "$opt_password", 
-				  "hostname" => "$hostname", 
-				  "socket"   => "$socket"}); 
-    die "Unable to create UMLS::Interface object.\n" if(!$umls);
-    ($errCode, $errString) = $umls->getError();
-    die "$errString\n" if($errCode);
+if(defined $opt_forcerun) {
+    $option_hash{"forcerun"} = $opt_forcerun;
 }
-elsif(defined $opt_config) {
-    $umls = UMLS::Interface->new({"config" => "$opt_config"});
-    die "Unable to create UMLS::Interface object.\n" if(!$umls);
-    ($errCode, $errString) = $umls->getError();
-    die "$errString\n" if($errCode);
+if(defined $opt_username and defined $opt_password) {
+    $option_hash{"driver"}   = "mysql";
+    $option_hash{"database"} = $database;
+    $option_hash{"username"} = $opt_username;
+    $option_hash{"password"} = $opt_password;
+    $option_hash{"hostname"} = $hostname;
+    $option_hash{"socket"}   = $socket;
 }
-else {
-    $umls = UMLS::Interface->new(); 
-    die "Unable to create UMLS::Interface object.\n" if(!$umls);
-    ($errCode, $errString) = $umls->getError();
-    die "$errString\n" if($errCode);
-}
+
+$umls = UMLS::Interface->new(\%option_hash); 
+die "Unable to create UMLS::Interface object.\n" if(!$umls);
+($errCode, $errString) = $umls->getError();
+die "$errString\n" if($errCode);
 
 &errorCheck($umls);
 
@@ -366,7 +351,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findShortestPath.pl,v 1.15 2009/02/18 18:20:26 btmcinnes Exp $';
+    print '$Id: findShortestPath.pl,v 1.16 2009/10/13 14:07:10 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 
