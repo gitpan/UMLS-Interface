@@ -12,6 +12,8 @@ DESCRIPTION
     created it can not be used by used by another program.
     4. better concurrency control so that multiple versions of the same
     table are not constructed at the same time.
+    5. Shorten table names
+    6. Reduce storage of path information
 
 AUTHORS
     Bridget McInnes <bthomson at cs.umn.edu>

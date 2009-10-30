@@ -1,6 +1,12 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.25 to 0.27
+    1. Added a --verbose option will print out path information to a file
+    rather than having this be done automatically. This will reduce the
+    amount of storage space required to hold the path information for a
+    given set of sources and relations.
+
   Changes from version 0.23 to 0.25
     1. Fixed mysql error that was occuring in UMLS-Interface
 
@@ -21,13 +27,13 @@ NAME
     4. Updated the documentation of the programs in the util/ directory
 
   Changes from version 0.21 to 0.23
-1. Added a getRelation function which returns all the possible 
-   relations in the MRREL file given a specified CUI and 
-   source. There is a corresponding util program getRelation.pl 
-   to show how this is used.
-2. Modified checking the existance of the UMLS tables. Before it 
-   was expecting the table names to be all capatalized but now 
-   they can be in lower case as well.
+    1. Added a getRelation function which returns all the possible relations
+    in the MRREL file given a specified CUI and source. There is a
+    corresponding util program getRelation.pl to show how this is used. 2.
+    Modified checking the existance of the UMLS tables. Before it was
+    expecting the table names to be all capatalized but now they can be in
+    lower case as well.
+
   Changes from version 0.19 to 0.21
     1. Added check to see if program files exist prior to removing them just
     in case they don't exist an error isn't going to display

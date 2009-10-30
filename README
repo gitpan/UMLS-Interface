@@ -2,72 +2,65 @@ NAME
     UMLS::Interface README
 
   SYNOPSIS
-        This package provides a Perl interface to the Unified Medical 
-        Language System (UMLS). The UMLS is a knowledge representation 
-        framework encoded designed to support broad scope biomedical 
-        research queries. There exists three major sources in the UMLS. 
-        The Metathesaurus which is a taxonomy of medical concepts, the 
-        Semantic Network which categorizes concepts in the Metathesaurus, 
-        and the SPECIALIST Lexicon which contains a list of biomedical 
-        and general English terms used in the biomedical domain. The 
-        UMLS-Interface package is set up to access the Metathesaurus
-        and the Semantic Network present in a mysql database.
+    This package provides a Perl interface to the Unified Medical Language
+    System (UMLS). The UMLS is a knowledge representation framework encoded
+    designed to support broad scope biomedical research queries. There
+    exists three major sources in the UMLS. The Metathesaurus which is a
+    taxonomy of medical concepts, the Semantic Network which categorizes
+    concepts in the Metathesaurus, and the SPECIALIST Lexicon which contains
+    a list of biomedical and general English terms used in the biomedical
+    domain. The UMLS-Interface package is set up to access the Metathesaurus
+    and the Semantic Network present in a mysql database.
 
   INSTALL
-        To install the module, run the following magic commands:
+    To install the module, run the following magic commands:
 
-          perl Makefile.PL
-          make
-          make test
-          make install
+      perl Makefile.PL
+      make
+      make test
+      make install
 
-        This will install the module in the standard location. You will, most
-        probably, require root privileges to install in standard system
-        directories. To install in a non-standard directory, specify a prefix
-        during the 'perl Makefile.PL' stage as:
+    This will install the module in the standard location. You will, most
+    probably, require root privileges to install in standard system
+    directories. To install in a non-standard directory, specify a prefix
+    during the 'perl Makefile.PL' stage as:
 
-          perl Makefile.PL PREFIX=/home/programs
+      perl Makefile.PL PREFIX=/home/programs
 
-        It is possible to modify other parameters during installation. The
-        details of these can be found in the ExtUtils::MakeMaker
-        documentation. However, it is highly recommended not messing around
-        with other parameters, unless you know what you're doing.
+    It is possible to modify other parameters during installation. The
+    details of these can be found in the ExtUtils::MakeMaker documentation.
+    However, it is highly recommended not messing around with other
+    parameters, unless you know what you're doing.
 
   DATABASE SETUP
-        The interface assumes that the UMLS is present as a mysql database. 
-        The names of these databases can be passed as configuration options 
-        at initialization. However, if the names of the database is not 
-        provided at initialization, then default values are used -- the 
-        database for the UMLS is called 'umls'.
+    The interface assumes that the UMLS is present as a mysql database. The
+    names of these databases can be passed as configuration options at
+    initialization. However, if the names of the database is not provided at
+    initialization, then default values are used -- the database for the
+    UMLS is called 'umls'.
 
-        The UMLS database must contain six tables: 
-            1. MRREL
-            2. MRCONSO
-            3. MRSAB
-            4. MRDOC
-            5. MRDEF
-            6. SRDEF
-            7. MRSTY
+    The UMLS database must contain six tables: 1. MRREL 2. MRCONSO 3. MRSAB
+    4. MRDOC 5. MRDEF 6. SRDEF 7. MRSTY
 
-        All other tables in the databases will be ignored, and any of these
-        tables missing would raise an error.
+    All other tables in the databases will be ignored, and any of these
+    tables missing would raise an error.
 
-        The mysql server can be on the same machine as the module or could
-        be on a remotely accessible machine. The location of the server can
-        be provided during initialization of the module.
+    The mysql server can be on the same machine as the module or could be on
+    a remotely accessible machine. The location of the server can be
+    provided during initialization of the module.
 
   INITIALIZING THE MODULE
-        To create an instance of the interface object, using default values for
-        all configuration options:
+    To create an instance of the interface object, using default values for
+    all configuration options:
 
-          use UMLS::Interface;
-          my $interface = UMLS::Interface->new();
+      use UMLS::Interface;
+      my $interface = UMLS::Interface->new();
 
-        Configuration options can be included in the MySQL my.cnf 
-        file. This is preferable. The directions for this are in 
-        the INSTALL file. It is Stage 5 Step D.  
+    Configuration options can be included in the MySQL my.cnf file. This is
+    preferable. The directions for this are in the INSTALL file. It is Stage
+    5 Step D.
 
-        The following configuration options are also provided though:
+    The following configuration options are also provided though:
 
         'driver'       -> Default value 'mysql'. This option specifies the 
                           Perl DBD driver that should be used to access the
@@ -92,23 +85,24 @@ NAME
                           without a password.
 
   USING THE MODULE
-        Once the object of module is successfully created after following the
-        steps described in the previous section, a number of methods can be
-        called upon this object:
+    Once the object of module is successfully created after following the
+    steps described in the previous section, a number of methods can be
+    called upon this object:
 
-          getError()                -- Returns the error code and error string from 
-                                       the last method call on the object.
-          root()                    -- Returns the concept ID of the root of the tree.
+          getError()                -- Returns the error code and error string
+                                       rom the last method call on the object.
+          root()                    -- Returns the concept ID of the root of 
+                                       the tree.
           depth()                   -- Returns the depth of the tree.
           version()                 -- Return the version of UMLS.
           exists()                  -- Determines if a CUI exists
           validCui()                -- Checks if CUI is a valid concept
           getSab()                  -- Returns the list of sources the concept
                                        exists in
-          getConceptList()          -- Returns the list of all concept IDs preset in
-                                       the database.
-          getTermsList()            -- Returns the list of terms corresponding to a 
-                                       particular concept ID.
+          getConceptList()          -- Returns the list of all concept IDs preset
+                                       in the database.
+          getTermsList()            -- Returns the list of terms corresponding to
+                                       a particular concept ID.
           getParents()              -- Returns the parent of a given CUI
           getChildren()             -- Returns the children of a given CUI
           pathsToRoot()             -- Returns a list of concept IDs that denote 
@@ -120,66 +114,61 @@ NAME
                                        two CUIs
           getCuiDef()               -- Returns the definition(s) of a given CUI
           dropTable()               -- Drops the temporary table created by 
-                                       the UMLS-Interface module of path information
-                                       for a specified set of sources
+                                       the UMLS-Interface module of path 
+                                       information for a specified set of sources
           findMinimumDepth()        -- Returns the minimum depth of a given CUI
                                        in the current view of the UMLS
           findMaximumDepth()        -- Returns the maximum depth of a given CUI
                                        in the current view of the UMLS
           getSt()                   -- Returns the TUI(s) of the semantic type(s)
                                        associated with a given CUI
-          getStAbr()                -- Returns the abbreviation of a semantic type 
-                                       given its cooresponding TUI
-          getStString()             -- Returns the name of the semantic type given 
-                                       its cooresponding abbreviation      
+          getStAbr()                -- Returns the abbreviation of a semantic 
+                                       type given its cooresponding TUI
+          getStString()             -- Returns the name of the semantic type 
+                                       given its cooresponding abbreviation      
           getStDef()                -- Returns the definition of a semantic type
                                        given its cooresponding abbreviation
-          checkConceptExists()      -- Returns true or false (1 or 0) if a concept
-                                       exists given the current view of the UMLS
-          getRelated()              -- Returns all the CUIs related to a specified 
-	                               CUI given a specified relation REL
-	  getRelations()            -- Returns all the relations in the MRREL file 
-	                               associated with a given CUI
-	
-  
-        These methods essentially expose an interface as required by the
-        UMLS::Similarity modules. The UMLS::Similarity modules require
-        that any interface to a taxonomy provide the above methods.
+          checkConceptExists()      -- Returns true or false (1 or 0) if a 
+                                       concept exists given the current view of 
+                                       the UMLS
+    These methods essentially expose an interface as required by the
+    UMLS::Similarity modules. The UMLS::Similarity modules require
+    that any interface to a taxonomy provide the above methods.
 
   CONTACT US
-      If you have any trouble installing and using UMLS-Interface, please 
-      contact us via the users mailing list : 
+    If you have any trouble installing and using UMLS-Interface, please
+    contact us via the users mailing list :
 
-        umls-similarity@yahoogroups.com
+    umls-similarity@yahoogroups.com
 
-      You can join this group by going to:
+    You can join this group by going to:
 
-        http://tech.groups.yahoo.com/group/umls-similarity/
+    <http://tech.groups.yahoo.com/group/umls-similarity/>
 
-      You may also contact us directly if you prefer :
+    You may also contact us directly if you prefer :
 
         Bridget T. McInnes: bthomson at cs.umn.edu
 
         Ted Pedersen      : tpederse at d.umn.edu
 
   SOFTWARE COPYRIGHT AND LICENSE
-        Copyright (C) 2004-2009 Bridget T McInnes, Siddharth Patwardhan, Serguei 
-        Pakhomov and Ted Pedersen
+    Copyright (C) 2004-2009 Bridget T McInnes, Siddharth Patwardhan, Serguei
+    Pakhomov and Ted Pedersen
 
-        This suite of programs is free software; you can redistribute it and/or
-        modify it under the terms of the GNU General Public License as
-        published by the Free Software Foundation; either version 2 of the
-        License, or (at your option) any later version.
+    This suite of programs is free software; you can redistribute it and/or
+    modify it under the terms of the GNU General Public License as published
+    by the Free Software Foundation; either version 2 of the License, or (at
+    your option) any later version.
 
-        This program is distributed in the hope that it will be useful, but
-        WITHOUT ANY WARRANTY; without even the implied warranty of
-        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-        General Public License for more details.
+    This program is distributed in the hope that it will be useful, but
+    WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+    Public License for more details.
 
-        You should have received a copy of the GNU General Public License along
-        with this program; if not, write to the Free Software Foundation, Inc.,
-        59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
-        Note: The text of the GNU General Public License is provided in the
-        file 'GPL.txt' that you should have received with this distribution.
+    Note: The text of the GNU General Public License is provided in the file
+    'GPL.txt' that you should have received with this distribution.
 

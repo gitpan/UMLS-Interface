@@ -47,11 +47,21 @@ The socket your mysql is using. DEFAULT: /tmp/mysql.sock
 
 Database contain UMLS DEFAULT: umls
 
-=head4 --help
+=head3 --forcerun
+
+This option will bypass any command prompts such as asking 
+if you would like to continue with the index creation. 
+
+=head3 --verbose
+
+This option will print out the table information to the 
+config file that you specified.
+
+=head3 --help
 
 Displays the quick summary of program options.
 
-=head4 --version
+=head3 --version
 
 Displays the version information.
 
@@ -118,7 +128,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui", "forcerun" );
+GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui", "forcerun", "verbose" );
 
 
 #  if help is defined, print out help
@@ -158,6 +168,9 @@ if(defined $opt_config) {
 }
 if(defined $opt_forcerun) {
     $option_hash{"forcerun"} = $opt_forcerun;
+}
+if(defined $opt_verbose) {
+    $option_hash{"verbose"} = $opt_verbose;
 }
 if(defined $opt_username and defined $opt_password) {
     $option_hash{"driver"}   = "mysql";
@@ -291,6 +304,15 @@ sub showHelp() {
 
     print "--config FILE            Configuration file\n\n";
 
+
+    print "--forcerun               This option will bypass any command \n";
+    print "                         prompts such as asking if you would \n";
+    print "                         like to continue with the index \n";
+    print "                         creation. \n\n";
+
+    print "--verbose                This option prints out the path information\n";
+    print "                         to a file in your config directory.\n\n";
+
     print "--version                Prints the version number\n\n";
  
     print "--help                   Prints this help message.\n\n";
@@ -300,7 +322,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findLeastCommonSubsumer.pl,v 1.12 2009/10/13 14:07:10 btmcinnes Exp $';
+    print '$Id: findLeastCommonSubsumer.pl,v 1.3 2009/10/30 16:14:14 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

@@ -259,7 +259,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: queryTerm.pl,v 1.14 2009/02/09 22:49:54 btmcinnes Exp $';
+    print '$Id: queryTerm.pl,v 1.1.1.1 2009/10/14 15:38:57 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

@@ -109,13 +109,16 @@ CPAN MODULES
     If you have supervisor access, or have configured MCPAN for local
     install, you can install via:
 
-    perl -MCPAN -e shell > install DBI
+     perl -MCPAN -e shell
+     > install DBI
 
     If not, you can, "manually" install by downloading the *.tar.gz file,
     unpacking, and executing the following commands.
 
-    perl Makefile.PL PREFIX=/home/Bit-Vector LIB=/home/MyPerlLib make make
-    test make install
+     perl Makefile.PL PREFIX=/home/programs LIB=/home/lib
+     make
+     make test
+     make install
 
     Note that the PREFIX and LIB settings are just examples to help you
     create a local install, if you do not have supervisor (su) access.
@@ -139,8 +142,7 @@ Stage 3 - Install MySQL, if already installed go to Stage 4
     Sometimes the headers and libraries are not installed so you want to
     double check on that.
 
-    ==head2 Installing on Red Hat Enterprise Linux WS release 4 using rpms
-
+  Installing on Red Hat Enterprise Linux WS release 4 using rpms
     I installed this on Red Hat Enterprise Linux WS release 4 using rpms.
     So, I downloaded the corresponding rpms:
 
@@ -200,8 +202,9 @@ Stage 3 - Install MySQL, if already installed go to Stage 4
     I also installed this on Ubuntu. This was 100 times easier than using
     the rpms! Type the following commands:
 
-    sudo apt-get install mysql-common sudo apt-get install mysql-client sudo
-    apt-get install mysql-server
+     sudo apt-get install mysql-common
+     sudo apt-get install mysql-client
+     sudo apt-get install mysql-server
 
     You are done - much easier!
 
@@ -214,11 +217,11 @@ Stage 3 - Install MySQL, if already installed go to Stage 4
     which is probably a good idea - you can create a user account. Here is
     how I did it:
 
-    mysql> CREATE USER bthomson IDENTIFIED BY 'psswrd'; Query OK, 0 rows
-    affected (0.00 sec)
+     mysql> CREATE USER bthomson IDENTIFIED BY 'psswrd';
+     Query OK, 0 rows affected (0.00 sec)
 
-    mysql> GRANT ALL ON *.* TO bthomson; Query OK, 0 rows affected (0.00
-    sec)
+     mysql> GRANT ALL ON *.* TO bthomson;
+     Query OK, 0 rows affected (0.00 sec)
 
     Directions are in the mysql documentation:
 
@@ -265,267 +268,258 @@ Stage 4 - Install UMLS, if already installed go to Stage 5
     <http://www.nlm.nih.gov/research/umls/meta6.html>
 
   Step 1: Download the UMLS
-         The UMLS is freely available but you need to register for 
-         a UMLS license prior to downloading. 
+    The UMLS is freely available but you need to register for a UMLS license
+    prior to downloading.
 
-         You can register here: L<http://umlsks.nlm.nih.gov/>
+    You can register here:
 
-         The download link is here: L<http://www.nlm.nih.gov/research/umls/>
-         
+    <http://umlsks.nlm.nih.gov/>
+
+    The download link is here:
+
+    <http://www.nlm.nih.gov/research/umls/>
+
      Download the following files:
-           1. <current release>-1-meta.nlm  
-           2. <current release>-otherks.nlm    
-           3. <current release>-2-meta.nlm  
-           4. mmsys.zip       
-           5. <current release>.CHK  
+      1. <current release>-1-meta.nlm  
+      2. <current release>-otherks.nlm    
+      3. <current release>-2-meta.nlm  
+      4. mmsys.zip    
+      5. <current release>.CHK  
            6. Copyright_Notice.txt  
            7. README.txt
 
   Step 2: Unzip the mmsys.zip file (unzip mmsys.zip)
-            The following should be created:
-              1. linux_mmsys.sh
-              2. solaris_mmsys.sh
-              3. macintosh_mmsys.sh
-              4. windows_mmsys.bat
-              5. MMSYS/ (directory)
+    The following should be created: 1. linux_mmsys.sh 2. solaris_mmsys.sh
+    3. macintosh_mmsys.sh 4. windows_mmsys.bat 5. MMSYS/ (directory)
 
   Step 3: Run MetamorphoSys (the install wizard)
-           -- Run the appropriate .sh file for your system 
-                   --> I ran ./linux_mmsys.sh
+     -- Run the appropriate .sh file for your system 
+         --> I ran ./linux_mmsys.sh
 
-           -- Click 'Install UMLS'
+     -- Click 'Install UMLS'
 
-           -- INSTALL UMLS' Window will appear
-              - Type in your destination directory. I used 
-                the same directory as my Source.
-              - At the very least make certain that the Metathesaurus 
-                box is checked. Although, I installed all three of the 
-                Knowledge Sources: 'Metathesaurus', 'Semantic 
-                Network' and 'SPECIALIST Lexicon and Lexical Tools'.
-              - Click 'OK'
+     -- INSTALL UMLS' Window will appear
+        - Type in your destination directory. I used 
+          the same directory as my Source.
+        - At the very least make certain that the Metathesaurus 
+          box is checked. Although, I installed all three of the 
+          Knowledge Sources: 'Metathesaurus', 'Semantic 
+          Network' and 'SPECIALIST Lexicon and Lexical Tools'.
+        - Click 'OK'
 
-           -- 'Install UMLS' and 'MetamorphoSys Configuration' windows will appear
-               - Click 'New Configuration' in the 'MetamorphoSys Configuration' 
+     -- 'Install UMLS' and 'MetamorphoSys Configuration' windows will appear
+         - Click 'New Configuration' in the 'MetamorphoSys Configuration' 
                          
-           -- 'License Agreement Notice' window will appear
-              - Click 'Accept'
+ -- 'License Agreement Notice' window will appear
+         - Click 'Accept'
 
-           -- 'Select Default Subset' window will appear
-              - Click 'Level 0 + SNOMEDCT'          
-                    - Unless you don't want or do not have a license for 
-                      SNOMED-CT. then Click 'Level 0'
-              - Click 'Done'
+     -- 'Select Default Subset' window will appear
+         - Click 'Level 0 + SNOMEDCT'               
+         - Unless you don't want or do not have a license for 
+           SNOMED-CT. then Click 'Level 0'
+         - Click 'Done'
 
-           -- 'UMLS Metathesaurus Configuration' window will appear
-              - Click on the 'Output Options' tab
-              - Check the 'Write MySQL load script' box 
-                    - this is under the heading 'Write Database Load Scripts'
-              - Click 'Done' and then 'Begin Subset'
-                    - this is the last option on the list of options in the 
-                      top left hand corner of the window. 
-              - A box will appear asking if you would save the changes 
-                    - this is up to you; I clicked 'No'
+     -- 'UMLS Metathesaurus Configuration' window will appear
+         - Click on the 'Output Options' tab
+         - Check the 'Write MySQL load script' box 
+         - this is under the heading 'Write Database Load Scripts'
+       - Click 'Done' and then 'Begin Subset'
+         - this is the last option on the list of options in the 
+           top left hand corner of the window. 
+       - A box will appear asking if you would save the changes 
+         - this is up to you; I clicked 'No'
 
          Now the UMLS will install and the load scripts will be created 
                             
-       -- 'Finished' window will appear
-              - Click 'Done'
+ -- 'Finished' window will appear
+        - Click 'Done'
 
 Stage 5 - Load UMLS into MySQL, if already installed go to Stage 6
   Step 1: Create the MySQL database
-            Log into MySQL and create a database called 'umls' 
-            as follows:
+    Log into MySQL and create a database called 'umls' as follows:
 
-            CREATE DATABASE IF NOT EXISTS umls CHARACTER SET utf8 COLLATE utf8_unicode_ci;
+    CREATE DATABASE IF NOT EXISTS umls CHARACTER SET utf8 COLLATE
+    utf8_unicode_ci;
 
   Step 2: Modify the 'my.cnf' file.
-            This has been put in a different place every version or distribution 
-            that I have run this one. I have found it in the '/etc' directory 
-            as well as the '/etc/mysql' directory. 
+    This has been put in a different place every version or distribution
+    that I have run this one. I have found it in the '/etc' directory as
+    well as the '/etc/mysql' directory.
 
-            You can find where yours is by using the find command:
+    You can find where yours is by using the find command:
 
-                    sudo find / -name my.cnf
+        sudo find / -name my.cnf
 
+    If you do not have a my.cnf file check to see if you have a 'my.ini'
+    file (which one you have will depend on your system).
 
-            If you do not have a my.cnf file check to see if you have a 'my.ini' 
-            file (which one you have will depend on your system).
+    The following options need to be modified to optimize for read
+    performance, the MySQL 5 server requires changing buffer sizes to make
+    use of the memory available.
 
-            The following options need to be modified to optimize for read 
-            performance, the MySQL 5 server requires changing buffer sizes 
-            to make use of the memory available. 
+          key_buffer        = 300M
+          table_cache       = 300
+          sort_buffer_size  = 20M
+          read_buffer_size  = 20M
+          query_cache_limit = 3M
+          query_cache_size  = 100M
 
-                          key_buffer        = 300M
-                          table_cache       = 300
-                          sort_buffer_size  = 20M
-                          read_buffer_size  = 20M
-                          query_cache_limit = 3M
-                          query_cache_size  = 100M
-
-  Step 3:	Populate the MySQL table using the load scripts
+  Step 3: Populate the MySQL table using the load scripts
    Step A: Find the MySQL load script for the Metathesaurus
-                    Go to your Destination directory that you 
-                    typed in Step C (this is where I said my 
-                    source and destination directory were the 
-                    same)
+    Go to your Destination directory that you typed in Step C (this is where
+    I said my source and destination directory were the same)
 
-                    go to the: <destination>/2008AA/META directory
+    Go to the: <destination>/2008AA/META directory
 
-                    In it you should see the file:
+     In it you should see the file:
 
-                       populate_mysql_db.sh
+       populate_mysql_db.sh
 
-                    If you don't see this file - you need to start 
-                    over. Step 3 - F did not get done properly.
+    If you don't see this file - you need to start over. Step 3 - F did not
+    get done properly.
 
    Step B: Modify the MySQL load scripts for the Metathesaurus
-               In the populate_mysql_db.sh you need to modify the 
-               following:
+    In the populate_mysql_db.sh you need to modify the following:
 
-                    MYSQL_HOME=<path to MYSQL_HOME>
-                    user=<username>
-                    password=<password>
-                    db_name=<db_name>
+            MYSQL_HOME=<path to MYSQL_HOME>
+            user=<username>
+            password=<password>
+            db_name=<db_name>
 
-               For example, I modified my file as follows:
+    For example, I modified my file as follows:
 
-                    MYSQL_HOME=/usr/
-                    user=bthomson
-                    password=<well I am not giving you my actual password>
-                    db_name=umls
+            MYSQL_HOME=/usr/
+            user=bthomson
+            password=<well I am not giving you my actual password>
+            db_name=umls
 
    Step C:  Run the MySQL load scripts for the Metathesaurus
-                    Run this script by typing on the command line:
+    Run this script by typing on the command line:
 
-                        ./populate_mysql_db.sh
+            ./populate_mysql_db.sh
 
-                    If you get the following:
+    If you get the following:
 
-                        ./populate_mysql_db.sh: Permission denied.
+            ./populate_mysql_db.sh: Permission denied.
 
-                    You need to change your permissions and try again. To change 
-                    your permissions type:
+    You need to change your permissions and try again. To change your
+    permissions type:
 
-                         chmod 755 populate_mysql_db.sh
+            chmod 755 populate_mysql_db.sh
 
-
-            Now this takes what feels like FOREVER! Now would be a good 
-            time to go do something else until sometime late tomorrow 
-            (yes, unfortunately, tomorrow) evening ...
+    Now this takes what feels like FOREVER! Now would be a good time to go
+    do something else until sometime late tomorrow (yes, unfortunately,
+    tomorrow) evening ...
 
    Step D: Find the MySQL load script for the Semantic Network
-                    Go to your Destination directory that you 
-                    typed in Step C (this is where I said my 
-                    source and destination directory were the 
-                    same)
+    Go to your Destination directory that you typed in Step C (this is where
+    I said my source and destination directory were the same)
 
-                    go to the: <destination>/2008AA/NET
+    Go to the: <destination>/2008AA/NET
 
-                    In it you should see the file:
+    In it you should see the file:
 
-                       LoadScripts.zip
+        LoadScripts.zip
 
-                    Unzip this file as follows:
+    Unzip this file as follows:
 
-                       unzip LoadScripts.zip
+        unzip LoadScripts.zip
 
-                    The following file then should appear:
+    The following file then should appear:
 
-                       populate_net_mysql_db.sh
+        populate_net_mysql_db.sh
 
-                    If you don't see this file - you need to start 
-                    over. Step 3 - F did not get done properly.
+    If you don't see this file - you need to start over. Step 3 - F did not
+    get done properly.
 
    Step E: Modify the MySQL load script for the Semantic Network
-               This is the exact same modifications that were done 
-               in the Metathesaurus load script.
+    This is the exact same modifications that were done in the Metathesaurus
+    load script.
 
-               In the populate_net_mysql_db.sh you need to modify the 
-               following:
+    In the populate_net_mysql_db.sh you need to modify the following:
 
-                    MYSQL_HOME=<path to MYSQL_HOME>
-                    user=<username>
-                    password=<password>
-                    db_name=<db_name>
+        MYSQL_HOME=<path to MYSQL_HOME>
+        user=<username>
+        password=<password>
+        db_name=<db_name>
 
-               For example, I modified my file as follows:
+    For example, I modified my file as follows:
 
-                    MYSQL_HOME=/usr/
-                    user=bthomson
-                    password=<well I am not giving you my actual password>
-                    db_name=umls
+        MYSQL_HOME=/usr/
+        user=bthomson
+        password=<well I am not giving you my actual password>
+        db_name=umls
 
    Step F:  Run the MySQL load script for the Semantic Network
-                    Run this script by typing on the command line:
+    Run this script by typing on the command line:
 
-                        ./populate_net_mysql_db.sh
+        ./populate_net_mysql_db.sh
 
-                    If you get the following:
+    If you get the following:
 
-                        ./populate_net_mysql_db.sh: Permission denied.
+        ./populate_net_mysql_db.sh: Permission denied.
 
-                    You need to change your permissions and try again. To change 
-                    your permissions type:
+    You need to change your permissions and try again. To change your
+    permissions type:
 
-                         chmod 755 populate_net_mysql_db.sh
+        chmod 755 populate_net_mysql_db.sh
 
-
-            Now this should not take forever. It goes much much quicker!
+    Now this should not take forever. It goes much much quicker!
 
   Step G: Modify the my.cnf file (again)
-            This has been put in a different place every version or distribution 
-            that I have run this one. I have found it in the '/etc' directory 
-            as well as the '/etc/mysql' directory. 
+    This has been put in a different place every version or distribution
+    that I have run this one. I have found it in the '/etc' directory as
+    well as the '/etc/mysql' directory.
 
-            You can find where yours is by using the find command:
+    You can find where yours is by using the find command:
 
-                    sudo find / -name my.cnf
+        sudo find / -name my.cnf
 
-            This time you are modifying it so the that the UMLS-Interface 
-            package (and the utils/ files) can automatically log into the 
-            umls database.
+    This time you are modifying it so the that the UMLS-Interface package
+    (and the utils/ files) can automatically log into the umls database.
 
-                [client]
-                user            = <username>
-                password        = <password>
-                port            = 3306
-                socket          = /tmp/mysql.sock
-                database        = umls
-                
-            The port number is should already be in the my.cnf file 
-                under the [mysql] heading. I just copied and pasted that. 
-                
-            The socket is what ever socket you used in Stage 3. 
+        [client]
+        user            = <username>
+        password        = <password>
+        port            = 3306
+        socket          = /tmp/mysql.sock
+        database        = umls
 
-                Remember we discussed how big of pain this was since 
-                it seemed like the socket location depended on what 
-                operating system you were using. My RedHat is:
+    The port number is should already be in the my.cnf file under the
+    [mysql] heading. I just copied and pasted that.
 
-                          socket = /tmp/mysql.sock
-                    
-            where as on my Ubunutu 8.04:         
+    The socket is what ever socket you used in Stage 3.
 
-                          socket = /var/lib/mysql/mysql.sock
+    Remember we discussed how big of pain this was since it seemed like the
+    socket location depended on what operating system you were using.
 
-                and currently on Ubuntu 9.04: 
+    My RedHat is:
 
-                          socket = /var/run/mysqld/mysqld.sock
-                              
-            So the sock file is different and its location is different 
-                depending on what version of linux you are running. 
+        socket = /tmp/mysql.sock
 
-                You can find it using:
+    where as on my Ubunutu 8.04:
 
-                    sudo find / -name mysqld.sock 
+        socket = /var/lib/mysql/mysql.sock
 
-                    or
+    and currently on Ubuntu 9.04:
 
-                    sudo find / -name mysql.sock 
+        socket = /var/run/mysqld/mysqld.sock
 
-                This is a huge pain. If you need help just send me an email.
+    So the sock file is different and its location is different depending on
+    what version of linux you are running.
 
-                The database is whatever you called the database that 
-                the UMLS is installed in. Mine is 'umls'.
+    You can find it using:
+
+         sudo find / -name mysqld.sock 
+
+         or
+
+         sudo find / -name mysql.sock
+
+    This is a huge pain. If you need help just send me an email.
+
+    The database is whatever you called the database that the UMLS is
+    installed in. Mine is 'umls'.
 
 Stage 6 - Install UMLS-Interface and set environment variable
     The usual way to install the package is to run the following commands:
@@ -535,87 +529,85 @@ Stage 6 - Install UMLS-Interface and set environment variable
          make test
          make install
 
+    You will often need root access/superuser privileges to run make
+    install. The module can also be installed locally. To do a local
+    install, you need to specify a PREFIX option when you run 'perl
+    Makefile.PL'. For example,
 
-        You will often need root access/superuser privileges to run
-        make install. The module can also be installed locally. To do a local
-        install, you need to specify a PREFIX option when you run 'perl
-        Makefile.PL'. For example,
+     perl Makefile.PL PREFIX=/home
 
-         perl Makefile.PL PREFIX=/home
+     or
 
-        or
+     perl Makefile.PL LIB=/home/lib PREFIX=/home
 
-         perl Makefile.PL LIB=/home/lib PREFIX=/home
+    will install UMLS-Interface into /home. The first method above will
+    install the modules in /home/lib/perl5/site_perl/5.8.3 (assuming you are
+    using version 5.8.3 of Perl; otherwise, the directory will be slightly
+    different). The second method will install the modules in /home/lib. In
+    either case the executable scripts will be installed in /home/bin and
+    the man pages will be installed in home/share.
 
-        will install UMLS-Interface into /home. The first method above 
-        will install the modules in /home/lib/perl5/site_perl/5.8.3 
-        (assuming you are using version 5.8.3 of Perl; otherwise, the 
-        directory will be slightly different). The second method will 
-        install the modules in /home/lib. In either case the executable 
-        scripts will be installed in /home/bin and the man pages will 
-        be installed in home/share.
+    Warning: do not put a dash or hyphen in front of PREFIX, LIB or WNHOME.
 
-        Warning: do not put a dash or hyphen in front of PREFIX, LIB or WNHOME.
+    In your perl programs that you may write using the modules, you may need
+    to add a line like so
 
-        In your perl programs that you may write using the modules, you may need
-        to add a line like so
+     use lib '/home/lib/perl5/site_perl/5.8.3';
 
-         use lib '/home/lib/perl5/site_perl/5.8.3';
+    if you used the first method or
 
-        if you used the first method or
+     use lib '/home/lib';
 
-         use lib '/home/lib';
+    if you used the second method. By doing this, the installed modules are
+    found by your program. To run the umls-similarity.pl program, you would
+    need to do
 
-        if you used the second method. By doing this, the installed modules are
-        found by your program. To run the umls-similarity.pl program, you would 
-        need to do
+     perl -I/home/lib/perl5/site_perl/5.8.3 umls-similarity.pl
 
-         perl -I/home/lib/perl5/site_perl/5.8.3 umls-similarity.pl
+     or
 
-        or
+     perl -I/home/lib
 
-         perl -I/home/lib
+    Of course, you could also add the 'use lib' line to the top of the
+    program yourself, but you might not want to do that. You will need to
+    replace 5.8.3 with whatever version of Perl you are using. The preceding
+    instructions should be sufficient for standard and slightly non-standard
+    installations. However, if you need to modify other makefile options you
+    should look at the ExtUtils::MakeMaker documentation. Modifying other
+    makefile options is not recommended unless you really, absolutely, and
+    completely know what you're doing!
 
-        Of course, you could also add the 'use lib' line to the top of the
-        program yourself, but you might not want to do that. You will need to
-        replace 5.8.3 with whatever version of Perl you are using. The
-        preceding instructions should be sufficient for standard and slightly
-        non-standard installations. However, if you need to modify other
-        makefile options you should look at the ExtUtils::MakeMaker
-        documentation. Modifying other makefile options is not recommended
-        unless you really, absolutely, and completely know what you're doing!
-
-        NOTE: If one (or more) of the tests run by 'make test' fails, you will
-        see a summary of the tests that failed, followed by a message of the
-        form "make: *** [test_dynamic] Error Y" where Y is a number between 1
-        and 255 (inclusive). If the number is less than 255, then it indicates
-        how many test failed (if more than 254 tests failed, then 254 will still
-        be shown). If one or more tests died, then 255 will be shown. For more
-        details, see:
+    NOTE: If one (or more) of the tests run by 'make test' fails, you will
+    see a summary of the tests that failed, followed by a message of the
+    form "make: *** [test_dynamic] Error Y" where Y is a number between 1
+    and 255 (inclusive). If the number is less than 255, then it indicates
+    how many test failed (if more than 254 tests failed, then 254 will still
+    be shown). If one or more tests died, then 255 will be shown. For more
+    details, see:
 
     <http://search.cpan.org/dist/Test-Simple/lib/Test/Builder.pm#EXIT_CODES>
 
-        Now please set the UMLSINTERFACE_CONFIGFILE_DIR environment variable.
-        This will be the location where you don't mind the UMLS-Interface 
-        module writing out system files. The system files that created are:
-               
-           1. <UMLS_version>_<sources><relations>_config
-                  
-              which is an example configuration file of the 
-                  the current run
-                  
-           2. <UMLS_version>_<sources><relations>_child
-                  <UMLS_version>_<sources><relations>_parent
-                  
-              this files store the upper level taxonomy which is 
-                  created when connecting multiple sources
+    Now please set the UMLSINTERFACE_CONFIGFILE_DIR environment variable.
+    This will be the location where you don't mind the UMLS-Interface module
+    writing out system files. The system files that created are:
 
-               3. <UMLS_version>_<sources><relations>_table
-                  
-              this file contains the path to the root for each 
-                  concept in the UMLS view. this information is stored 
-                  in a mysql database of the same name. This really 
-                  helps speed up the initialization.
+           1. <UMLS_version>_<sources><relations>_config
+              
+          which is an example configuration file of the 
+              the current run
+              
+       2. <UMLS_version>_<sources><relations>_child
+              <UMLS_version>_<sources><relations>_parent
+              
+          this files store the upper level taxonomy which is 
+              created when connecting multiple sources
+
+           3. <UMLS_version>_<sources><relations>_table
+              
+          this file contains the path to the root for each 
+              concept in the UMLS view. this information is stored 
+              in a mysql database of the same name. This really 
+              helps speed up the initialization.
 
 CONTACT US
      If you have any trouble installing and using UMLS-Interface, please 

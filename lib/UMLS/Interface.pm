@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.76 2009/10/13 18:46:03 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.2 2009/10/30 15:35:05 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -44,7 +44,7 @@ use DBI;
 use bytes;
 use vars qw($VERSION);
 
-$VERSION = '0.25';
+$VERSION = '0.27';
 
 my $debug = 0;
 
@@ -86,11 +86,14 @@ my $configFile = "";
 my $childFile  = "";
 my $parentFile = "";
 
+
 my $markFlag   = 0;
 
+my $option_verbose  = 0;
 my $option_forcerun = 0;
 
 my %cycleHash = ();
+
 
 # UMLS-specific stuff ends ----------
 
@@ -219,11 +222,24 @@ sub _initialize
     my $config       = $params->{'config'};
     my $cyclefile    = $params->{'cyclefile'};
     my $forcerun     = $params->{'forcerun'};
+    my $verbose      = $params->{'verbose'};
 
     #  check if a forced run has been identified
     if(defined $forcerun) {
 	$option_forcerun = 1;
+	
+	print STDERR "--forcerun option set\n";
+
     }
+
+    #  check if verbose run has been identified
+    if(defined $verbose) { 
+	$option_verbose = 1;
+	
+	print STDERR "--verbose option set\n";
+    }
+    
+    if($debug) { print STDERR "Verbose option: $option_verbose\n"; }
     
     #  to store the database object
     my $db;
@@ -840,10 +856,13 @@ sub _updateTaxonomy {
     if(-e $childFile)  { system "rm -rf $childFile";  }
     if(-e $parentFile) { system "rm -rf $parentFile"; }
 
-    open(CHD, ">$childFile")  || 
-	die "Could not open $childFile\n";
-    open(PAR, ">$parentFile") || 
-	die "Could not open $parentFile\n";
+
+    #  if the verbose option exists open files to store the 
+    #  the parent child information    
+    if($option_verbose) {
+	open(CHD, ">$childFile")  || die "Could not open $childFile\n";
+	open(PAR, ">$parentFile") || die "Could not open $parentFile\n";
+    }
 
     #  select all the CUI1s from MRREL - takes approximately 6 minutes
     my $allCui1 = $db->selectcol_arrayref("select CUI1 from MRREL where ($relations) and ($sources) and (CVF is null)");
@@ -892,19 +911,31 @@ sub _updateTaxonomy {
 	    push @{$parentTaxonomy{$cui}}, $sab_cui;
 	    push @{$childrenTaxonomy{$sab_cui}}, $cui;
 	    
-	    print PAR "$cui $sab_cui\n";
-	    print CHD "$sab_cui $cui\n";
+	    #  if the verbose option is set write the parent 
+	    #  and child information to the appropriate files
+	    if($option_verbose) {
+		print PAR "$cui $sab_cui\n";
+		print CHD "$sab_cui $cui\n";
+	    }
 	}
     }
    
     #  add the sab cuis to the parentTaxonomy
     foreach my $sab_cui (sort keys %sab_hash) {
+	#  push this onto the parent taxonomy
 	push @{$parentTaxonomy{$sab_cui}}, $umlsRoot;
-	print PAR "$sab_cui $umlsRoot\n";
+
+	#  print otu this information to the parent file if required
+	if($option_verbose) {
+	    print PAR "$sab_cui $umlsRoot\n";
+	}
     }
-    
-    close PAR; close CHD;
-    
+
+    #  close the parent and child files if they were opened.
+    if($option_verbose) {
+	close PAR; close CHD;
+    }
+
     my $temp = chmod 0777, $parentFile, $childFile;
     
     #  print out some information
@@ -981,10 +1012,10 @@ sub _setUpperLevelTaxonomy {
 	
 	if($debug) { print STDERR "The child and parent files exist\n"; }
 	
-	#  open parent and child files
 	open(PAR, $parentFile) || die "Could not open $parentFile\n";	
 	open(CHD, $childFile)  || die "Could not open $childFile\n";
 	
+
 	#  load parent table
 	while(<PAR>) {
 	    chomp;
@@ -1026,10 +1057,13 @@ sub _setUpperLevelTaxonomy {
 	
 	$self->{'traceString'} = "";
 	
-	# open the parent and child files to store the upper level taxonomy information
-	open(CHD, ">$childFile")  || die "Could not open $childFile\n";
-	open(PAR, ">$parentFile") || die "Could not open $parentFile\n";
-	
+	# open the parent and child files to store the upper level 
+	#  taxonomy information if the verbose option is defined
+	if($option_verbose) {
+	    open(CHD, ">$childFile")  || die "Could not open $childFile\n";
+	    open(PAR, ">$parentFile") || die "Could not open $parentFile\n";
+	}
+
 	#  select all the CUI1s from MRREL 
 	my $allCui1 = $db->selectcol_arrayref("select CUI1 from MRREL where ($relations) and ($sources)");
 	if($self->checkError($function)) { return undef; }
@@ -1085,24 +1119,35 @@ sub _setUpperLevelTaxonomy {
 		my $arrRef2 = $sdb->do("INSERT INTO $parentTable (CUI1, CUI2) VALUES ('$sab_cui', '$cui')");	    
 		if($self->checkError($function)) { return (); } 
 		
-		
-		print PAR "$cui $sab_cui\n";
-		print CHD "$sab_cui $cui\n";
+		#  print this information to the parent and child 
+		#  file is the verbose option has been set
+		if($option_verbose) {
+		    print PAR "$cui $sab_cui\n";
+		    print CHD "$sab_cui $cui\n";
+		}
 	    }
 	}
    
 	#  add the sab cuis to the parentTaxonomy
 	foreach my $sab_cui (sort keys %sab_hash) {
+	    #  push this information on the parent taxonomy
 	    push @{$parentTaxonomy{$sab_cui}}, $umlsRoot;
-	    print PAR "$sab_cui $umlsRoot\n";
+	    
+	    #  print it to the table if the verbose option is set
+	    if($option_verbose) {
+		print PAR "$sab_cui  $umlsRoot\n";
+	    }
+	    
+	    #  store this informatino in the database
 	    my $arrRef = $sdb->do("INSERT INTO $parentTable (CUI1, CUI2) VALUES ('$sab_cui', '$umlsRoot')");	    
 	    if($self->checkError($function)) { return (); }   		
 	    
-
-	    
 	}
 	
-	close PAR; close CHD;
+	#  close the parent and child tables if opened
+	if($option_verbose) {
+	    close PAR; close CHD;
+	}
     }
     
     #  print out some information
@@ -2049,8 +2094,9 @@ sub _initializeDepthFirstSearch
 	return undef;
     } 
 
-    open(TABLEFILE, ">$tableFile") || die "Could not open $tableFile";
-    
+    if($option_verbose) {
+	open(TABLEFILE, ">$tableFile") || die "Could not open $tableFile";
+    }
 
     my @children = $self->getChildren($concept);
     foreach my $child (@children) {
@@ -2060,7 +2106,9 @@ sub _initializeDepthFirstSearch
 	$self->_depthFirstSearch($child, $d,$path,*TABLEFILE);
     }
     
-    close TABLEFILE;
+    if($option_verbose) {
+	close TABLEFILE;
+    }
 
     my $temp = chmod 0777, $tableFile;
 }
@@ -2125,8 +2173,8 @@ sub _depthFirstSearch
     my $arrRef = $sdb->do("INSERT INTO $tableName (CUI, DEPTH, PATH) VALUES(\'$concept\', '$d', \'$series\')");
     if($self->checkError($function)) { return (); }
     
-    #  print information into the file
-    print F "$concept\t$d\t$series\n";
+    #  print information into the file if verbose option is set
+    if($option_verbose) { print F "$concept\t$d\t$series\n"; }
     
     #  get all the children
     my @children = $self->getChildren($concept);
