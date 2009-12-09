@@ -1,6 +1,34 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.27 to 0.29
+    1. Added a dfs.pl program which is located in the utils/ directory. This
+    program runs a dfs over a specified set of sources and relations in the
+    UMLS and returns:
+
+        1. the maximum depth
+        2. paths to root
+        3. sources
+        4. maximum branching factor
+        5. average branching factor
+        6. number of leaf nodes
+        7. number of nodes
+        8. root
+
+    2. Added a function in Interface.pm called getAllTerms() which returns
+    all of the possible terms of a given CUI along with their source(s).
+    This is for all of the strings associated with the CUI in the MRCONSO
+    table so you can't specify a source for this one. If you would like to
+    do that use the getTermList function instead.
+
+       There is also a program in the utils/ directory which uses this called 
+       queryCui-Sab.pl
+
+    3. Added the functionality to store only the path information of a given
+    set of cuis. To do this you need to use the --cuilist option which takes
+    in a file containing CUIs. Note that each CUI needs to be on a seperate
+    line.
+
   Changes from version 0.25 to 0.27
     1. Added a --verbose option will print out path information to a file
     rather than having this be done automatically. This will reduce the

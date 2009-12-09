@@ -2,26 +2,27 @@
 
 =head1 NAME
 
-findLeastCommonSubsumer.pl - This program finds the least common subsumer 
-between two concepts.
+queryCui-Sab.pl - This program returns all associated terms of a concept 
+                  in the MRCONSO table with their associated source.
 
 =head1 SYNOPSIS
 
-This program takes two terms or CUIs and returns the least common
-subsumer between them.
+This program takes in a CUI and returns all of its associated terms and 
+their sources from the MRCONSO table regardless of what source was 
+specified
 
 =head1 USAGE
 
-Usage: findLeastCommonSubsumer.pl [OPTIONS] [CUI1|TERM1] [CUI2|TERM2]
+Usage: queryCui-Sab.pl [OPTIONS] CUI
 
 =head1 INPUT
 
 =head2 Required Arguments:
 
-=head3 [CUI1|TERM1] [CUI2|TERM2]
+=head3 CUI
 
-A TERM or CUI (or some combination) from the Unified 
-Medical Language System
+Concept Unique Identifier (CUI) from the Unified Medical 
+Language System (UMLS)
 
 =head2 Optional Arguments:
 
@@ -47,28 +48,11 @@ The socket your mysql is using. DEFAULT: /tmp/mysql.sock
 
 Database contain UMLS DEFAULT: umls
 
-=head3 --forcerun
-
-This option will bypass any command prompts such as asking 
-if you would like to continue with the index creation. 
-
-=head3 --verbose
-
-This option will print out the table information to the 
-config file that you specified.
-
-=head3 --cuilist FILE
-
-This option takes in a file containing a list of CUIs (one CUI 
-per line) and stores only the path information for those CUIs 
-rather than for all of the CUIs given the specified set of 
-sources and relations
-
-=head3 --help
+=head4 --help
 
 Displays the quick summary of program options.
 
-=head3 --version
+=head4 --version
 
 Displays the version information.
 
@@ -135,7 +119,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui", "forcerun", "verbose", "cuilist=s");
+GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s");
 
 
 #  if help is defined, print out help
@@ -152,9 +136,9 @@ if( defined $opt_version ) {
     exit;
 }
 
-# At least 2 terms and/or cuis should be given on the command line.
-if(scalar(@ARGV) < 2) {
-    print STDERR "Two terms and/or CUIs are required\n";
+# At least 1 CUI should be given on the command line.
+if(scalar(@ARGV) < 1) {
+    print STDERR "No term was specified on the command line\n";
     &minimalUsageNotes();
     exit;
 }
@@ -168,108 +152,66 @@ if(defined $opt_socket)   { $socket   = $opt_socket;   }
 
 my $umls = "";
 
-my %option_hash = ();
-
-if(defined $opt_config) {
-    $option_hash{"config"} = $opt_config;
+if(defined $opt_username and defined $opt_password and defined $opt_config) {
+    $umls = UMLS::Interface->new({"driver" => "mysql", 
+				  "database" => "$database", 
+				  "username" => "$opt_username",  
+				  "password" => "$opt_password", 
+				  "hostname" => "$hostname", 
+				  "socket"   => "$socket",
+			          "config"   => "$opt_config"}); 
+    die "Unable to create UMLS::Interface object.\n" if(!$umls);
+    ($errCode, $errString) = $umls->getError();
+    die "$errString\n" if($errCode);
 }
-if(defined $opt_forcerun) {
-    $option_hash{"forcerun"} = $opt_forcerun;
+elsif(defined $opt_username and defined $opt_password) {    
+    $umls = UMLS::Interface->new({"driver" => "mysql", 
+				  "database" => "$database", 
+				  "username" => "$opt_username",  
+				  "password" => "$opt_password", 
+				  "hostname" => "$hostname", 
+				  "socket"   => "$socket"}); 
+    die "Unable to create UMLS::Interface object.\n" if(!$umls);
+    ($errCode, $errString) = $umls->getError();
+    die "$errString\n" if($errCode);
 }
-if(defined $opt_verbose) {
-    $option_hash{"verbose"} = $opt_verbose;
+elsif(defined $opt_config) {
+    $umls = UMLS::Interface->new({"config" => "$opt_config"});
+    die "Unable to create UMLS::Interface object.\n" if(!$umls);
+    ($errCode, $errString) = $umls->getError();
+    die "$errString\n" if($errCode);
 }
-if(defined $opt_cuilist) {
-    $option_hash{"cuilist"} = $opt_cuilist;
+else {
+    $umls = UMLS::Interface->new(); 
+    die "Unable to create UMLS::Interface object.\n" if(!$umls);
+    ($errCode, $errString) = $umls->getError();
+    die "$errString\n" if($errCode);
 }
-if(defined $opt_username and defined $opt_password) {
-    $option_hash{"driver"}   = "mysql";
-    $option_hash{"database"} = $database;
-    $option_hash{"username"} = $opt_username;
-    $option_hash{"password"} = $opt_password;
-    $option_hash{"hostname"} = $hostname;
-    $option_hash{"socket"}   = $socket;
-}
-
-$umls = UMLS::Interface->new(\%option_hash); 
-die "Unable to create UMLS::Interface object.\n" if(!$umls);
-($errCode, $errString) = $umls->getError();
-die "$errString\n" if($errCode);
-
 
 &errorCheck($umls);
 
+my $cui = shift;
 
-my $input1 = shift;
-my $input2 = shift;
+if($umls->validCui($cui)) {
+    print STDERR "ERROR: The concept ($cui) is not valid.\n";
+    exit;
+}
 
-my $flag1 = "cui";
-my $flag2 = "cui";
+my @terms = $umls->getAllTerms($cui); 
 
-#  check if the input are CUIs or terms
-if( ($input1=~/C[0-9]+/)) {
-    push @c1, $input1;
+&errorCheck($umls);
+ 
+if($#terms < 0) {
+    print "There are no terms associated with $cui\n";
 }
 else {
-    @c1 = $umls->getConceptList($input1); 
-    &errorCheck($umls);
-    $flag1 = "term";
-}
-if( ($input2=~/C[0-9]+/)) {
-    push @c2, $input2; 
-    $flag2 = "term";
-}
-else {
-    @c2 = $umls->getConceptList($input2); 
-    &errorCheck($umls);
-    $flag = "term";
-}
-
-my $printFlag = 0;
-
-foreach $cui1 (@c1) {
-    foreach $cui2 (@c2) {
-
-	if($umls->validCui($cui1)) {
-	    print STDERR "ERROR: The concept ($cui1) is not valid.\n";
-	    exit;
-	}
-
-	if($umls->validCui($cui2)) {
-	    print STDERR "ERROR: The concept ($cui2) is not valid.\n";
-	    exit;
-	}
-	
-	my $lcs = $umls->findLeastCommonSubsumer($cui1, $cui2);
-	
-	&errorCheck($umls);
-
-	my $t1 = $input1;
-	my $t2 = $input2;
-	
-	if($flag1 eq "term") {
-	    ($t1) = $umls->getTermList($cui1); 
-	}
-
-	if($flag2 eq "term") {
-	    ($t2) = $umls->getTermList($cui2); 
-	}
-	
-
-	my ($t) = $umls->getTermList($lcs);
-	
-	print "\nThe least common subsumer between $t1 ($cui1) and $t2 ($cui2) is $t ($lcs)\n";
-	
-	$printFlag = 1;
+    print "The terms for CUI ($cui) are :\n";
+    my $i = 1;
+    foreach $term (@terms) {
+	print "$i. $term\n"; $i++;
     }
 }
 
-if( !($printFlag) ) {
-    print "\n";
-    print "There is not a least common subsumer between $input1 \n";
-    print "and $input2 given the current view of the UMLS.\n\n";
-}
-	
 sub errorCheck
 {
     my $obj = shift;
@@ -284,7 +226,7 @@ sub errorCheck
 ##############################################################################
 sub minimalUsageNotes {
     
-    print "Usage: findLeastCommonSubsumer.pl [OPTIONS] [CUI1|TERM1] [CUI2|TERM2]\n";
+    print "Usage: queryCui-Sab.pl [OPTIONS] CUI \n";
     &askHelp();
     exit;
 }
@@ -295,10 +237,11 @@ sub minimalUsageNotes {
 sub showHelp() {
 
         
-    print "This is a utility that takes as input two Terms or CUIs\n";
-    print "and returns the Least Common Subsumer between the two.\n\n";
+    print "This is a utility that takes as input a cui\n";
+    print "and returns all of its possible associated terms\n";
+    print "with their associated source(s).\n\n";
   
-    print "Usage: findLeastCommonSubsumer.pl [OPTIONS] [CUI1|TERM1] [CUI2|TERM2]\n\n";
+    print "Usage: queryCui-Sab.pl [OPTIONS] CUI\n\n";
 
     print "Options:\n\n";
 
@@ -312,21 +255,6 @@ sub showHelp() {
     
     print "--socket STRING          Socket used by mysql (DEFAULT: /tmp.mysql.sock)\n\n";
 
-    print "--config FILE            Configuration file\n\n";
-
-
-    print "--forcerun               This option will bypass any command \n";
-    print "                         prompts such as asking if you would \n";
-    print "                         like to continue with the index \n";
-    print "                         creation. \n\n";
-
-    print "--verbose                This option prints out the path information\n";
-    print "                         to a file in your config directory.\n\n";
-    print "--cuilist FILE           This option takes in a file containing a \n";
-    print "                         list of CUIs (one CUI per line) and stores\n";
-    print "                         only the path information for those CUIs\n"; 
-    print "                         rather than for all of the CUIs\n\n";
-
     print "--version                Prints the version number\n\n";
  
     print "--help                   Prints this help message.\n\n";
@@ -336,7 +264,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findLeastCommonSubsumer.pl,v 1.4 2009/12/09 18:44:59 btmcinnes Exp $';
+    print '$Id: queryCui-Sab.pl,v 1.1 2009/12/09 18:44:59 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 
@@ -344,6 +272,6 @@ sub showVersion {
 #  function to output "ask for help" message when user's goofed
 ##############################################################################
 sub askHelp {
-    print STDERR "Type findLeastCommonSubsumer.pl --help for help.\n";
+    print STDERR "Type queryCui-Sab.pl --help for help.\n";
 }
     

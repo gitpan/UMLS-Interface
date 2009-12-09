@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.2 2009/10/30 15:35:05 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.5 2009/12/09 18:44:59 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -44,7 +44,7 @@ use DBI;
 use bytes;
 use vars qw($VERSION);
 
-$VERSION = '0.27';
+$VERSION = '0.29';
 
 my $debug = 0;
 
@@ -72,6 +72,9 @@ my $parentRelations = "";
 my %parentTaxonomy   = ();
 my %childrenTaxonomy = ();
 
+#  list of cuis to obtain the path 
+#  information for - default is all
+my %CuiList = ();
 
 #  trace variables
 my %trace = ();
@@ -91,6 +94,7 @@ my $markFlag   = 0;
 
 my $option_verbose  = 0;
 my $option_forcerun = 0;
+my $option_cuilist  = 0;
 
 my %cycleHash = ();
 
@@ -211,6 +215,8 @@ sub _initialize
     return undef if(!defined $self || !ref $self);
     $params = {} if(!defined $params);
 
+    my $function = "_initialize";
+
     #  get all the parameters
     my $multitax     = $params->{'multitax'};
     my $database     = $params->{'database'};
@@ -223,24 +229,34 @@ sub _initialize
     my $cyclefile    = $params->{'cyclefile'};
     my $forcerun     = $params->{'forcerun'};
     my $verbose      = $params->{'verbose'};
+    my $cuilist      = $params->{'cuilist'};
 
-    #  check if a forced run has been identified
-    if(defined $forcerun) {
-	$option_forcerun = 1;
-	
-	print STDERR "--forcerun option set\n";
+    print STDERR "User Options:\n";
 
-    }
 
     #  check if verbose run has been identified
     if(defined $verbose) { 
 	$option_verbose = 1;
 	
-	print STDERR "--verbose option set\n";
+	print STDERR "   --verbose option set\n";
     }
-    
-    if($debug) { print STDERR "Verbose option: $option_verbose\n"; }
-    
+
+    #  check if a forced run has been identified
+    if(defined $forcerun) {
+	$option_forcerun = 1;
+	
+	print STDERR "   --forcerun option set\n";
+    }
+
+    #  check if the cuilist option has been set
+    if(defined $cuilist) {
+	$option_cuilist = 1;
+
+    	print STDERR "   --cuilist option set\n";
+    }
+
+    print STDERR "\n";
+
     #  to store the database object
     my $db;
 
@@ -358,7 +374,7 @@ sub _initialize
     $self->{'maxCacheSize'} = 1000;
     $self->{'cacheQ'}       = ();
 
-  #  set the configuration
+    #  set the configuration
     my $configCheck;
     if(defined $config) { $configCheck = $self->_config($config); }
     else                { $configCheck = $self->_config();        }
@@ -516,7 +532,23 @@ sub _initialize
 	close CONFIG;
 
 	my $temp = chmod 0777, $configFile;
-	
+    }
+
+    #  load the cuilist if it has been defined
+    if(defined $cuilist) {
+	open(CUILIST, $cuilist) || die "Could not open the cuilist file: $cuilist\n"; 
+	while(<CUILIST>) {
+	    chomp;
+	    
+	    if($self->validCui($_)) {
+		$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
+		$self->{'errorString'} .= "Incorrect input value ($_) in cuilist.";
+		$self->{'errorCode'} = 2 if($self->{'errorCode'} < 1);
+		return undef;
+	    }
+	    
+	    $CuiList{$_}++;
+	} 
     }
 }
 
@@ -703,6 +735,75 @@ sub getTermList
         $tr =~ s/\s+$//;
         $tr =~ s/\s+/ /g;
         $retHash{lc($tr)} = 1;
+    }
+    
+    return keys(%retHash);
+}
+
+################# modified version from v0.01 2003
+################# modified function as of v0.03
+# Method to map terms to a conceptID
+sub getAllTerms
+{
+    my $self = shift;
+    my $concept = shift;
+
+    return 0 if(!defined $self || !ref $self);
+    
+    my $function = "getAllTerms";
+    &_debug($function);
+    
+ 
+    if(!$concept) {
+	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "Undefined input values.";
+	$self->{'errorCode'} = 2 if($self->{'errorCode'} < 1);
+	return ();
+    } 
+    
+    if($self->validCui($concept)) {
+	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "Incorrect input value ($concept).";
+	$self->{'errorCode'} = 2 if($self->{'errorCode'} < 1);
+	return ();
+    } 
+
+    my %retHash = ();
+
+    if($concept eq $umlsRoot) {
+	$retHash{"**UMLS ROOT**"}++;
+	return keys(%retHash);    
+    }
+
+    $self->{'traceString'} = "";
+
+    my $db = $self->{'db'};
+    if(!$db) {
+	$self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "A db is required.";
+	$self->{'errorCode'} = 2;
+	return ();
+    }    
+
+    my %strhash = ();
+    
+    my $sql = qq{ select STR, SAB from MRCONSO where CUI='$concept' };
+    my $sth = $db->prepare( $sql );
+    $sth->execute();
+    my($str, $sab);
+    $sth->bind_columns( undef, \$str, \$sab );
+    while( $sth->fetch() ) {
+	$str =~ s/^\s+//;
+	$str =~ s/\s+$//;
+        $str =~ s/\s+/ /g;
+	$str = lc($str);
+	push @{$strhash{$str}}, $sab;
+    } $sth->finish();
+    
+    foreach my $str (sort keys %strhash) {
+	my $sabs = join ", ", @{$strhash{$str}};
+	my $index = "$str - $sabs";
+	$retHash{$index}++;
     }
     
     return keys(%retHash);
@@ -1846,58 +1947,6 @@ sub _checkSab
 }
 
 ################# new function as of v0.03
-#  Takes as input a CUI and returns all of 
-#  the sources in which it originated from
-#  given the users view of the UMLS
-sub getSab
-{
-    my $self = shift;
-    my $concept = shift;
-
-    return () if(!defined $self || !ref $self);
- 
-   my $function = "getSab";
-    #&_debug($function);
-    
-    if(!$concept) {
-	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
-	$self->{'errorString'} .= "Undefined input values.";
-	$self->{'errorCode'} = 2 if($self->{'errorCode'} < 1);
-	return ();
-    }
- 
-    if($self->validCui($concept)) {
-	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
-	$self->{'errorString'} .= "Incorrect input value ($concept).";
-	$self->{'errorCode'} = 2 if($self->{'errorCode'} < 1);
-	return undef;
-    } 
-
-    my $db = $self->{'db'};
-    if(!$db) {
-	$self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
-	$self->{'errorString'} .= "A db is required.";
-	$self->{'errorCode'} = 2;
-	return ();
-    }    
-
-    $self->{'traceString'} = "";
-    
-    my $arrRef = $db->selectcol_arrayref("select distinct SAB from MRCONSO where CUI='$concept'");    
-    if($self->checkError($function)) { return (); }
-    
-    if(scalar(@{$arrRef}) < 1) {
-	$self->{'errorCode'} = 2;
-	$self->{'errorString'} .= "\nError (UMLS::Interface->_getSab)) - ";
-	$self->{'errorString'} .= "No version info in table MRDOC.";
-	return ();
-    }
-
-    return @{$arrRef};
-}
-
-
-################# new function as of v0.03
 #  Returns the children of a concept - the relations that 
 #  are considered children are predefined by the user.
 #  The default are the RN and CHD relations
@@ -2170,11 +2219,25 @@ sub _depthFirstSearch
     my $series = join " ", @path;
     
     #  load information into the table
-    my $arrRef = $sdb->do("INSERT INTO $tableName (CUI, DEPTH, PATH) VALUES(\'$concept\', '$d', \'$series\')");
-    if($self->checkError($function)) { return (); }
+    if($option_cuilist) {
+	if(exists $CuiList{$concept}) {
+	    my $arrRef = $sdb->do("INSERT INTO $tableName (CUI, DEPTH, PATH) VALUES(\'$concept\', '$d', \'$series\')");
+	    if($self->checkError($function)) { return (); }
+	}
+    } 
+    else {
+	my $arrRef = $sdb->do("INSERT INTO $tableName (CUI, DEPTH, PATH) VALUES(\'$concept\', '$d', \'$series\')");
+	if($self->checkError($function)) { return (); }
+    }
     
     #  print information into the file if verbose option is set
-    if($option_verbose) { print F "$concept\t$d\t$series\n"; }
+    if($option_verbose) { 
+	if($option_cuilist) {
+	    if(exists $CuiList{$concept}) {
+		print F "$concept\t$d\t$series\n"; 
+	    }
+	} else { print F "$concept\t$d\t$series\n"; }
+    }
     
     #  get all the children
     my @children = $self->getChildren($concept);

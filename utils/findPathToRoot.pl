@@ -56,6 +56,13 @@ if you would like to continue with the index creation.
 This option will print out the table information to the 
 config file that you specified.
 
+=head3 --cuilist FILE
+
+This option takes in a file containing a list of CUIs (one CUI 
+per line) and stores only the path information for those CUIs 
+rather than for all of the CUIs given the specified set of 
+sources and relations
+
 =head3 --help
 
 Displays the quick summary of program options.
@@ -126,7 +133,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "forcerun", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui", "verbose");
+GetOptions( "version", "help", "forcerun", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui", "verbose", "cuilist=s");
 
 
 #  if help is defined, print out help
@@ -169,6 +176,9 @@ if(defined $opt_forcerun) {
 }
 if(defined $opt_verbose) {
     $option_hash{"verbose"} = $opt_verbose;
+}
+if(defined $opt_cuilist) {
+    $option_hash{"cuilist"} = $opt_cuilist;
 }
 if(defined $opt_username and defined $opt_password) {
     $option_hash{"driver"}   = "mysql";
@@ -286,6 +296,11 @@ sub showHelp() {
     print "--verbose                This option prints out the path information\n";
     print "                         to a file in your config directory.\n\n";    
 
+    print "--cuilist FILE           This option takes in a file containing a \n";
+    print "                         list of CUIs (one CUI per line) and stores\n";
+    print "                         only the path information for those CUIs\n"; 
+    print "                         rather than for all of the CUIs\n\n";
+
     print "--version                Prints the version number\n\n";
  
     print "--help                   Prints this help message.\n\n";
@@ -295,7 +310,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findPathToRoot.pl,v 1.3 2009/10/30 16:14:14 btmcinnes Exp $';
+    print '$Id: findPathToRoot.pl,v 1.4 2009/12/09 18:44:59 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

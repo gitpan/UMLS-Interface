@@ -12,6 +12,7 @@ t/access.t
 t/mysql.t
 TODO
 utils/configuration
+utils/dfs.pl
 utils/findLeastCommonSubsumer.pl
 utils/findMaximumCuiDepth.pl
 utils/findMinimumCuiDepth.pl
@@ -25,6 +26,7 @@ utils/getRelations.pl
 utils/getStDef.pl
 utils/getSts.pl
 utils/queryCui.pl
+utils/queryCui-Sab.pl
 utils/queryTerm.pl
 utils/removeConfigData.pl
 utils/synopsis.pl
