@@ -2,18 +2,17 @@
 
 =head1 NAME
 
-removeConfigData.pl - This program removes the temporary table 
-and associated files that are created based on the configuration 
-file.
+getAllTableNames.pl - This program returns the table names that were 
+created by the UMLS-Interface package
 
 =head1 SYNOPSIS
 
-This program removes the temporary table and associated files that 
-are created based on the configuration file.
+This program returns the table names that were created by the 
+UMLS-Interface package
 
 =head1 USAGE
 
-Usage: removeConfigData.pl [OPTIONS] CONFIGFILE
+Usage: getAllTableNames.pl [OPTIONS]
 
 =head1 INPUT
 
@@ -60,10 +59,6 @@ Hostname where mysql is located. DEFAULT: localhost
 =head3 --socket STRING
 
 The socket your mysql is using. DEFAULT: /tmp/mysql.sock
-
-=head3 --database STRING        
-
-Database contain UMLS DEFAULT: umls
 
 =head4 --help
 
@@ -153,50 +148,32 @@ if( defined $opt_version ) {
     exit;
 }
 
-# At least 1 CUI should be given on the command line.
-if(scalar(@ARGV) < 1) {
-    print STDERR "Configuration file was not specified on the command line\n";
-    &minimalUsageNotes();
-    exit;
-}
-
-my $database = "umls";
-if(defined $opt_database) { $database = $opt_database; }
 my $hostname = "localhost";
 if(defined $opt_hostname) { $hostname = $opt_hostname; }
 my $socket   = "/tmp/mysql.sock";
 if(defined $opt_socket)   { $socket   = $opt_socket;   }
 
-my $umls = "";
+my $database = "umlsinterfaceindex";
+my $sdb = "";
 
-my $config = shift;
-
-if(defined $opt_username and defined $opt_password) {
-    $umls = UMLS::Interface->new({"driver" => "mysql", 
-				  "database" => "$database", 
-				  "username" => "$opt_username",  
-				  "password" => "$opt_password", 
-				  "hostname" => "$hostname", 
-				  "socket"   => "$socket",
-			          "config"   => "$config"}); 
-    die "Unable to create UMLS::Interface object.\n" if(!$umls);
-    ($errCode, $errString) = $umls->getError();
-    die "$errString\n" if($errCode);
+if(defined $self->{'username'}) {
+    $sdb = DBI->connect("DBI:mysql:database=$database;mysql_socket=$socket;host=$hostname",$username, $password, {RaiseError => 1});
 }
 else {
-    $umls = UMLS::Interface->new({"config" => "$config"});
-    die "Unable to create UMLS::Interface object.\n" if(!$umls);
-    ($errCode, $errString) = $umls->getError();
-    die "$errString\n" if($errCode);
+    my $dsn = "DBI:mysql:$database;mysql_read_default_group=client;";
+    $sdb = DBI->connect($dsn);
 }
 
-&errorCheck($umls);
+print "\nTable\t\t\t\t\t\tTable Name\n";
+my $sql = qq{ select TABLENAME, HEX from tableindex};
+my $sth = $sdb->prepare( $sql );
+$sth->execute();
+my($name, $hex);
+$sth->bind_columns( undef, \$name, \$hex);
+while( $sth->fetch() ) {
+    print "$hex\t$name\n";
+} $sth->finish();
 
-$umls->dropConfigTable();
-
-&errorCheck($umls);
-
-$umls->removeConfigFiles();
 
 sub errorCheck
 {
@@ -212,7 +189,7 @@ sub errorCheck
 ##############################################################################
 sub minimalUsageNotes {
     
-    print "Usage: removeConfigData.pl [OPTIONS] CONFIGFILE \n";
+    print "Usage: getAllTableNames.pl [OPTIONS]\n\n";
     &askHelp();
     exit;
 }
@@ -223,10 +200,10 @@ sub minimalUsageNotes {
 sub showHelp() {
 
         
-    print "This is a utility that removes the temporary database and \n";
-    print "files associated with the configuration file information.\n\n";
+    print "This is a utility that returns the a list of all\n";
+    print "the table anmes created by UMLS-Interface\n\n";
   
-    print "Usage: removeConfigData.pl [OPTIONS] CONFIGFILE\n\n";
+    print "Usage: getAllTableNames.pl [OPTIONS]\n\n";
 
     print "Options:\n\n";
 
@@ -236,8 +213,6 @@ sub showHelp() {
 
     print "--hostname STRING        Hostname for mysql (DEFAULT: localhost)\n\n";
 
-    print "--database STRING        Database contain UMLS (DEFAULT: umls)\n\n";
-    
     print "--socket STRING          Socket used by mysql (DEFAULT: /tmp.mysql.sock)\n\n";
 
     print "--version                Prints the version number\n\n";
@@ -249,7 +224,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: removeConfigData.pl,v 1.2 2009/12/30 20:41:34 btmcinnes Exp $';
+    print '$Id: getAllTableNames.pl,v 1.1 2009/12/22 21:21:57 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 
@@ -257,6 +232,6 @@ sub showVersion {
 #  function to output "ask for help" message when user's goofed
 ##############################################################################
 sub askHelp {
-    print STDERR "Type removeConfigData.pl --help for help.\n";
+    print STDERR "Type getAllTableNames.pl --help for help.\n";
 }
     

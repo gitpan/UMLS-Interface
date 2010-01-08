@@ -1,5 +1,6 @@
 CHANGELOG
 default_options/2008AA-badpairs
+FAQ
 FDL.txt
 GPL.txt
 INSTALL
@@ -9,7 +10,10 @@ MANIFEST			This list of files
 META.yml
 README
 t/access.t
+t/functions.t
 t/mysql.t
+t/options.t
+t/prgs.t
 TODO
 utils/configuration
 utils/dfs.pl
@@ -18,6 +22,7 @@ utils/findMaximumCuiDepth.pl
 utils/findMinimumCuiDepth.pl
 utils/findPathToRoot.pl
 utils/findShortestPath.pl
+utils/getAllTableNames.pl
 utils/getChildren.pl
 utils/getCuiDef.pl
 utils/getParents.pl
@@ -25,8 +30,9 @@ utils/getRelated.pl
 utils/getRelations.pl
 utils/getStDef.pl
 utils/getSts.pl
-utils/queryCui.pl
+utils/getTableNames.pl
 utils/queryCui-Sab.pl
+utils/queryCui.pl
 utils/queryTerm.pl
 utils/removeConfigData.pl
 utils/synopsis.pl

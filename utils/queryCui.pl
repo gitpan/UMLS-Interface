@@ -7,6 +7,7 @@ queryCui.pl - This program returns all associated terms of a concept.
 =head1 SYNOPSIS
 
 This program takes in a CUI and returns all of its associated terms
+given the sources and relations specified in the config file
 
 =head1 USAGE
 
@@ -135,7 +136,7 @@ if( defined $opt_version ) {
 
 # At least 1 CUI should be given on the command line.
 if(scalar(@ARGV) < 1) {
-    print STDERR "No term was specified on the command line\n";
+    print STDERR "No CUI was specified on the command line\n";
     &minimalUsageNotes();
     exit;
 }
@@ -148,42 +149,37 @@ my $socket   = "/tmp/mysql.sock";
 if(defined $opt_socket)   { $socket   = $opt_socket;   }
 
 my $umls = "";
+my %option_hash = ();
 
-if(defined $opt_username and defined $opt_password and defined $opt_config) {
-    $umls = UMLS::Interface->new({"driver" => "mysql", 
-				  "database" => "$database", 
-				  "username" => "$opt_username",  
-				  "password" => "$opt_password", 
-				  "hostname" => "$hostname", 
-				  "socket"   => "$socket",
-			          "config"   => "$opt_config"}); 
-    die "Unable to create UMLS::Interface object.\n" if(!$umls);
-    ($errCode, $errString) = $umls->getError();
-    die "$errString\n" if($errCode);
+if(defined $opt_config) {
+    $option_hash{"config"} = $opt_config;
 }
-elsif(defined $opt_username and defined $opt_password) {    
-    $umls = UMLS::Interface->new({"driver" => "mysql", 
-				  "database" => "$database", 
-				  "username" => "$opt_username",  
-				  "password" => "$opt_password", 
-				  "hostname" => "$hostname", 
-				  "socket"   => "$socket"}); 
-    die "Unable to create UMLS::Interface object.\n" if(!$umls);
-    ($errCode, $errString) = $umls->getError();
-    die "$errString\n" if($errCode);
+if(defined $opt_verbose) {
+    $option_hash{"verbose"} = $opt_verbose;
 }
-elsif(defined $opt_config) {
-    $umls = UMLS::Interface->new({"config" => "$opt_config"});
-    die "Unable to create UMLS::Interface object.\n" if(!$umls);
-    ($errCode, $errString) = $umls->getError();
-    die "$errString\n" if($errCode);
+if(defined $opt_username) {
+    $option_hash{"username"} = $opt_username;
 }
-else {
-    $umls = UMLS::Interface->new(); 
-    die "Unable to create UMLS::Interface object.\n" if(!$umls);
-    ($errCode, $errString) = $umls->getError();
-    die "$errString\n" if($errCode);
+if(defined $opt_driver) {
+    $option_hash{"driver"}   = "mysql";
 }
+if(defined $opt_database) {
+    $option_hash{"database"} = $database;
+}
+if(defined $opt_password) {
+    $option_hash{"password"} = $opt_password;
+}
+if(defined $opt_hostname) {
+    $option_hash{"hostname"} = $hostname;
+}
+if(defined $opt_socket) {
+    $option_hash{"socket"}   = $socket;
+}
+
+$umls = UMLS::Interface->new(\%option_hash); 
+die "Unable to create UMLS::Interface object.\n" if(!$umls);
+($errCode, $errString) = $umls->getError();
+die "$errString\n" if($errCode);
 
 &errorCheck($umls);
 
@@ -234,8 +230,8 @@ sub minimalUsageNotes {
 sub showHelp() {
 
         
-    print "This is a utility that takes as input a cui\n";
-    print "and returns all of its possible associated terms.\n\n";
+    print "This is a utility that takes as input a cui and returns all of its\n";
+    print "possible associated terms given the specified sources and relations.\n\n";
   
     print "Usage: queryCui.pl [OPTIONS] CUI\n\n";
 
@@ -262,7 +258,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: queryCui.pl,v 1.1.1.1 2009/10/14 15:38:57 btmcinnes Exp $';
+    print '$Id: queryCui.pl,v 1.5 2010/01/07 23:15:44 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

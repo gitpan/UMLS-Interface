@@ -169,6 +169,7 @@ if(scalar(@ARGV) < 1) {
     exit;
 }
 
+
 my $config = shift;
 
 my $database = "umls";
@@ -188,12 +189,22 @@ if(defined $opt_forcerun) {
     $option_hash{"forcerun"} = $opt_forcerun;
 }
 
-if(defined $opt_username and defined $opt_password) {
-    $option_hash{"driver"}   = "mysql";
-    $option_hash{"database"} = $database;
+if(defined $opt_username) {
     $option_hash{"username"} = $opt_username;
+}
+if(defined $opt_driver) {
+    $option_hash{"driver"}   = "mysql";
+}
+if(defined $opt_database) {
+    $option_hash{"database"} = $database;
+}
+if(defined $opt_password) {
     $option_hash{"password"} = $opt_password;
+}
+if(defined $opt_hostname) {
     $option_hash{"hostname"} = $hostname;
+}
+if(defined $opt_socket) {
     $option_hash{"socket"}   = $socket;
 }
 
@@ -217,12 +228,11 @@ my $paths_to_root = 0;
 my $max_branch     = 0;
 my $avg_branch     = 0;
 my $branch_counter = 0;
+my %branch_hash = ();
 
 #  set leaf node counter
 my %leafs = ();
 my %nodes = ();
-
-$nodes{$root}++;
 
 #  set max depth variable
 my $max_depth = 0;
@@ -248,8 +258,7 @@ my @children= $umls->getChildren($root);
 
 #  update the branching variables
 $max_branch = $#children + 1;
-$avg_branch = $#children + 1;
-$branch_counter++;
+$branch_hash{$root} = $max_branch;
 
 foreach my $child (@children) {
     my @array = (); 
@@ -258,19 +267,33 @@ foreach my $child (@children) {
     &_depthFirstSearch($child, $d, $path,*TABLEFILE);
 }
 
+#  set the node count for the root
+if($#children >= 0) { 
+    $nodes{$root}++;
+}
+else {
+    $leafs{$root}++;
+}
+
 #  close the file and set the permissions
 if($opt_verbose) {
     close TABLEFILE;
     my $temp = chmod 0777, $tableFile;
 }
 
-#  calculate the average number of branches
+#  calculate the max and average number of branches
+foreach my $cui (sort keys %branch_hash) {
+    if($branch_hash{$cui} > $max_branch) { $max_branch = $branch_hash{$cui}; }
+    $avg_branch += $branch_hash{$cui};
+    $branch_counter++;
+}
 $avg_branch = $avg_branch / $branch_counter;
 
 #  set the node and leaf counts
 my $leaf_count = keys %leafs;
 my $node_count = keys %nodes;
-$node_count += $leaf_count;
+
+
 
 #  print out the information
 print "max_depth : $max_depth\n";
@@ -282,6 +305,10 @@ print "leaf_count : $leaf_count\n";
 print "node_count : $node_count\n";
 print "root : $root\n";
 
+
+#foreach my $b (sort {$a<=>$b} keys %branch_hash) {
+#    print "$b: $branch_hash{$b}\n";
+#}
 
 ######################################################################### 
 #  Depth First Search (DFS) 
@@ -356,13 +383,11 @@ sub _depthFirstSearch
  
     #  update the branching variables
     if($branches > 0) {
-	if($branches >  $max_branch) { $max_branch = $branches; }
-	$avg_branch += $branches;
-	$branch_counter++;
+	$branch_hash{$concept} = $branches;
     }
     
     #  set the leaf count
-    if($branches == 0) { $leafs{$concept}++; }
+    if($branches == 0) { $leafs{$concept}++; print "LEAF: $concept\n"; }
     else               { $nodes{$concept}++; }
 }
 
@@ -428,7 +453,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: dfs.pl,v 1.1 2009/12/08 19:19:34 btmcinnes Exp $';
+    print '$Id: dfs.pl,v 1.4 2010/01/08 16:24:11 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

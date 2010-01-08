@@ -10,7 +10,45 @@ NAME
     concepts in the Metathesaurus, and the SPECIALIST Lexicon which contains
     a list of biomedical and general English terms used in the biomedical
     domain. The UMLS-Interface package is set up to access the Metathesaurus
-    and the Semantic Network present in a mysql database.
+    and the Semantic Network present in a MySQL database.
+
+  CONFIGURATION
+    UMLS-Interface allows information to be extracted from the UMLS given a
+    specified set of sources and relations through the use of a
+    configuration file. The format of the configuration file is as follows:
+
+      SAB :: include FMA, MSH
+      REL :: include PAR, CHD, RB, RN
+
+    where SAB refers to the sources and REL refers to the relations. Another
+    example can be found in the configuration file in the utils/ directory.
+
+    You can specify a single source, multiple sources or the entire UMLS
+    (using the UMLS_ALL option). Keep in mind that the greater the number of
+    sources the larger the search space so if you obtaining path information
+    about two concepts this will take longer. The names of the sources in
+    the configuration file are expected to be in the SAB (sourse
+    abbreviation) form. A listing of the sources and their SABs can be
+    found:
+
+    <http://www.nlm.nih.gov/research/umls/knowledge_sources/metathesaurus/re
+    lease/source_vocabularies.html>
+
+    You can specify any relations that exist in the specified set of sources
+    that you defined. The directional (hierarchical) relations though are
+    PAR/CHD and RB/RN. The other relations (such as RO and SIB) are not
+    directional which means when obtaining path information when using these
+    relations may take much longer than obtaining path information using the
+    directional relations. A listing of the different relations can be found
+    here (scroll down to the REL table):
+
+    <http://www.nlm.nih.gov/research/umls/knowledge_sources/metathesaurus/re
+    lease/abbreviations.html>
+
+    If you do plan on using a multiple sources or the entire UMLS, we would
+    advise you to use the --realtime option which is explained below, in the
+    Interface.pm documentation and the path programs in the utils/
+    directory.
 
   INSTALL
     To install the module, run the following magic commands:
@@ -56,9 +94,9 @@ NAME
       use UMLS::Interface;
       my $interface = UMLS::Interface->new();
 
-    Configuration options can be included in the MySQL my.cnf file. This is
-    preferable. The directions for this are in the INSTALL file. It is Stage
-    5 Step D.
+    The database onfiguration options can be included in the MySQL my.cnf
+    file. This is preferable. The directions for this are in the INSTALL
+    file. It is Stage 5 Step D.
 
     The following configuration options are also provided though:
 
@@ -84,6 +122,22 @@ NAME
                           provided, the module attempts to access the server
                           without a password.
 
+        'forcerun'     -> This parameter will bypass any command prompts such 
+                          as asking if you would like to continue with the index 
+                          creation. 
+
+        'realtime'     -> This parameter will not create a database of path 
+                          information (what we refer to as the index) but obtain
+                          the path information about a concept on the fly
+      
+    'cuilist'      -> This parameter contains a file containing a list 
+                          of CUIs in which the path information should be 
+                          store for - if the CUI isn't on the list the path 
+                          information for that CUI will not be stored
+
+        'verbose'      -> This parameter will print out the table information 
+                          to a config file in the UMLSINTERFACECONFIG directory
+
   USING THE MODULE
     Once the object of module is successfully created after following the
     steps described in the previous section, a number of methods can be
@@ -99,12 +153,18 @@ NAME
           validCui()                -- Checks if CUI is a valid concept
           getSab()                  -- Returns the list of sources the concept
                                        exists in
-          getConceptList()          -- Returns the list of all concept IDs preset
-                                       in the database.
-          getTermsList()            -- Returns the list of terms corresponding to
-                                       a particular concept ID.
+          getConceptList()          -- Returns the list of all concept IDs for 
+                                       the term in a specified set of sources.
+          getTermsList()            -- Returns the list of terms and their sources 
+                                       given a particular concept ID 
+          getAllTerms()             -- Returns the list of terms corresponding to 
+                                       a particular concept ID for all sources
           getParents()              -- Returns the parent of a given CUI
           getChildren()             -- Returns the children of a given CUI
+          getRelated()              -- Returns the relations of a given CUI and 
+                                       relation
+          getRelations              -- Returns all of the relations associated 
+                                       with a specific CUI in a given source
           pathsToRoot()             -- Returns a list of concept IDs that denote 
                                        the path from the input concept ID to the 
                                        root 
@@ -120,7 +180,7 @@ NAME
                                        in the current view of the UMLS
           findMaximumDepth()        -- Returns the maximum depth of a given CUI
                                        in the current view of the UMLS
-          getSt()                   -- Returns the TUI(s) of the semantic type(s)
+          getSts()                  -- Returns the TUI(s) of the semantic type(s)
                                        associated with a given CUI
           getStAbr()                -- Returns the abbreviation of a semantic 
                                        type given its cooresponding TUI
@@ -131,9 +191,32 @@ NAME
           checkConceptExists()      -- Returns true or false (1 or 0) if a 
                                        concept exists given the current view of 
                                        the UMLS
+          returnTableNames()        -- Returns the table names in human and 
+                                       hex form created by the package for a 
+                                       given configuration
+
     These methods essentially expose an interface as required by the
-    UMLS::Similarity modules. The UMLS::Similarity modules require
-    that any interface to a taxonomy provide the above methods.
+    UMLS::Similarity modules. The UMLS::Similarity modules require that any
+    interface to a taxonomy provide the above methods.
+
+  REFERENCING
+        If you write a paper that has used UMLS-Interface in some way, we'd 
+        certainly be grateful if you sent us a copy and referenced UMLS-Interface. 
+        We have a published paper that provides a suitable reference:
+
+        @inproceedings{McInnesPP09,
+           title={{UMLS-Interface and UMLS-Similarity : Open Source Software for Measuring Paths and Semantic Similarity}}, 
+           author={McInnes, B.T. and Pedersen, T. and Pakhomov, S.V.}, 
+           booktitle={Proceedings of the American Medical Informatics Association (AMIA) Symposium},
+           year={2009}, 
+           month={November}, 
+           address={San Fransico, CA}
+        }
+
+        This paper is also found in
+        <http://www-users.cs.umn.edu/~bthomson/publications/pubs.html>
+        or
+        <http://www.d.umn.edu/~tpederse/Pubs/amia09.pdf>
 
   CONTACT US
     If you have any trouble installing and using UMLS-Interface, please

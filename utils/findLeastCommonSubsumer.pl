@@ -47,6 +47,13 @@ The socket your mysql is using. DEFAULT: /tmp/mysql.sock
 
 Database contain UMLS DEFAULT: umls
 
+=head3 --realtime
+
+This option will not create a database of the path information
+for all of concepts in the specified set of sources and relations 
+in the config file but obtain the information for just the 
+input concept
+
 =head3 --forcerun
 
 This option will bypass any command prompts such as asking 
@@ -135,7 +142,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui", "forcerun", "verbose", "cuilist=s");
+GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui", "forcerun", "verbose", "cuilist=s", "realtime");
 
 
 #  if help is defined, print out help
@@ -170,6 +177,9 @@ my $umls = "";
 
 my %option_hash = ();
 
+if(defined $opt_realtime) {
+    $option_hash{"realtime"} = $opt_realtime;
+}
 if(defined $opt_config) {
     $option_hash{"config"} = $opt_config;
 }
@@ -182,14 +192,25 @@ if(defined $opt_verbose) {
 if(defined $opt_cuilist) {
     $option_hash{"cuilist"} = $opt_cuilist;
 }
-if(defined $opt_username and defined $opt_password) {
-    $option_hash{"driver"}   = "mysql";
-    $option_hash{"database"} = $database;
+if(defined $opt_username) {
     $option_hash{"username"} = $opt_username;
+}
+if(defined $opt_driver) {
+    $option_hash{"driver"}   = "mysql";
+}
+if(defined $opt_database) {
+    $option_hash{"database"} = $database;
+}
+if(defined $opt_password) {
     $option_hash{"password"} = $opt_password;
+}
+if(defined $opt_hostname) {
     $option_hash{"hostname"} = $hostname;
+}
+if(defined $opt_socket) {
     $option_hash{"socket"}   = $socket;
 }
+
 
 $umls = UMLS::Interface->new(\%option_hash); 
 die "Unable to create UMLS::Interface object.\n" if(!$umls);
@@ -234,11 +255,13 @@ foreach $cui1 (@c1) {
 	    print STDERR "ERROR: The concept ($cui1) is not valid.\n";
 	    exit;
 	}
-
 	if($umls->validCui($cui2)) {
 	    print STDERR "ERROR: The concept ($cui2) is not valid.\n";
 	    exit;
 	}
+
+	if(($umls->checkConceptExists($cui1) == 0) or
+	   ($umls->checkConceptExists($cui2) == 0) ) { next; }
 	
 	my $lcs = $umls->findLeastCommonSubsumer($cui1, $cui2);
 	
@@ -314,6 +337,10 @@ sub showHelp() {
 
     print "--config FILE            Configuration file\n\n";
 
+    print "--realtime               This option will not create a database of the\n";
+    print "                         path information for all of concepts but just\n"; 
+    print "                         obtain the information for the input concept\n\n";
+
 
     print "--forcerun               This option will bypass any command \n";
     print "                         prompts such as asking if you would \n";
@@ -336,7 +363,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findLeastCommonSubsumer.pl,v 1.4 2009/12/09 18:44:59 btmcinnes Exp $';
+    print '$Id: findLeastCommonSubsumer.pl,v 1.7 2010/01/07 23:15:44 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

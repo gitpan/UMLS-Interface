@@ -117,7 +117,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s" );
+GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "file=s" );
 
 
 #  if help is defined, print out help
@@ -149,87 +149,101 @@ my $socket   = "/tmp/mysql.sock";
 if(defined $opt_socket)   { $socket   = $opt_socket;   }
 
 my $umls = "";
+my %option_hash = ();
 
-if(defined $opt_username and defined $opt_password and defined $opt_config) {
-    $umls = UMLS::Interface->new({"driver" => "mysql", 
-				  "database" => "$database", 
-				  "username" => "$opt_username",  
-				  "password" => "$opt_password", 
-				  "hostname" => "$hostname", 
-				  "socket"   => "$socket",
-			          "config"   => "$opt_config"}); 
-    die "Unable to create UMLS::Interface object.\n" if(!$umls);
-    ($errCode, $errString) = $umls->getError();
-    die "$errString\n" if($errCode);
+if(defined $opt_config) {
+    $option_hash{"config"} = $opt_config;
 }
-elsif(defined $opt_username and defined $opt_password) {
-    $umls = UMLS::Interface->new({"driver" => "mysql", 
-				  "database" => "$database", 
-				  "username" => "$opt_username",  
-				  "password" => "$opt_password", 
-				  "hostname" => "$hostname", 
-				  "socket"   => "$socket"}); 
-    die "Unable to create UMLS::Interface object.\n" if(!$umls);
-    ($errCode, $errString) = $umls->getError();
-    die "$errString\n" if($errCode);
+if(defined $opt_verbose) {
+    $option_hash{"verbose"} = $opt_verbose;
 }
-elsif(defined $opt_config) {
-    $umls = UMLS::Interface->new({"config" => "$opt_config"});
-    die "Unable to create UMLS::Interface object.\n" if(!$umls);
-    ($errCode, $errString) = $umls->getError();
-    die "$errString\n" if($errCode);
+if(defined $opt_username) {
+    $option_hash{"username"} = $opt_username;
 }
-else {
-    $umls = UMLS::Interface->new(); 
-    die "Unable to create UMLS::Interface object.\n" if(!$umls);
-    ($errCode, $errString) = $umls->getError();
-    die "$errString\n" if($errCode);
+if(defined $opt_driver) {
+    $option_hash{"driver"}   = "mysql";
 }
+if(defined $opt_database) {
+    $option_hash{"database"} = $database;
+}
+if(defined $opt_password) {
+    $option_hash{"password"} = $opt_password;
+}
+if(defined $opt_hostname) {
+    $option_hash{"hostname"} = $hostname;
+}
+if(defined $opt_socket) {
+    $option_hash{"socket"}   = $socket;
+}
+
+$umls = UMLS::Interface->new(\%option_hash); 
+die "Unable to create UMLS::Interface object.\n" if(!$umls);
+($errCode, $errString) = $umls->getError();
+die "$errString\n" if($errCode);
 
 &errorCheck($umls);
 
-my $input = shift;
-my $term  = $input;
-
-my @c = ();
-if($input=~/C[0-9]+/) {
-    push @c, $input;
-    ($term) = $umls->getTermList($input);
-}
-else {
-    @c = $umls->getConceptList($input);
-}
-
-&errorCheck($umls);
- 
-my $printFlag = 0;
-
-foreach my $cui (@c) {
-
-    if($umls->validCui($cui)) {
-	print STDERR "ERROR: The concept ($cui) is not valid.\n";
-	exit;
+my @terms = ();
+if(defined $opt_file) {
+    open(FILE, $opt_file) || die "Could not open file: $file\n";
+    while(<FILE>) {
+	chomp;
+	push @terms, $_;
     }
+}
+else {
+    
+    my $input = shift;
+    push @terms, $input;
+}
 
-    my @children= $umls->getChildren($cui); 
+foreach my $input (@terms) {
+    
+    my $term = $input;
 
-    &errorCheck($umls);
-
-    if($#children < 0) {
-	print "The term $term ($cui) does not have any children\n";
+    my @c = ();
+    if($input=~/C[0-9]+/) {
+	push @c, $input;
+	($term) = $umls->getTermList($input);
     }
     else {
-	print "The children of $term ($cui) are: \n";
-	foreach my $child (@children) {
-	    my ($t) = $umls->getTermList($child);
-	    print "  $t($child)\n";
-	} 
+	@c = $umls->getConceptList($input);
     }
-    $printFlag = 1;
-}
+    
+    &errorCheck($umls);
+    
+    my $printFlag = 0;
+    
+    foreach my $cui (@c) {
+	
+	if($umls->validCui($cui)) {
+	    print STDERR "ERROR: The concept ($cui) is not valid.\n";
+	    exit;
+	}
 
-if(! ($printFlag) ) {
-    print "Input $input does not exist in this view of the UMLS.\n";
+	#  make certain cui exists in this view
+	if($umls->checkConceptExists($cui) == 0) { next; }	
+
+	my @children= $umls->getChildren($cui); 
+	
+	&errorCheck($umls);
+	
+	if($#children < 0) {
+	    print "The term $term ($cui) does not have any children\n";
+	}
+	else {
+	    print "The children of $term ($cui) are: \n";
+	    foreach my $child (@children) {
+		my ($t) = $umls->getTermList($child);
+		print "  $t($child)\n";
+	    } 
+	}
+	$printFlag = 1;
+    }
+    
+    if(! ($printFlag) ) {
+	print "Input $input does not exist in this view of the UMLS.\n";
+    }
 }
 
 sub errorCheck
@@ -286,7 +300,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getChildren.pl,v 1.1.1.1 2009/10/14 15:38:57 btmcinnes Exp $';
+    print '$Id: getChildren.pl,v 1.7 2010/01/07 23:15:44 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

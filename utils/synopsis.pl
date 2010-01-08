@@ -128,17 +128,13 @@ my @sts = $umls->getSt($cui1);
 
 foreach my $st (@sts) {
 
-    my @abrs = $umls->getStAbr($st);
+    my $abr = $umls->getStAbr($st);
 
-    foreach my $abr (@abrs) {
+    my $string = $umls->getStString($abr);
+    
+    my $def    = $umls->getStDef($abr);
 
-	my $string = $umls->getStString($abr);
-
-	my $def    = $umls->getStDef($abr);
-
-	print "  => $string ($abr) : $def\n";
-
-    }
-
+    print "  => $string ($abr) : $def\n";
+    
 } print "\n";
 

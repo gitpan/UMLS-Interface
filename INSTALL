@@ -126,6 +126,13 @@ CPAN MODULES
     You must include /home/MyPerlLib in your PERL5LIB environment variable
     to access this module when running.
 
+  Digest::SHA1
+    UMLS-Interface uses Digest::SHA1 to conver the human readable tables
+    names (the original one) to hex in order to keep the table names short
+    while still having them contain all the relevant information. This
+    pakcage is freely available at
+    <http://search.cpan.org/~gaas/Digest-SHA1/>
+
 Stage 3 - Install MySQL, if already installed go to Stage 4
     Requires MySQL (version 5 or better)
 

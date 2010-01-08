@@ -148,42 +148,37 @@ my $socket   = "/tmp/mysql.sock";
 if(defined $opt_socket)   { $socket   = $opt_socket;   }
 
 my $umls = "";
+my %option_hash = ();
 
-if(defined $opt_username and defined $opt_password and defined $opt_config) {
-    $umls = UMLS::Interface->new({"driver" => "mysql", 
-				  "database" => "$database", 
-				  "username" => "$opt_username",  
-				  "password" => "$opt_password", 
-				  "hostname" => "$hostname", 
-				  "socket"   => "$socket",
-			          "config"   => "$opt_config"}); 
-    die "Unable to create UMLS::Interface object.\n" if(!$umls);
-    ($errCode, $errString) = $umls->getError();
-    die "$errString\n" if($errCode);
+if(defined $opt_config) {
+    $option_hash{"config"} = $opt_config;
 }
-elsif(defined $opt_username and defined $opt_password) {    
-    $umls = UMLS::Interface->new({"driver" => "mysql", 
-				  "database" => "$database", 
-				  "username" => "$opt_username",  
-				  "password" => "$opt_password", 
-				  "hostname" => "$hostname", 
-				  "socket"   => "$socket"}); 
-    die "Unable to create UMLS::Interface object.\n" if(!$umls);
-    ($errCode, $errString) = $umls->getError();
-    die "$errString\n" if($errCode);
+if(defined $opt_verbose) {
+    $option_hash{"verbose"} = $opt_verbose;
 }
-elsif(defined $opt_config) {
-    $umls = UMLS::Interface->new({"config" => "$opt_config"});
-    die "Unable to create UMLS::Interface object.\n" if(!$umls);
-    ($errCode, $errString) = $umls->getError();
-    die "$errString\n" if($errCode);
+if(defined $opt_username) {
+    $option_hash{"username"} = $opt_username;
 }
-else {
-    $umls = UMLS::Interface->new(); 
-    die "Unable to create UMLS::Interface object.\n" if(!$umls);
-    ($errCode, $errString) = $umls->getError();
-    die "$errString\n" if($errCode);
+if(defined $opt_driver) {
+    $option_hash{"driver"}   = "mysql";
 }
+if(defined $opt_database) {
+    $option_hash{"database"} = $database;
+}
+if(defined $opt_password) {
+    $option_hash{"password"} = $opt_password;
+}
+if(defined $opt_hostname) {
+    $option_hash{"hostname"} = $hostname;
+}
+if(defined $opt_socket) {
+    $option_hash{"socket"}   = $socket;
+}
+
+$umls = UMLS::Interface->new(\%option_hash); 
+die "Unable to create UMLS::Interface object.\n" if(!$umls);
+($errCode, $errString) = $umls->getError();
+die "$errString\n" if($errCode);
 
 &errorCheck($umls);
 
@@ -217,19 +212,15 @@ foreach my $cui (@c) {
 	print "There are no semantic types associated with $term ($cui)\n";
     }
     else {
+	print "The semantic types associated with $term ($cui):\n";
 	foreach my $st (@sts) {
-	    my @abrs = $umls->getStAbr($st);
+	    my $abr = $umls->getStAbr($st);
 	    &errorCheck($umls);
-	
-	    print "The semantic types associated with $term ($cui):\n";
-	    foreach my $abr (@abrs) {
-		my $string = $umls->getStString($abr);
-		&errorCheck($umls);
-		print "  $string ($abr)\n";
-	    }
+	    my $string = $umls->getStString($abr);
+	    &errorCheck($umls);
+	    print "  $string ($abr)\n";
 	}
     }
-    
     $printFlag = 1;
 }
 
@@ -290,7 +281,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getSts.pl,v 1.1.1.1 2009/10/14 15:38:57 btmcinnes Exp $';
+    print '$Id: getSts.pl,v 1.4 2009/12/29 20:51:28 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

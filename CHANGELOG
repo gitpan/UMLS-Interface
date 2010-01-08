@@ -1,6 +1,48 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.29 to 0.31
+    1. Changed all of the table names into hex form!! This is important
+    because it now means the versions aren't back compatible. Why did I do
+    this - well the table names were getting long the more sources and
+    relations that were added. If to many were used an error is thrown
+    because there were too many characters in the table name.
+
+       I created two utils/ programs the first is returnTableNames.pl. 
+       This returns all of the table names in both hex and human readable 
+       form (the original form) that were created for a specified config 
+       file. The second is returnAllTableNames.pl which returns all of 
+       the table names (in hex and the original form) that have been 
+       created by the package. These tables are stored in a database called 
+       umlsinterfaceindex. One nice thing is that this will be the only 
+       database created now.
+
+    2. The getSab() disappeared - I must have erased it - it is back!
+
+    3. The RELA option in the config file is now up and running. So you can
+    now not only specify a set of sources and relations but also RELAs - as
+    long as the RELA exists in the source and relation combination. If it
+    doesn't I just continue on right now - I could error out though - not
+    certain which is the best thing to do right now.
+
+    4. You can use other relations in UMLS-Interface now, like, for example,
+    RO. I don't connect these though to the root so if they are not either
+    connected to the root itself (like in SNOMEDCT but unlike in FMA) it
+    will only connect through additional relations.
+
+    5. The make tests have been expanded
+
+    6. Added a --realtime option. This allows the path information to be
+    obtained on the fly rather than prebuilding the umlsinterface index. You
+    will notice these in the util/ programs
+
+    7. There is a UMLS_ALL tag that can be used in the configuration file in
+    replace of the source names. For example, to use the entire UMLS with
+    the PAR/CHD relations, the configuration file would be as follows:
+
+          SAB :: include UMLS_ALL
+          REL :: include PAR, CHD
+
   Changes from version 0.27 to 0.29
     1. Added a dfs.pl program which is located in the utils/ directory. This
     program runs a dfs over a specified set of sources and relations in the

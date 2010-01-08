@@ -2,18 +2,17 @@
 
 =head1 NAME
 
-removeConfigData.pl - This program removes the temporary table 
-and associated files that are created based on the configuration 
-file.
+getTableNames.pl - This program returns the table names associated 
+with a specified configuration file.
 
 =head1 SYNOPSIS
 
-This program removes the temporary table and associated files that 
-are created based on the configuration file.
+This program returns the table names associated with a specified 
+configuration file.
 
 =head1 USAGE
 
-Usage: removeConfigData.pl [OPTIONS] CONFIGFILE
+Usage: getTableNames.pl [OPTIONS] CONFIGFILE
 
 =head1 INPUT
 
@@ -155,7 +154,7 @@ if( defined $opt_version ) {
 
 # At least 1 CUI should be given on the command line.
 if(scalar(@ARGV) < 1) {
-    print STDERR "Configuration file was not specified on the command line\n";
+    print STDERR "Configuration file was specified on the command line\n";
     &minimalUsageNotes();
     exit;
 }
@@ -192,11 +191,20 @@ else {
 
 &errorCheck($umls);
 
-$umls->dropConfigTable();
-
+my $hashRef = $umls->returnTableNames();
 &errorCheck($umls);
 
-$umls->removeConfigFiles();
+my $hashkeys = keys %{$hashRef};
+if($hashkeys > 0) {
+    print "\nThe tables associated with the given configuration file are as follows:\n\n";
+    print "    Table\t\t\t\t\tTable Name\n";
+    foreach my $name (sort keys %{$hashRef}) {
+	print "    ${$hashRef}{$name}\t$name\n";
+    }
+}
+else {
+    print "There are no tables created for this configuration\n";
+}
 
 sub errorCheck
 {
@@ -212,7 +220,7 @@ sub errorCheck
 ##############################################################################
 sub minimalUsageNotes {
     
-    print "Usage: removeConfigData.pl [OPTIONS] CONFIGFILE \n";
+    print "Usage: getTableNames.pl [OPTIONS] CONFIGFILE \n\n";
     &askHelp();
     exit;
 }
@@ -223,10 +231,10 @@ sub minimalUsageNotes {
 sub showHelp() {
 
         
-    print "This is a utility that removes the temporary database and \n";
-    print "files associated with the configuration file information.\n\n";
+    print "This is a utility that returns the table names\n";
+    print "created for a given configuration file\n\n";
   
-    print "Usage: removeConfigData.pl [OPTIONS] CONFIGFILE\n\n";
+    print "Usage: getTableNames.pl [OPTIONS] CONFIGFILE\n\n";
 
     print "Options:\n\n";
 
@@ -249,7 +257,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: removeConfigData.pl,v 1.2 2009/12/30 20:41:34 btmcinnes Exp $';
+    print '$Id: getTableNames.pl,v 1.1 2009/12/22 21:21:57 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 
@@ -257,6 +265,6 @@ sub showVersion {
 #  function to output "ask for help" message when user's goofed
 ##############################################################################
 sub askHelp {
-    print STDERR "Type removeConfigData.pl --help for help.\n";
+    print STDERR "Type getTableNames.pl --help for help.\n";
 }
     
