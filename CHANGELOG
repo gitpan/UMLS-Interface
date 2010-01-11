@@ -1,6 +1,11 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.31 to 0.33
+1. fixed the error in the make tests - they would not work properly
+   unless you had the UMLS-Interface environment variable set 
+   for the location of the configuration files even though we weren't 
+   using them.
   Changes from version 0.29 to 0.31
     1. Changed all of the table names into hex form!! This is important
     because it now means the versions aren't back compatible. Why did I do

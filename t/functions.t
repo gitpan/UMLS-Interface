@@ -42,7 +42,7 @@ else         { print "ok 3\n";     }
 #    C0015385 = limbs      (in MSH)
 #    C0000005 = i-maa      (in MSH but has no PAR/CHD relations)
 #    C0005768 = blood      (in MSH with a definition)
-#
+#    C0016504 = feet
 ######################################################################
 my $expected = "";
 my $obtained = "";
@@ -139,14 +139,14 @@ else             { print "ok 20\n";    }
 #  check the findLeastCommonSubsumer() function
 $expected = "C0015385";
 my $lcs = $umls->findLeastCommonSubsumer("C0015385", "C0018563");
-if($lcs ne $expected) { print "no ok 21\n"; }
-else                  { print "ok 21\n";    }
+if($lcs eq $expected) { print "ok 21\n"; }
+else                  { print "not ok 21\n";    }
 
 
 #  check the checkConceptExists() function
 $expected = 0;
 $obtained = $umls->checkConceptExists("C0000005");
-if($obtained != $expected) { print "no ok 22\n"; }
+if($obtained ne $expected) { print "no ok 22\n"; }
 else                       { print "ok 22\n";    }
 
 $expected = 1;

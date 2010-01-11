@@ -6,7 +6,7 @@
 #  This scripts tests some of the options available in Interface.pm
 
 
-BEGIN { $| = 1; print "1..7\n"; }
+BEGIN { $| = 1; print "1..5\n"; }
 END {print "not ok 1\n" unless $loaded;}
 
 use UMLS::Interface;
@@ -31,26 +31,15 @@ my ($errCode, $errString) = $umls->getError();
 if($errCode) { print "not ok 3\n"; }
 else         { print "ok 3\n";     }
 
-#  check the verbose option
-$option_hash{"verbose"} = 1;
+#  check the forcerun option
+$option_hash{"forcerun"} = 1;
 
 $umls = UMLS::Interface->new(\%option_hash);
 if(!$umls) { print "not ok 4\n"; }
 else       { print "ok 4\n";     }
 
-my ($errCode, $errString) = $umls->getError();
+($errCode, $errString) = $umls->getError();
 if($errCode) { print "not ok 5\n"; }
 else         { print "ok 5\n";     }
-
-#  check the forcerun option
-$option_hash{"forcerun"} = 1;
-
-$umls = UMLS::Interface->new(\%option_hash);
-if(!$umls) { print "not ok 6\n"; }
-else       { print "ok 6\n";     }
-
-my ($errCode, $errString) = $umls->getError();
-if($errCode) { print "not ok 7\n"; }
-else         { print "ok 7\n";     }
 
 

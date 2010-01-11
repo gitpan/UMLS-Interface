@@ -20,6 +20,7 @@ my $output   = "";
 #######################################################################################
 #  check the findLeastCommonSubsumer.pl program
 #######################################################################################
+
 $util_prg = File::Spec->catfile('utils', 'findLeastCommonSubsumer.pl');
 ok(-e $util_prg);
 

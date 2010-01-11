@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.16 2010/01/08 20:43:32 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.17 2010/01/10 23:21:09 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -47,7 +47,7 @@ use vars qw($VERSION);
 
 use Digest::SHA1  qw(sha1 sha1_hex sha1_base64);
 
-$VERSION = '0.31';
+$VERSION = '0.33';
 
 my $debug = 0;
 
@@ -540,43 +540,48 @@ sub _setConfigurationVariable
     return undef if(!defined $self || !ref $self);
     $self->{'traceString'} = "";
 
-    if(! (defined $umlsinterface) ) {    
-	my $answerFlag    = 0;
-	my $interfaceFlag = 0;
-	
-	while(! ($interfaceFlag) ) {
-
-	    print STDERR "The UMLSINTERFACE_CONFIGFILE_DIR environment\n";
-	    print STDERR "variable has not been defined yet. Please \n";
-	    print STDERR "enter a location that the UMLS-Interface can\n";
-	    print STDERR "use to store its configuration files:\n";
+    if($option_verbose) {
+	if(! (defined $umlsinterface) ) {    
+	    my $answerFlag    = 0;
+	    my $interfaceFlag = 0;
 	    
-	    $umlsinterface = <STDIN>; chomp $umlsinterface;
-
-	    while(! ($answerFlag)) {
-		print STDERR "  Is $umlsinterface the correct location? ";
-		my $answer = <STDIN>; chomp $answer;
-		if($answer=~/[Yy]/) { 
-		    $answerFlag    = 1; 
-		    $interfaceFlag = 1;   
+	    while(! ($interfaceFlag) ) {
+		
+		print STDERR "The UMLSINTERFACE_CONFIGFILE_DIR environment\n";
+		print STDERR "variable has not been defined yet. Please \n";
+		print STDERR "enter a location that the UMLS-Interface can\n";
+		print STDERR "use to store its configuration files:\n";
+		
+		$umlsinterface = <STDIN>; chomp $umlsinterface;
+		
+		while(! ($answerFlag)) {
+		    print STDERR "  Is $umlsinterface the correct location? ";
+		    my $answer = <STDIN>; chomp $answer;
+		    if($answer=~/[Yy]/) { 
+			$answerFlag    = 1; 
+			$interfaceFlag = 1;   
+		    }
+		    else {
+			print STDERR "Please entire in location:\n";
+			$umlsinterface = <STDIN>; chomp $umlsinterface;
+		    }
 		}
-		else {
-		    print STDERR "Please entire in location:\n";
-		    $umlsinterface = <STDIN>; chomp $umlsinterface;
+		
+		if(! (-e $umlsinterface) ) {
+		    system "mkdir -m 777 $umlsinterface";
 		}
+		
+		print STDERR "Please set the UMLSINTERFACE_CONFIGFILE_DIR variable:\n\n";
+		print STDERR "It can be set in csh as follows:\n\n";
+		print STDERR " setenv UMLSINTERFACE_CONFIGFILE_DIR $umlsinterface\n\n";
+		print STDERR "And in bash shell:\n\n";
+		print STDERR " export UMLSINTERFACE_CONFIGFILE_DIR=$umlsinterface\n\n";
+		print STDERR "Thank you!\n\n";
 	    }
-
-	    if(! (-e $umlsinterface) ) {
-		system "mkdir -m 777 $umlsinterface";
-	    }
-	    
-	    print STDERR "Please set the UMLSINTERFACE_CONFIGFILE_DIR variable:\n\n";
-	    print STDERR "It can be set in csh as follows:\n\n";
-	    print STDERR " setenv UMLSINTERFACE_CONFIGFILE_DIR $umlsinterface\n\n";
-	    print STDERR "And in bash shell:\n\n";
-	    print STDERR " export UMLSINTERFACE_CONFIGFILE_DIR=$umlsinterface\n\n";
-	    print STDERR "Thank you!\n\n";
 	}
+    }
+    else {
+	$umlsinterface = "";
     }
 }
 
@@ -595,7 +600,6 @@ sub _setTableAndFileNames
     #  set appropriate version output
     my $ver = $version;
     $ver=~s/-/_/g;
-    
     
     #  set table and cycle and upper level relations files
     $childFile  = "$umlsinterface/$ver";
@@ -666,8 +670,11 @@ sub _setTableAndFileNames
     #print STDERR "$childTable => $childTableHuman\n";
     #print STDERR "$parentTable=> $parentTableHuman\n";
 
-    print STDERR "  Configuration file:\n";
-    print STDERR "    $configFile\n";
+    if($option_verbose) {
+	print STDERR "  Configuration file:\n";
+	print STDERR "    $configFile\n";
+    }
+    
     print STDERR "  Database: \n";
     print STDERR "    $database\n\n";
 }
@@ -680,30 +687,33 @@ sub _setConfigFile
     return undef if(!defined $self || !ref $self);
     $self->{'traceString'} = "";
     
-    my $function = "_setConfigFile";
-    &_debug($function);
-
-    if(! (-e $configFile)) {
+    if($option_verbose) {
+        
+	my $function = "_setConfigFile";
+	&_debug($function);
 	
-	open(CONFIG, ">$configFile") ||
-	    die "Could not open configuration file: $configFile\n";
-	
-	my @sarray = ();
-	my @rarray = ();
-
-	print CONFIG "SAB :: include ";
-	while($sources=~/=\'(.*?)\'/g)   { push @sarray, $1; }
-	my $slist = join ", ", @sarray;
-	print CONFIG "$slist\n";
-	
-	print CONFIG "REL :: include ";
-	while($relations=~/=\'(.*?)\'/g) { push @rarray, $1; }
-	my $rlist = join ", ", @rarray;
-	print CONFIG "$rlist\n";
-
-     	close CONFIG;
-
-	my $temp = chmod 0777, $configFile;
+	if(! (-e $configFile)) {
+	    
+	    open(CONFIG, ">$configFile") ||
+		die "Could not open configuration file: $configFile\n";
+	    
+	    my @sarray = ();
+	    my @rarray = ();
+	    
+	    print CONFIG "SAB :: include ";
+	    while($sources=~/=\'(.*?)\'/g)   { push @sarray, $1; }
+	    my $slist = join ", ", @sarray;
+	    print CONFIG "$slist\n";
+	    
+	    print CONFIG "REL :: include ";
+	    while($relations=~/=\'(.*?)\'/g) { push @rarray, $1; }
+	    my $rlist = join ", ", @rarray;
+	    print CONFIG "$rlist\n";
+	    
+	    close CONFIG;
+	    
+	    my $temp = chmod 0777, $configFile;
+	}
     }
 }
 
@@ -798,10 +808,6 @@ sub _initialize
     $self->_loadCuiList($cuilist);
     if($self->checkError("_loadCuiList")) { return (); }	
 
-    #  propogate counts up if it has been defined
-    $self->_propogateCounts();
-    if($self->checkError("_propogateCounts")) { return (); }	
-    
     #  create the index database
     $self->_createIndexDB();
     if($self->checkError("_createIndexDB")) { return (); }	
@@ -809,7 +815,13 @@ sub _initialize
     #  connect to the index database
     $self->_connectIndexDB();
     if($self->checkError("_connectIndexDB")) { return (); }	
-   
+
+    #  propogate counts up if it has been defined 
+    #  the database must be up to do this
+    #$self->_propogateCounts();
+    #if($self->checkError("_propogateCounts")) { return (); }	
+    
+
 }
 
 #  Method to check if a concept ID exists in the database.
@@ -1140,7 +1152,7 @@ sub pathsToRoot
     } 
 
     #  check that concept exists
-    if($self->checkConceptExists($concept) eq 0) {
+    if(!($self->checkConceptExists($concept))) {
 	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
 	$self->{'errorString'} .= "Concept ($concept) doesn't exist.";
 	$self->{'errorCode'} = 2;
@@ -1805,15 +1817,18 @@ sub _loadCycleInformation
 {
 
     my $self = shift;
-    open(CYCLE, ">$cycleFile") || die "Could not open file $cycleFile"; 
-    foreach my $cui1 (sort keys %cycleHash) {
-	foreach my $cui2 (sort keys %{$cycleHash{$cui1}}) {
-	    print CYCLE "$cui1 $cui2 $cycleHash{$cui1}{$cui2}\n";
-	}
-    } 
-    close CYCLE;
-
-    my $temp = chmod 0777, $cycleFile;
+    
+    if($option_verbose) {
+	open(CYCLE, ">$cycleFile") || die "Could not open file $cycleFile"; 
+	foreach my $cui1 (sort keys %cycleHash) {
+	    foreach my $cui2 (sort keys %{$cycleHash{$cui1}}) {
+		print CYCLE "$cui1 $cui2 $cycleHash{$cui1}{$cui2}\n";
+	    }
+	} 
+	close CYCLE;
+	
+	my $temp = chmod 0777, $cycleFile;
+    }
 }
 
 sub _debug
@@ -1928,8 +1943,8 @@ sub _config {
 	if($self->checkError("_setRelas")) { return (); }
 
 	#  check the relations
-	$self->_checkRelations();
-	if($self->checkError("_checkRelations")) { return (); }
+	#$self->_checkRelations();
+	#if($self->checkError("_checkRelations")) { return (); }
 
     }
 
@@ -3014,9 +3029,35 @@ sub _propogateCounts
 
     my $self = shift;
     
- 
+    return undef if(!defined $self || !ref $self);
+    
+    my $function = "_propogateCounts";
+    &_debug($function);
+    
+    if(! ($option_propogation)) { return; }
 
+    open(FILE, $propogationFile) || die "Could not open propogation file: $propogationFile\n";
+    while(<FILE>) {
+	chomp;
+	if($_=~/^#/)    { next; }
+	if($_=~/^\s*$/) { next; }
+	
+	my ($freq, $cui, $str) = split/\|/;
+	$propogationHash{$cui} = 1;
+    }
+    print STDERR "Finished Loading\n";
+    
+    print STDERR "Propogating Counts\n";
+    my @array = ();
+    my $count = $self->_propogation($umlsRoot, \@array);
+    print STDERR "Finished Propogating ($count)\n";
+    
+    
 
+    foreach my $cui (sort keys %propogationHash) {
+	print "$cui : $propogationHash{$cui}\n";
+    }
+    exit;
 }
 
 
@@ -3025,8 +3066,7 @@ sub _propogation
     my $self    = shift;
     my $concept = shift;
     my $array   = shift;
-    my $count   = shift;
-
+    
     my $function = "_recursiveCuiToRoot";
     
     #  check the concept is there
@@ -3057,6 +3097,7 @@ sub _propogation
 	return ();
     }
     
+    my $freq = $propogationHash{$concept};
 
     #  set up the new path
     my @intermediate = @{$array};
@@ -3069,28 +3110,36 @@ sub _propogation
 	my @reversed = reverse(@intermediate);
 	my $rseries  = join " ", @reversed;
 	push @path_storage, $rseries;
-	return;
+	return $freq;
     }
 
     #  get all the parents
-    my @parents = $self->_getParentsForDFS($concept);
-    if($self->checkError("_getParentsForDFS")) { return (); }
+    my @children = $self->_getChildrenForDFS($concept);
+    if($self->checkError("_getChildrenForDFS")) { return (); }
     
     #  search through the children
-    foreach my $parent (@parents) {
+    my $count = 0;
+    foreach my $child (@children) {
 	
 	#  check if child cui has already in the path
 	my $flag = 0;
 	foreach my $cui (@intermediate) {
-	    if($cui eq $parent) { $flag = 1; }
+	    if($cui eq $child) { $flag = 1; }
 	}
 	
 	#  if it isn't continue on with the depth first search
 	if($flag == 0) {
-	    $self->_recursiveCuiToRoot($parent, \@intermediate);
+	    $count += $self->_propogate($child, \@intermediate);
+	    print "$concept : $count : $freq\n";
 	    if($self->checkError("$function")) { return (); }
 	}
     }
+    
+    $freq += $count; 
+
+    return $freq;
+    
+    
 }
 
 sub _cuiToRoot
@@ -3331,7 +3380,7 @@ sub findMinimumDepth
     } 
 
     #  check that the cui exists
-    return () if(! (defined $self->checkConceptExists($cui)));
+    return () if(! ($self->checkConceptExists($cui)));
 
     #  set the upper level taxonomy
     $self->_setUpperLevelTaxonomy();
@@ -3410,7 +3459,7 @@ sub findMaximumDepth
     } 
 
     #  check that the cui exists
-    return () if(! (defined $self->checkConceptExists($cui)));
+    return () if(! ($self->checkConceptExists($cui)));
 
     #  set the upper level taxonomy
     $self->_setUpperLevelTaxonomy();
@@ -3516,8 +3565,8 @@ sub findShortestPath
     } 
 
     #  check that concept1 and concept2 exist
-    return () if(! (defined $self->checkConceptExists($concept1)));
-    return () if(! (defined $self->checkConceptExists($concept2)));
+    return () if(! ($self->checkConceptExists($concept1)));
+    return () if(! ($self->checkConceptExists($concept2)));
 
     #  find the shortest path and lcs 
     my($lcs, $path) = $self->_findShortestPath($concept1, $concept2);
@@ -3621,13 +3670,13 @@ sub findLeastCommonSubsumer
     
     
     #  check that concept1 and concept2 exist
-    if($self->checkConceptExists($concept1) eq 0) {
+    if(! ($self->checkConceptExists($concept1))) {
 	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
 	$self->{'errorString'} .= "Concept 1 ($concept1) doesn't exist.";
 	$self->{'errorCode'} = 2;
 	return undef;
     }
-    if($self->checkConceptExists($concept2) eq 0) {
+    if(!($self->checkConceptExists($concept2))) {
 	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
 	$self->{'errorString'} .= "Concept 2 ($concept2) doesn't exist.";
 	$self->{'errorCode'} = 2;
