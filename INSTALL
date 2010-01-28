@@ -133,6 +133,11 @@ CPAN MODULES
     pakcage is freely available at
     <http://search.cpan.org/~gaas/Digest-SHA1/>
 
+  bignum
+    UMLS-Interface uses these packages for the propogation counts because
+    the counts can get rather large. This package is freely available at
+    <http://search.cpan.org/~tels/bignum-0.23/>
+
 Stage 3 - Install MySQL, if already installed go to Stage 4
     Requires MySQL (version 5 or better)
 

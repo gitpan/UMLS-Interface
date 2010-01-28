@@ -5,15 +5,12 @@ SYNOPSIS
     Plans for future versions of UMLS-Interface
 
 DESCRIPTION
-    1. Allow for back compatability of UMLS versions
-    2. Fail gracefully in the test cases when the problem is that the
-    username/password ect ... is not set
-    3. concurrency control so that while a table is in the process of being
+    1. concurrency control so that while a table is in the process of being
     created it can not be used by used by another program.
-    4. better concurrency control so that multiple versions of the same
+    2. better concurrency control so that multiple versions of the same
     table are not constructed at the same time.
-    5. Shorten table names
-    6. Reduce storage of path information
+    3. let the user know if the table hasn't been completed
+    4. Reduce storage of path information
 
 AUTHORS
     Bridget McInnes <bthomson at cs.umn.edu>

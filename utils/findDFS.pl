@@ -2,7 +2,8 @@
 
 =head1 NAME
 
-dfs.pl 
+findDFS.pl - This program runs a dfs over a specified set of sources
+and relations in the UMLS.
 
 =head1 SYNOPSIS
 
@@ -12,7 +13,7 @@ to the root, branching factor, leaf and node count.
 
 =head1 USAGE
 
-Usage: dfs.pl CONFIGFILE [OPTIONS]
+Usage: findDFS.pl CONFIGFILE [OPTIONS]
 
 =head1 INPUT
 
@@ -25,6 +26,10 @@ relations to use. The default uses MSH and the PAR/CHD
 relations.
 
 =head2 Optional Arguments:
+
+=head3 --debug
+
+Sets the debug flag for testing
 
 =head3 --username STRING
 
@@ -144,7 +149,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "depth=s", "root=s", "verbose=s" );
+GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "depth=s", "root=s", "verbose=s", "debug");
 
 
 
@@ -185,8 +190,8 @@ my %option_hash = ();
 
 $option_hash{"config"} = $config;
 
-if(defined $opt_forcerun) {
-    $option_hash{"forcerun"} = $opt_forcerun;
+if(defined $opt_debug) {
+    $option_hash{"debug"} = $opt_debug;
 }
 
 if(defined $opt_username) {
@@ -253,7 +258,7 @@ if($opt_verbose) {
 }
 
 #  get the first set of children and start the 
-my @children= $umls->getChildren($root); 
+my @children= $umls->_getChildrenForDFS($root); 
 &errorCheck($umls);
 
 #  update the branching variables
@@ -359,7 +364,7 @@ sub _depthFirstSearch
     $paths_to_root++;
 
     #  get all the children
-    my @children = $umls->getChildren($concept);
+    my @children = $umls->_getChildrenForDFS($concept);
 
     
     my $branches = 0;
@@ -387,7 +392,7 @@ sub _depthFirstSearch
     }
     
     #  set the leaf count
-    if($branches == 0) { $leafs{$concept}++; print "LEAF: $concept\n"; }
+    if($branches == 0) { $leafs{$concept}++; }
     else               { $nodes{$concept}++; }
 }
 
@@ -407,7 +412,7 @@ sub errorCheck
 ##############################################################################
 sub minimalUsageNotes {
     
-    print "Usage: dfs.pl CONFIGFILE [OPTIONS]\n";
+    print "Usage: findDFS.pl CONFIGFILE [OPTIONS]\n";
     &askHelp();
     exit;
 }
@@ -422,9 +427,11 @@ sub showHelp() {
     print "and relations in the UMLS returning the depth, number of paths\n";
     print "to the root, branching factor, leaf and node count.\n\n";
   
-    print "Usage: dfs.pl CONFIGFILE [OPTIONS]\n\n";
+    print "Usage: findDFS.pl CONFIGFILE [OPTIONS]\n\n";
 
     print "Options:\n\n";
+
+    print "--debug                  Sets the debug flag for testing\n\n";
 
     print "--username STRING        Username required to access mysql\n\n";
 
@@ -453,7 +460,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: dfs.pl,v 1.4 2010/01/08 16:24:11 btmcinnes Exp $';
+    print '$Id: findDFS.pl,v 1.2 2010/01/20 16:28:31 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 
@@ -461,6 +468,6 @@ sub showVersion {
 #  function to output "ask for help" message when user's goofed
 ##############################################################################
 sub askHelp {
-    print STDERR "Type dfs.pl --help for help.\n";
+    print STDERR "Type findDFS.pl --help for help.\n";
 }
     

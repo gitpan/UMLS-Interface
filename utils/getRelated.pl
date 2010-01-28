@@ -27,6 +27,10 @@ The relation of the given CUI or term.
 
 =head2 Optional Arguments:
 
+=head3 --debug
+
+Sets the debug flag for testing
+
 =head3 --username STRING
 
 Username is required to access the umls database on MySql
@@ -120,7 +124,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s" );
+GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s" );
 
 
 #  if help is defined, print out help
@@ -159,6 +163,9 @@ if(defined $opt_config) {
 }
 if(defined $opt_verbose) {
     $option_hash{"verbose"} = $opt_verbose;
+}
+if(defined $opt_debug) {
+    $option_hash{"debug"} = $opt_debug;
 }
 if(defined $opt_username) {
     $option_hash{"username"} = $opt_username;
@@ -267,6 +274,8 @@ sub showHelp() {
 
     print "Options:\n\n";
 
+    print "--debug                  Sets the debug flag for testing\n\n";
+
     print "--username STRING        Username required to access mysql\n\n";
 
     print "--password STRING        Password required to access mysql\n\n";
@@ -288,7 +297,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getRelated.pl,v 1.6 2010/01/07 23:15:44 btmcinnes Exp $';
+    print '$Id: getRelated.pl,v 1.7 2010/01/20 16:28:31 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.17 2010/01/10 23:21:09 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.28 2010/01/28 16:37:10 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -47,7 +47,10 @@ use vars qw($VERSION);
 
 use Digest::SHA1  qw(sha1 sha1_hex sha1_base64);
 
-$VERSION = '0.33';
+use bignum qw/hex oct/;
+
+
+$VERSION = '0.35';
 
 my $debug = 0;
 
@@ -97,6 +100,8 @@ my $cycleFile       = "";
 my $configFile      = "";
 my $childFile       = "";
 my $parentFile      = "";
+my $propTable       = "";
+my $propTableHuman  = "";
 
 my $markFlag   = 0;
 my $umlsall    = 0;
@@ -107,8 +112,10 @@ my $option_cuilist     = 0;
 my $option_realtime    = 0;
 my $option_propogation = 0;
 
-my %propogationHash = ();
-my $propogationFile = "";
+my %propogationFreq  = ();
+my %propogationHash  = ();
+my $propogationFile  = "";
+my $propogationTotal = 0;
 
 
 my %cycleHash       = ();
@@ -176,9 +183,7 @@ sub root
 
     $self->{'traceString'} = "";
 
-    my @array = keys %roots;
-
-    return @array; 
+    return $umlsRoot; 
 }
 
 # Method to return the maximum depth of a taxonomy.
@@ -320,8 +325,18 @@ sub _setOptions
     my $cuilist      = $params->{'cuilist'};
     my $realtime     = $params->{'realtime'};
     my $propogation  = $params->{'propogation'};
-    
-    print STDERR "\nUser Options:\n";
+    my $debugoption  = $params->{'debug'};
+
+    if(defined $forcerun || defined $verbose || defined $cuilist || 
+       defined $realtime || defined $debugoption) {
+	print STDERR "\nUser Options:\n";
+    }
+
+    #  check if the debug option has been been defined
+    if(defined $debugoption) { 
+	$debug = 1; 
+	print STDERR "   --debug option set\n";
+    }
 
     #  check if the propogation option has been identified
     if(defined $propogation) {
@@ -612,7 +627,8 @@ sub _setTableAndFileNames
     $tableName  = "$ver";
     $parentTable= "$ver";
     $childTable = "$ver";
-        
+    $propTable  = "$ver";
+    
     print STDERR "UMLS-Interface Configuration Information\n";
     print STDERR "  Sources:\n";
     foreach my $sab (sort keys %sab_names) {
@@ -625,7 +641,8 @@ sub _setTableAndFileNames
 	$tableName  .= "_$sab";
 	$parentTable.= "_$sab";
 	$childTable .= "_$sab";
-	
+	$propTable  .= "_$sab";
+
 	print STDERR "    $sab\n";
 	
 	
@@ -643,7 +660,8 @@ sub _setTableAndFileNames
 	$tableName  .= "_$rel";	
 	$parentTable.= "_$rel";
 	$childTable .= "_$rel";
-	
+	$propTable  .= "_$rel";
+
 	print STDERR "    $rel\n";
     }
     
@@ -655,20 +673,19 @@ sub _setTableAndFileNames
     $tableName  .= "_table";
     $parentTable.= "_parent";
     $childTable .= "_child";
+    $propTable .= "_prop";
 
     #  convert the databases to the hex name
     #  and store the human readable form 
     $tableNameHuman   = $tableName;
     $childTableHuman  = $childTable;
     $parentTableHuman = $parentTable;
+    $propTableHuman   = $propTable;
 
     $tableName   = "a" . sha1_hex($tableNameHuman);
     $childTable  = "a" . sha1_hex($childTableHuman);
     $parentTable = "a" . sha1_hex($parentTableHuman);
-
-    #print STDERR "$tableName => $tableNameHuman\n";
-    #print STDERR "$childTable => $childTableHuman\n";
-    #print STDERR "$parentTable=> $parentTableHuman\n";
+    $propTable   = "a" . sha1_hex($propTableHuman);
 
     if($option_verbose) {
 	print STDERR "  Configuration file:\n";
@@ -752,7 +769,7 @@ sub _initialize
     return undef if(!defined $self || !ref $self);
     $params = {} if(!defined $params);
 
-    #  get all the parameters
+    #  get some of the parameters
     my $multitax     = $params->{'multitax'};
     my $config       = $params->{'config'};
     my $cyclefile    = $params->{'cyclefile'};
@@ -818,8 +835,8 @@ sub _initialize
 
     #  propogate counts up if it has been defined 
     #  the database must be up to do this
-    #$self->_propogateCounts();
-    #if($self->checkError("_propogateCounts")) { return (); }	
+    $self->_propogateCounts();
+    if($self->checkError("_propogateCounts")) { return (); }	
     
 
 }
@@ -1342,6 +1359,93 @@ sub _loadTaxonomyTables
     close PAR; close CHD; 
 }
 
+sub getCuiList
+{
+    my $self = shift;
+    
+    return undef if(!defined $self || !ref $self);
+    
+    my $function = "_getCuiList";
+    &_debug($function);
+    
+    #  set up the database
+    my $db = $self->{'db'};
+    if(!$db) {
+	$self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "A db is required.";
+	$self->{'errorCode'} = 2;
+	return undef;
+    }    
+    
+    $self->{'traceString'} = "";
+    
+    #  set the upper level taxonomy 
+    $self->_setUpperLevelTaxonomy();
+    if($self->checkError("_setUpperLevelTaxonomy")) { return (); }   
+    
+    #  get the sabs in the config file
+    my @sabs = ();
+    if($umlsall) {
+	my $s = $db->selectcol_arrayref("select distinct SAB from MRREL");
+	@sabs = @{$s};
+    }
+    else {
+	foreach my $sab (sort keys %sab_names) { push @sabs, $sab; }
+    }
+
+    my %hash = ();    
+    #  for each of the sabs in the configuratino file
+    foreach my $sab (@sabs) {
+	
+	#  get the cuis for that sab
+	my $cuis = $self->_getCuis($sab);
+	
+	#  add the cuis to the propogation hash
+	foreach my $cui (@{$cuis}) { $hash{$cui} = 0 };
+    }
+    
+    #  add upper level taxonomy
+    foreach my $cui (sort keys %parentTaxonomy)   { $hash{$cui} = 0; }
+    foreach my $cui (sort keys %childrenTaxonomy) { $hash{$cui} = 0; }
+    
+    return \%hash;
+}
+
+sub _getCuis
+{
+
+    my $self = shift;
+    my $sab  = shift;
+    
+    return undef if(!defined $self || !ref $self);
+    
+    my $function = "_getCuis";
+    &_debug($function);
+            
+    #  set up the database
+    my $db = $self->{'db'};
+    if(!$db) {
+	$self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "A db is required.";
+	$self->{'errorCode'} = 2;
+	return undef;
+    }    
+    
+    $self->{'traceString'} = "";
+    
+    if($debug) { print STDERR "select CUI1 from MRREL where ($relations) and (SAB=\'$sab\')\;\n"; }
+    my $allCui1 = $db->selectcol_arrayref("select CUI1 from MRREL where ($relations) and (SAB=\'$sab\')\;");
+    if($self->checkError($function)) { return undef; }
+    
+    if($debug) { print STDERR "select CUI2 from MRREL where ($relations) and (SAB=\'$sab\')\n"; }
+    my $allCui2 = $db->selectcol_arrayref("select CUI2 from MRREL where ($relations) and (SAB=\'$sab\')");
+    if($self->checkError($function)) { return undef; }
+    
+    my @allCuis = (@{$allCui1}, @{$allCui2});
+    
+    return \@allCuis;
+}
+
 #  this function creates the upper level taxonomy between the 
 #  the sources and the root UMLS node
 sub _createUpperLevelTaxonomy
@@ -1394,16 +1498,8 @@ sub _createUpperLevelTaxonomy
 	#  get the sab's cui
 	my $sab_cui = $self->_getSabCui($sab);
 	
-	
-	#  select all the CUI1s from MRREL 
-	if($debug) { print STDERR "selecting all CUIs from MRREL for $sab\n"; }
-	my $allCui1 = $db->selectcol_arrayref("select CUI1 from MRREL where ($relations) and (SAB=\'$sab\')");
-	if($self->checkError($function)) { return undef; }
-	my $allCui2 = $db->selectcol_arrayref("select CUI2 from MRREL where ($relations) and (SAB=\'$sab\')");
-	if($self->checkError($function)) { return undef; }
-	
-	my @allCuis = (@{$allCui1}, @{$allCui2});
-	
+	#  select all the CUIs from MRREL 
+	my $allCuis = $self->_getCuis($sab);
 	
 	#  select all the CUI1s from MRREL that have a parent link
 	if($debug) { print STDERR "selecting CUIs from MRREL that have parent link for $sab\n"; }
@@ -1416,7 +1512,7 @@ sub _createUpperLevelTaxonomy
     
 	#  load the cuis that do not have a parent into the parent 
 	#  and chilren taxonomy for the upper level
-	foreach my $cui (@allCuis) {
+	foreach my $cui (@{$allCuis}) {
 	
 	    #  if the cui has a parent move on
 	    if(exists $parCuisHash{$cui})    { next; }
@@ -1732,16 +1828,19 @@ sub _setDepth {
 	if(-e $tableFile) {
 	    
 	    #  create the table in the umls database
-	    my $ar1 = $sdb->do("CREATE TABLE IF NOT EXISTS $tableName (CUI char(8), DEPTH int, PATH varchar(450))");
+	    my$sdb->do("CREATE TABLE IF NOT EXISTS $tableName (CUI char(8), DEPTH int, PATH varchar(450))");
 	    if($self->checkError($function)) { return (); }
 	    
+	    $sdb->do("INSERT INTO tableindex (TABLENAME, HEX) VALUES ('$tableNameHuman', '$tableName')");
+	    if($self->checkError($function)) { return (); }   
+
 	    #  load the path information into the table
 	    open(TABLE, $tableFile) || die "Could not open $tableFile\n";
 	    while(<TABLE>) {
 		chomp;
 		if($_=~/^\s*$/) { next; }
 		my ($cui, $depth, $path) = split/\t/;
-		my $arrRef = $sdb->do("INSERT INTO $tableName (CUI, DEPTH, PATH) VALUES(\'$cui\', '$depth', \'$path\')");
+		$sdb->do("INSERT INTO $tableName (CUI, DEPTH, PATH) VALUES(\'$cui\', '$depth', \'$path\')");
 		if($self->checkError($function)) { return (); }
 	    }
 	}
@@ -3024,18 +3123,162 @@ sub _forbiddenConcept
     return 0;
 }
 
-sub _propogateCounts
+sub getIC
 {
+    my $self     = shift;
+    my $concept  = shift;
 
-    my $self = shift;
-    
     return undef if(!defined $self || !ref $self);
     
-    my $function = "_propogateCounts";
+    my $function = "_getIC";
+    &_debug($function);
+
+    if(! ($self->checkConceptExists($concept))) {
+	return;
+    }
+    my $prob = $propogationHash{$concept} / $propogationTotal;
+    
+    my $score = 0;
+    if($prob > 0) {
+	$score = -log($prob);
+    }
+    return $score;
+    #return ($prob > 0) ? -log($prob) : 0;
+}
+
+sub getFreq
+{
+    my $self = shift;
+    my $concept = shift;
+
+
+    return undef if(!defined $self || !ref $self);
+    
+    my $function = "_getIC";
+    &_debug($function);
+
+    return () if(! ($self->checkConceptExists($concept)));
+
+    return $propogationHash{$concept};
+}
+
+sub getPropogationCuis
+{
+    my $self = shift;
+
+    return undef if(!defined $self || !ref $self);
+    
+    my $function = "getPropogationCuis";
     &_debug($function);
     
-    if(! ($option_propogation)) { return; }
+    #  set the database
+    my $db = $self->{'db'};
+    if(!$db) {
+	$self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "A db is required.";
+	$self->{'errorCode'} = 2;
+	return ();
+    }
 
+    #  set the upper level taxonomy 
+    $self->_setUpperLevelTaxonomy();
+    if($self->checkError("_setUpperLevelTaxonomy")) { return (); }   
+    
+    #  get the sabs in the config file
+    my @sabs = ();
+    if($umlsall) {
+	my $s = $db->selectcol_arrayref("select distinct SAB from MRREL");
+	@sabs = @{$s};
+    }
+    else {
+	foreach my $sab (sort keys %sab_names) { push @sabs, $sab; }
+    }
+
+    my %hash = ();    
+    #  for each of the sabs in the configuratino file
+    foreach my $sab (@sabs) {
+	
+	#  get the cuis for that sab
+	my $cuis = $self->_getCuis($sab);
+	
+	#  add the cuis to the propogation hash
+	foreach my $cui (@{$cuis}) { $hash{$cui} = 0 };
+    }
+    
+    #  add upper level taxonomy
+    foreach my $cui (sort keys %parentTaxonomy)   { $hash{$cui} = 0; }
+    foreach my $cui (sort keys %childrenTaxonomy) { $hash{$cui} = 0; }
+    
+    return \%hash;
+}
+
+sub _initializePropogationHash
+{
+    my $self = shift;
+
+    return undef if(!defined $self || !ref $self);
+    
+    my $function = "_initializePropogationHash";
+    &_debug($function);
+    
+    #  set the database
+    my $db = $self->{'db'};
+    if(!$db) {
+	$self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "A db is required.";
+	$self->{'errorCode'} = 2;
+	return ();
+    }
+    
+    #  select all the CUIs from MRREL for the defined $source
+    my $allCui1 = ""; my $allCui2 = "";
+    if($umlsall) {
+       	$allCui1 = $db->selectcol_arrayref("select CUI1 from MRREL where ($relations)");
+	if($self->checkError($function)) { return undef; }
+	$allCui2 = $db->selectcol_arrayref("select CUI2 from MRREL where ($relations)");
+	if($self->checkError($function)) { return undef; }
+    }
+    else {
+	if($debug) { print STDERR "select CUI1 from MRREL where ($relations) and ($sources)\n"; }
+	$allCui1 = $db->selectcol_arrayref("select CUI1 from MRREL where ($relations) and ($sources)");
+	if($self->checkError($function)) { return undef; }
+	if($debug) { print STDERR "select CUI2 from MRREL where ($relations) and ($sources)\n"; }
+	$allCui2 = $db->selectcol_arrayref("select CUI2 from MRREL where ($relations) and ($sources)");
+	if($self->checkError($function)) { return undef; }
+    }
+    
+    #  add the cuis to the propogation hash
+    foreach my $cui (@{$allCui1}) { 
+	$propogationHash{$cui} = "";
+	$propogationFreq{$cui} = 0;
+    }
+    foreach my $cui (@{$allCui2}) { 
+	$propogationHash{$cui} = ""; 
+	$propogationFreq{$cui} = 0;
+    }
+    
+    #  add upper level taxonomy
+    foreach my $cui (sort keys %parentTaxonomy)   { 
+	$propogationHash{$cui} = ""; 
+	$propogationFreq{$cui} = 0;
+    }
+    foreach my $cui (sort keys %childrenTaxonomy) { 
+	$propogationHash{$cui} = ""; 
+	$propogationFreq{$cui} = 0;
+    }
+    
+}
+
+sub _loadPropogationFreq
+{
+    my $self = shift;
+
+   return undef if(!defined $self || !ref $self);
+    
+    my $function = "_loadPropogationFreq";
+    &_debug($function);
+    
+    #  collect the counts for the required cuis
     open(FILE, $propogationFile) || die "Could not open propogation file: $propogationFile\n";
     while(<FILE>) {
 	chomp;
@@ -3043,31 +3286,207 @@ sub _propogateCounts
 	if($_=~/^\s*$/) { next; }
 	
 	my ($freq, $cui, $str) = split/\|/;
-	$propogationHash{$cui} = 1;
-    }
-    print STDERR "Finished Loading\n";
-    
-    print STDERR "Propogating Counts\n";
-    my @array = ();
-    my $count = $self->_propogation($umlsRoot, \@array);
-    print STDERR "Finished Propogating ($count)\n";
-    
-    
 
-    foreach my $cui (sort keys %propogationHash) {
-	print "$cui : $propogationHash{$cui}\n";
+	#  negative numbers are used as codes - they don't mean anything
+	if($freq < 0) { next; }
+
+	if(exists $propogationFreq{$cui}) {
+	    $propogationFreq{$cui} = $freq;
+	}
     }
-    exit;
 }
 
+sub _loadPropogationTables
+{
+    my $self = shift;
+
+    return undef if(!defined $self || !ref $self);
+    
+    my $function = "_loadPropogationTables";
+    &_debug($function);
+    
+    #  set the index DB handler
+    my $sdb = $self->{'sdb'};
+    if(!$sdb) {
+	$self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "A db is required.";
+	$self->{'errorCode'} = 2;
+	return ();
+    }    
+
+    #  create the table
+    $sdb->do("CREATE TABLE IF NOT EXISTS $propTable (CUI char(8), FREQ char(42))");
+    if($self->checkError($function)) { return (); }
+    #  load the table
+    my $N = 0;
+    foreach my $cui (sort keys %propogationHash) {
+	#my $freq = $propogationHash{$cui}->as_hex();
+	my $freq = $propogationHash{$cui};
+	$sdb->do("INSERT INTO $propTable (CUI, FREQ) VALUES ('$cui', '$freq')");	    
+	if($self->checkError($function)) { return (); }   
+	$N += $freq;
+    }
+
+    #  set N (the total propogation count)
+    $propogationTotal = $N;
+
+    #  add them to the index table
+    $sdb->do("INSERT INTO tableindex (TABLENAME, HEX) VALUES ('$propTableHuman', '$propTable')");
+    if($self->checkError($function)) { return (); }   
+
+}
+
+sub _setPropogationHash
+{
+    my $self = shift;
+    
+    return undef if(!defined $self || !ref $self);
+    
+    my $function = "_setPropogationHash";
+    &_debug($function);
+
+    #  set the index DB handler
+    my $sdb = $self->{'sdb'};
+    if(!$sdb) {
+	$self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "A db is required.";
+	$self->{'errorCode'} = 2;
+	return ();
+    }    
+    
+    #  set the parent taxonomy
+    my $sql = qq{ SELECT CUI, FREQ FROM $propTable};
+    my $sth = $sdb->prepare( $sql );
+    $sth->execute();
+    my($cui, $freq);
+    $sth->bind_columns( undef, \$cui, \$freq );
+    my $N = 0;
+    while( $sth->fetch() ) {
+	$propogationHash{$cui} = $freq;
+	$N += $freq;
+    } $sth->finish();
+
+    #  set N (the total propogation count)
+    $propogationTotal = $N;
+}
+
+sub getPropogationCount
+{
+    my $self = shift;
+    my $concept = shift;
+    
+    my $function = "getPropogationCount";
+    &_debug($function);
+
+    $self->_propogateCounts();
+
+    #  check the concept is there
+    if(!$concept) {
+	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "Undefined input values.";
+	$self->{'errorCode'} = 2 if($self->{'errorCode'} < 1);
+	return ();
+    }
+ 
+    #  check that the concept is valid
+    if($self->validCui($concept)) {
+	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "Incorrect input value ($concept).";
+	$self->{'errorCode'} = 2 if($self->{'errorCode'} < 1);
+	return undef;
+    } 
+
+    if(exists $propogationHash{$concept}) {
+	return $propogationHash{$concept};
+    }
+    else {
+	return -1;
+    }
+
+}
+
+sub _propogateCounts
+{
+
+    my $self = shift;
+    
+    return undef if(!defined $self || !ref $self);
+    
+    if($option_propogation) {
+
+	my $function = "_propogateCounts";
+	&_debug($function);
+
+	#  check if the parent and child tables exist and 
+	#  if they do just return otherwise create them
+	my $pkey = keys (%propogationHash);
+
+        #  if propogation hash
+	if($pkey > 0) { return; }
+	
+	elsif($self->_checkTableExists($propTable)) {
+	    $self->_setPropogationHash();
+	}
+	else {
+	    	    
+	    #  set the upper level taxonomy
+	    $self->_setUpperLevelTaxonomy();
+	    if($self->checkError("_setUpperLevelTaxonomy")) { return (); }
+	    
+	    #  initialize the propogation hash
+	    $self->_initializePropogationHash();
+	    
+	    #  load the propogation frequency hash
+	    $self->_loadPropogationFreq();
+	    
+	    #  propogate the counts
+	    &_debug("_propogation");
+	    my @array = ();
+	    $self->_propogation($umlsRoot, \@array);
+	    
+	    #  tally up the propogation counts
+	    $self->_tallyCounts();
+
+	    #  load the propogation tables
+	    $self->_loadPropogationTables();
+	}
+    }
+}
+
+sub _tallyCounts
+{
+
+    my $self = shift;
+    
+    return undef if(!defined $self || !ref $self);
+    
+    my $function = "_tallyCounts";
+    &_debug($function);
+    
+    foreach my $cui (sort keys %propogationHash) {
+	my $set    = $propogationHash{$cui};
+	my $pcount = $propogationFreq{$cui};
+
+	my %hash = ();
+	while($set=~/(C[0-9][0-9][0-9][0-9][0-9][0-9][0-9])/g) {
+	    my $c = $1;
+	    if(! (exists $hash{$c}) ) {
+		$pcount += $propogationFreq{$c};
+		$hash{$c}++;
+	    }
+	}
+	
+	$propogationHash{$cui} = $pcount;
+    }
+}
 
 sub _propogation
 {
     my $self    = shift;
     my $concept = shift;
     my $array   = shift;
-    
-    my $function = "_recursiveCuiToRoot";
+
+    my $function = "_propogation";
     
     #  check the concept is there
     if(!$concept) {
@@ -3084,10 +3503,7 @@ sub _propogation
 	$self->{'errorCode'} = 2 if($self->{'errorCode'} < 1);
 	return undef;
     } 
-    
-    #  check that the concept is not one of the forbidden concepts
-    if($self->_forbiddenConcept($concept)) { return (); }
-    
+      
     #  set the database
     my $sdb = $self->{'sdb'};
     if(!$sdb) {
@@ -3097,29 +3513,24 @@ sub _propogation
 	return ();
     }
     
-    my $freq = $propogationHash{$concept};
+
 
     #  set up the new path
     my @intermediate = @{$array};
     push @intermediate, $concept;
     my $series = join " ", @intermediate;
-   
-    #  if the concept is the umls root - we are done
-    if($concept eq $umlsRoot) { 
-	#  this is a complete path to the root so push it on the paths 
-	my @reversed = reverse(@intermediate);
-	my $rseries  = join " ", @reversed;
-	push @path_storage, $rseries;
-	return $freq;
-    }
 
-    #  get all the parents
+
+    #  get all the children
     my @children = $self->_getChildrenForDFS($concept);
     if($self->checkError("_getChildrenForDFS")) { return (); }
     
     #  search through the children
-    my $count = 0;
+    my $set = $propogationHash{$concept};
     foreach my $child (@children) {
+	
+	#  check that the concept is not one of the forbidden concepts
+	if($self->_forbiddenConcept($concept)) { next; }
 	
 	#  check if child cui has already in the path
 	my $flag = 0;
@@ -3128,18 +3539,31 @@ sub _propogation
 	}
 	
 	#  if it isn't continue on with the depth first search
-	if($flag == 0) {
-	    $count += $self->_propogate($child, \@intermediate);
-	    print "$concept : $count : $freq\n";
-	    if($self->checkError("$function")) { return (); }
+	if($flag == 0) {  
+	    $set .= " ";
+	    $set .= $self->_propogation($child, \@intermediate);    
 	}
     }
     
-    $freq += $count; 
+    my $rset = _breduce($set);
+    $propogationHash{$concept} = $rset;
 
-    return $freq;
+    open(TMP, ">>tmp") || die "TMP\n";
+    print TMP "$concept: $rset\n";
+    close TMP;
+
+    $rset .= " $concept";
+    return $rset;
+}
+
+sub _breduce {
     
-    
+   
+    local($_)= @_;
+    my (@words)= split;
+    my (%newwords);
+    for (@words) { $newwords{$_}=1 }
+    join ' ', keys(%newwords);
 }
 
 sub _cuiToRoot
@@ -3844,8 +4268,7 @@ sub checkConceptExists {
     return () if(!defined $self || !ref $self);
     
     my $function = "checkConceptExists";
-    #&_debug($function);
-    
+
     if(!$concept) {
 	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
 	$self->{'errorString'} .= "Undefined input values.";
@@ -3867,7 +4290,10 @@ sub checkConceptExists {
 	$self->{'errorCode'} = 2;
 	return undef;
     }
-    
+
+    #  check to see if it is the root
+    if($concept eq $umlsRoot) { return 1; }
+
     my $arrRef = "";
     if($umlsall) {
 	$arrRef = $db->selectcol_arrayref("select count(*) from MRREL where (CUI1='$concept' or CUI2='$concept') and ($relations)");
@@ -4197,8 +4623,10 @@ sub dropConfigTable
     if(exists $tables{$tableName}) {	
 	$sdb->do("drop table $tableName");
 	if($self->checkError($function)) { return (); }
-	
-	
+    }
+    if(exists $tables{$propTable}) {
+	$sdb->do("drop table $propTable");
+	if($self->checkError($function)) { return (); }
     }
     if(exists $tables{"tableindex"}) {	
 
@@ -4209,6 +4637,9 @@ sub dropConfigTable
 	if($self->checkError($function)) { return (); }
 	
 	$sdb->do("delete from tableindex where HEX='$tableName'");
+	if($self->checkError($function)) { return (); }
+	
+	$sdb->do("delete from tableindex where HEX='$propTable'");
 	if($self->checkError($function)) { return (); }
     }
 }
@@ -4292,6 +4723,7 @@ UMLS::Interface - Perl interface to the Unified Medical Language System (UMLS)
 
  die "$errString\n" if($errCode);
 
+ my $root = $umls->root();
 
  my $term1    = "blood";
 
@@ -4299,6 +4731,9 @@ UMLS::Interface - Perl interface to the Unified Medical Language System (UMLS)
 
  my $cui1     = pop @tList1;
 
+ if($umls->checkConceptExists($cui1) == 0) { 
+    print "This concept ($cui1) doesn't exist\n";
+ } else { print "This concept ($cui1) does exist\n"; }
 
  my $term2    = "cell";
 
@@ -4306,46 +4741,39 @@ UMLS::Interface - Perl interface to the Unified Medical Language System (UMLS)
 
  my $cui2     = pop @tList2;
 
-
  my $exists1  = $umls->checkConceptExists($cui1);
 
  my $exists2  = $umls->checkConceptExists($cui2);
 
-
  if($exists1) { print "$term1($cui1) exists in your UMLS view.\n"; }
 
  else         { print "$term1($cui1) does not exist in your UMLS view.\n"; }
-
-
+ 
  if($exists2) { print "$term2($cui2) exists in your UMLS view.\n"; }
 
  else         { print "$term2($cui2) does not exist in your UMLS view.\n"; }
 
  print "\n";
 
-
  my @cList1   = $umls->getTermList($cui1);
 
  my @cList2   = $umls->getTermList($cui2);
-
 
  print "The terms associated with $term1 ($cui1):\n";
 
  foreach my $c1 (@cList1) {
 
-     print " => $c1\n";
+    print " => $c1\n";
 
  } print "\n";
-
 
  print "The terms associated with $term2 ($cui2):\n";
 
  foreach my $c2 (@cList2) {
 
-     print " => $c2\n";
+    print " => $c2\n";
 
  } print "\n";
-
 
  my $lcs = $umls->findLeastCommonSubsumer($cui1, $cui2);
 
@@ -4353,13 +4781,11 @@ UMLS::Interface - Perl interface to the Unified Medical Language System (UMLS)
 
  print "$term2 ($cui2) is $lcs\n\n";
 
-
  my @shortestpath = $umls->findShortestPath($cui1, $cui2);
 
  print "The shortest path between $term1 ($cui1) and $term2 ($cui2):\n";
 
  print "  => @shortestpath\n\n";
-
 
  my $pathstoroot   = $umls->pathsToRoot($cui1);
 
@@ -4367,10 +4793,9 @@ UMLS::Interface - Perl interface to the Unified Medical Language System (UMLS)
 
  foreach  $path (@{$pathstoroot}) {
 
-     print "  => $path\n";
+    print "  => $path\n";
 
  } print "\n";
-
 
  my $mindepth = $umls->findMinimumDepth($cui1);
 
@@ -4380,27 +4805,35 @@ UMLS::Interface - Perl interface to the Unified Medical Language System (UMLS)
 
  print "The maximum depth of $term1 ($cui1) is $maxdepth\n\n";
 
-
  my @children = $umls->getChildren($cui2); 
 
  print "The child(ren) of $term2 ($cui2) are: @children\n\n";
-
 
  my @parents = $umls->getParents($cui2);
 
  print "The parent(s) of $term2 ($cui2) are: @parents\n\n";
 
+ my @relations = $umls->getRelations($cui2);
+
+ print "The relation(s) of $term2 ($cui2) are: @relations\n\n";
+
+ my @siblings = $umls->getRelated($cui2, "SIB");
+
+ print "The sibling(s) of $term2 ($cui2) are: @siblings\n\n";
 
  my @definitions = $umls->getCuiDef($cui1);
 
  print "The definition(s) of $term1 ($cui1) are:\n";
 
  foreach $def (@definitions) {
- 
-     print "  => $def\n"; $i++;
+
+    print "  => $def\n"; $i++;
 
  } print "\n";
 
+ my @sabs = $umls->getSab($cui1);
+
+ print "The sources containing $term1 ($cui1) are: @sabs\n";
 
  print "The semantic type(s) of $term1 ($cui1) and the semantic\n";
 
@@ -4410,15 +4843,19 @@ UMLS::Interface - Perl interface to the Unified Medical Language System (UMLS)
 
  foreach my $st (@sts) {
 
-     my $abr = $umls->getStAbr($st);
+    my $abr = $umls->getStAbr($st);
 
-     my $string = $umls->getStString($abr);
+    my $string = $umls->getStString($abr);
+    
+    my $def    = $umls->getStDef($abr);
 
-     my $def    = $umls->getStDef($abr);
-
-     print "  => $string ($abr) : $def\n";
-
+    print "  => $string ($abr) : $def\n";
+    
  } print "\n";
+
+ $umls->removeConfigFiles();
+
+ $umls->dropConfigTable();
 
 
 =head1 ABSTRACT

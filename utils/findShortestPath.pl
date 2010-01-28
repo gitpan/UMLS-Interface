@@ -43,6 +43,9 @@ Medical Language System
 
     term1<>cui2
 
+=head3 --debug
+
+Sets the debug flag for testing
 
 =head3 --username STRING
 
@@ -160,7 +163,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui", "infile=s", "forcerun", "verbose", "cuilist=s", "realtime" );
+GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui", "infile=s", "forcerun", "verbose", "cuilist=s", "realtime", "debug" );
 
 
 #  if help is defined, print out help
@@ -215,6 +218,9 @@ my $umls = "";
 my %option_hash = ();
 
 
+if(defined $opt_debug) {
+    $option_hash{"debug"} = $opt_debug;
+}
 if(defined $opt_realtime) {
     $option_hash{"realtime"} = $opt_realtime;
 }
@@ -373,6 +379,8 @@ sub showHelp() {
     print "Options:\n\n";
 
     print "--infile FILE            File containing TERM or CUI pairs\n\n";
+    
+    print "--debug                  Sets the debug flag for testing\n\n";
 
     print "--username STRING        Username required to access mysql\n\n";
 
@@ -410,7 +418,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findShortestPath.pl,v 1.6 2009/12/29 20:51:28 btmcinnes Exp $';
+    print '$Id: findShortestPath.pl,v 1.7 2010/01/20 16:28:31 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

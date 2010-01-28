@@ -2,29 +2,29 @@
 
 =head1 NAME
 
-queryCui-Sab.pl - This program returns all associated terms of a concept 
-                  in the MRCONSO table with their associated source.
+getAssociatedCuis.pl - This program returns all the CUIs of a term.
 
 =head1 SYNOPSIS
 
-This program takes in a CUI and returns all of its associated terms and 
-their sources from the MRCONSO table regardless of what source was 
-specified
+This program takes in a term and returns all of its associated CUIs
 
 =head1 USAGE
 
-Usage: queryCui-Sab.pl [OPTIONS] CUI
+Usage: getAssociatedCuis.pl [OPTIONS] TERM
 
 =head1 INPUT
 
 =head2 Required Arguments:
 
-=head3 CUI
+=head3 TERM
 
-Concept Unique Identifier (CUI) from the Unified Medical 
-Language System (UMLS)
+A term from the Unified Medical Language System
 
 =head2 Optional Arguments:
+
+=head3 --debug
+
+Sets the debug flag for testing
 
 =head3 --username STRING
 
@@ -115,11 +115,10 @@ this program; if not, write to:
 #                            COMMAND LINE OPTIONS AND USAGE
 #                           ================================
 
-
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s");
+GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s" );
 
 
 #  if help is defined, print out help
@@ -136,9 +135,9 @@ if( defined $opt_version ) {
     exit;
 }
 
-# At least 1 CUI should be given on the command line.
+# At least 1 term should be given on the command line.
 if(scalar(@ARGV) < 1) {
-    print STDERR "No CUI was specified on the command line\n";
+    print STDERR "No term was specified on the command line\n";
     &minimalUsageNotes();
     exit;
 }
@@ -150,11 +149,15 @@ if(defined $opt_hostname) { $hostname = $opt_hostname; }
 my $socket   = "/tmp/mysql.sock";
 if(defined $opt_socket)   { $socket   = $opt_socket;   }
 
+
 my $umls = "";
 my %option_hash = ();
 
 if(defined $opt_config) {
     $option_hash{"config"} = $opt_config;
+}
+if(defined $opt_debug) {
+    $option_hash{"debug"} = $opt_debug;
 }
 if(defined $opt_verbose) {
     $option_hash{"verbose"} = $opt_verbose;
@@ -185,25 +188,24 @@ die "$errString\n" if($errCode);
 
 &errorCheck($umls);
 
-my $cui = shift;
+my $input = shift;
 
-if($umls->validCui($cui)) {
-    print STDERR "ERROR: The concept ($cui) is not valid.\n";
-    exit;
-}
+my $term  = $input;
 
-my @terms = $umls->getAllTerms($cui); 
+$term=~s/\'/\\\'/g;
+
+my @cuis = $umls->getConceptList($term); 
 
 &errorCheck($umls);
- 
-if($#terms < 0) {
-    print "There are no terms associated with $cui\n";
+
+if($#cuis < 0) {
+    print "No CUIs are associated with $input.\n";
 }
 else {
-    print "The terms for CUI ($cui) are :\n";
+    print "The CUIs associated with $term are:\n";
     my $i = 1;
-    foreach $term (@terms) {
-	print "$i. $term\n"; $i++;
+    foreach my $cui (@cuis) {
+	print "$i. $cui\n"; $i++;
     }
 }
 
@@ -221,7 +223,7 @@ sub errorCheck
 ##############################################################################
 sub minimalUsageNotes {
     
-    print "Usage: queryCui-Sab.pl [OPTIONS] CUI \n";
+    print "Usage: getAssociatedCuis.pl [OPTIONS] TERM \n";
     &askHelp();
     exit;
 }
@@ -232,13 +234,14 @@ sub minimalUsageNotes {
 sub showHelp() {
 
         
-    print "This is a utility that takes as input a cui\n";
-    print "and returns all of its possible associated terms\n";
-    print "with their associated source(s).\n\n";
+    print "This is a utility that takes as input a term\n";
+    print "and returns all of its possible CUIs.\n\n";
   
-    print "Usage: queryCui-Sab.pl [OPTIONS] CUI\n\n";
+    print "Usage: getAssociatedCuis.pl [OPTIONS] TERM\n\n";
 
     print "Options:\n\n";
+    
+    print "--debug                  Sets the debug flag for testing\n\n";
 
     print "--username STRING        Username required to access mysql\n\n";
 
@@ -250,6 +253,8 @@ sub showHelp() {
     
     print "--socket STRING          Socket used by mysql (DEFAULT: /tmp.mysql.sock)\n\n";
 
+    print "--config FILE            Configuration file\n\n";
+
     print "--version                Prints the version number\n\n";
  
     print "--help                   Prints this help message.\n\n";
@@ -259,7 +264,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: queryCui-Sab.pl,v 1.4 2009/12/30 20:41:34 btmcinnes Exp $';
+    print '$Id: getAssociatedCuis.pl,v 1.2 2010/01/20 16:28:31 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 
@@ -267,6 +272,6 @@ sub showVersion {
 #  function to output "ask for help" message when user's goofed
 ##############################################################################
 sub askHelp {
-    print STDERR "Type queryCui-Sab.pl --help for help.\n";
+    print STDERR "Type getAssociatedCuis.pl --help for help.\n";
 }
     

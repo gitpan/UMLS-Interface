@@ -24,6 +24,10 @@ A concept (CUI) or a term from the Unified Medical Language System
 
 =head2 Optional Arguments:
 
+=head3 --debug
+
+Sets the debug flag for testing
+
 =head3 --username STRING
 
 Username is required to access the umls database on MySql
@@ -140,7 +144,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "forcerun", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui", "verbose", "cuilist=s", "realtime");
+GetOptions( "version", "help", "forcerun", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui", "verbose", "cuilist=s", "realtime", "propogation=s");
 
 
 #  if help is defined, print out help
@@ -175,6 +179,12 @@ my $umls = "";
 
 my %option_hash = ();
 
+if(defined $opt_propogation) { 
+    $option_hash{"propogation"} = $opt_propogation;
+}
+if(defined $opt_debug) {
+    $option_hash{"debug"} = $opt_debug;
+}
 if(defined $opt_realtime) {
     $option_hash{"realtime"} = $opt_realtime;
 }
@@ -256,6 +266,10 @@ foreach my $cui (@c) {
 	    foreach my $element (@array) {
 		my ($t) = $umls->getTermList($element); 
 		print "$element ($t) ";
+		if(defined $opt_propogation) {
+		    my $pc = $umls->getPropogationCount($element);
+		    print "($pc) ";
+		}
 	    } print "\n";
 	    
 	    $printFlag = 1;
@@ -298,6 +312,8 @@ sub showHelp() {
     print "Usage: findPathToRoot.pl [OPTIONS] [CUI|TERM]\n\n";
 
     print "Options:\n\n";
+    
+    print "--debug                  Sets the debug flag for testing\n\n";
 
     print "--username STRING        Username required to access mysql\n\n";
 
@@ -337,7 +353,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findPathToRoot.pl,v 1.8 2010/01/07 23:15:44 btmcinnes Exp $';
+    print '$Id: findPathToRoot.pl,v 1.10 2010/01/28 16:37:10 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

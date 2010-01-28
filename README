@@ -195,6 +195,10 @@ NAME
                                        hex form created by the package for a 
                                        given configuration
 
+          getIC()                   -- Returns the information content of a CUI
+
+          getFreq()                 -- Returns the propogation count of a CUI
+
     These methods essentially expose an interface as required by the
     UMLS::Similarity modules. The UMLS::Similarity modules require that any
     interface to a taxonomy provide the above methods.

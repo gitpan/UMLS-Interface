@@ -8,7 +8,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 53;
+use Test::More tests => 55;
 
 BEGIN{ use_ok ('File::Spec') }
 
@@ -34,32 +34,32 @@ like ($output, qr/Two terms and\/or CUIs are required\s+Type findLeastCommonSubs
 
 
 #######################################################################################
-#  check the findMaximumCuiDepth.pl program
+#  check the findCuiDepth.pl program with --maximum option
 #######################################################################################
-$util_prg = File::Spec->catfile('utils', 'findMaximumCuiDepth.pl');
+$util_prg = File::Spec->catfile('utils', 'findCuiDepth.pl');
 ok(-e $util_prg);
 
 #  check no command line inputs
-$output = `$perl $util_prg 2>&1`;
-like ($output, qr/No term was specified on the command line\s+Type findMaximumCuiDepth.pl --help for help.\s+Usage\: findMaximumCuiDepth\.pl \[OPTIONS\] \[TERM\|CUI\]\s*/);
+$output = `$perl $util_prg --maximum 2>&1`;
+like ($output, qr/No term was specified on the command line\s+Type findCuiDepth.pl --help for help.\s+Usage\: findCuiDepth\.pl \[OPTIONS\] \[TERM\|CUI\]\s*/);
 
 #  check when invalid CUI is entered
-$output = `$perl $util_prg C98 2>&1`;
+$output = `$perl $util_prg --maximum C98 2>&1`;
 like ($output, qr/Warning \(UMLS\:\:Interface\-\>getTermList\(\)\) \- Incorrect input value \(C98\)/);
 
 #######################################################################################
-#  check the findMinimumCuiDepth.pl program
+#  check the findCuiDepth.pl program with --minimum option
 #####################################################################
 ##################
-$util_prg = File::Spec->catfile('utils', 'findMinimumCuiDepth.pl');
+$util_prg = File::Spec->catfile('utils', 'findCuiDepth.pl');
 ok(-e $util_prg);
 
 #  check no command line inputs
-$output = `$perl $util_prg 2>&1`;
-like ($output, qr/No term was specified on the command line\s+Type findMinimumCuiDepth.pl --help for help.\s+Usage\: findMinimumCuiDepth\.pl \[OPTIONS\] \[TERM\|CUI\]\s*/);
+$output = `$perl $util_prg --minimum 2>&1`;
+like ($output, qr/No term was specified on the command line\s+Type findCuiDepth.pl --help for help.\s+Usage\: findCuiDepth\.pl \[OPTIONS\] \[TERM\|CUI\]\s*/);
 
 #  check when invalid CUI is entered
-$output = `$perl $util_prg C98 2>&1`;
+$output = `$perl $util_prg --minimum C98 2>&1`;
 like ($output, qr/Warning \(UMLS\:\:Interface\-\>getTermList\(\)\) \- Incorrect input value \(C98\)/);
 
 #######################################################################################
@@ -197,46 +197,46 @@ $output = `$perl $util_prg dkj 2>&1`;
 like ($output, qr/There are no definitions for the semantic type \(dkj\)/);
 
 #######################################################################################
-#  check the queryCui.pl program
+#  check the getAssociatedTerms.pl program
 #######################################################################################
-$util_prg = File::Spec->catfile('utils', 'queryCui.pl');
+$util_prg = File::Spec->catfile('utils', 'getAssociatedTerms.pl');
 ok(-e $util_prg);
 
 #  check no command line inputs
 $output = `$perl $util_prg 2>&1`;
-like ($output, qr/No CUI was specified on the command line\s+Type queryCui.pl --help for help.\s+Usage\: queryCui\.pl \[OPTIONS\] CUI\s*/);
+like ($output, qr/No CUI was specified on the command line\s+Type getAssociatedTerms.pl --help for help.\s+Usage\: getAssociatedTerms\.pl \[OPTIONS\] CUI\s*/);
 
 #  check when invalid CUI is entered
 $output = `$perl $util_prg C98 2>&1`;
-like ($output, qr/ERROR\: The concept \(C98\) is not valid\./);
+like ($output, qr/ERROR\: Input argument \(C98\) must be a CUI \(C\\d\\d\\d\\d\\d\\d\\d\\d\)\./);
 
 #######################################################################################
-#  check the queryTerm.pl program
+#  check the getAssociatedCuis.pl program
 #######################################################################################
-$util_prg = File::Spec->catfile('utils', 'queryTerm.pl');
+$util_prg = File::Spec->catfile('utils', 'getAssociatedCuis.pl');
 ok(-e $util_prg);
 
 #  check no command line inputs
 $output = `$perl $util_prg 2>&1`;
-like ($output, qr/No term was specified on the command line\s+Type queryTerm.pl --help for help.\s+Usage\: queryTerm\.pl \[OPTIONS\] TERM\s*/);
+like ($output, qr/No term was specified on the command line\s+Type getAssociatedCuis.pl --help for help.\s+Usage\: getAssociatedCuis\.pl \[OPTIONS\] TERM\s*/);
 
 #  check when invalid term is entered
 $output = `$perl $util_prg C98 2>&1`;
 like ($output, qr/No CUIs are associated with C98\./);
 
 #######################################################################################
-#  check the queryCui-Sab.pl program
+#  check the getAssociatedTerms.pl program with the --config option
 #######################################################################################
-$util_prg = File::Spec->catfile('utils', 'queryCui-Sab.pl');
+$util_prg = File::Spec->catfile('utils', 'getAssociatedTerms.pl');
 ok(-e $util_prg);
 
 #  check no command line inputs
 $output = `$perl $util_prg 2>&1`;
-like ($output, qr/No CUI was specified on the command line\s+Type queryCui-Sab.pl --help for help.\s+Usage\: queryCui-Sab\.pl \[OPTIONS\] CUI\s*/);
+like ($output, qr/No CUI was specified on the command line\s+Type getAssociatedTerms.pl --help for help.\s+Usage\: getAssociatedTerms\.pl \[OPTIONS\] CUI\s*/);
 
 #  check when invalid CUI is entered
 $output = `$perl $util_prg C98 2>&1`;
-like ($output, qr/ERROR\: The concept \(C98\) is not valid\./);
+like ($output, qr/ERROR\: Input argument \(C98\) must be a CUI \(C\\d\\d\\d\\d\\d\\d\\d\\d\)\./);
  
 #######################################################################################
 #  check the removeConfigData.pl program
@@ -249,15 +249,25 @@ $output = `$perl $util_prg 2>&1`;
 like ($output, qr/Configuration file was not specified on the command line\s+Type removeConfigData.pl --help for help.\s+Usage\: removeConfigData\.pl \[OPTIONS\] CONFIGFILE\s*/);
 
 #######################################################################################
-#  check the dfs.pl program
+#  check the findDFS.pl program
 #######################################################################################
-$util_prg = File::Spec->catfile('utils', 'dfs.pl');
+$util_prg = File::Spec->catfile('utils', 'findDFS.pl');
 ok(-e $util_prg);
 
 #  check no command line inputs
 $output = `$perl $util_prg 2>&1`;
-like ($output, qr/The config file was not specified on the command line\s+Type dfs.pl --help for help.\s+Usage\: dfs\.pl CONFIGFILE \[OPTIONS\]\s*/);
+like ($output, qr/The config file was not specified on the command line\s+Type findDFS.pl --help for help.\s+Usage\: findDFS\.pl CONFIGFILE \[OPTIONS\]\s*/);
 
 #  check when invalid configuration file is entered
 $output = `$perl $util_prg config 2>&1`;
 like ($output, qr/Could not open configuration file\: config/);
+
+#######################################################################################
+#  check the getCuiList.pl program
+#######################################################################################
+$util_prg = File::Spec->catfile('utils', 'getCuiList.pl');
+ok(-e $util_prg);
+
+#  check no command line inputs
+$output = `$perl $util_prg 2>&1`;
+like ($output, qr/Configuration file was not specified on the command line\s+Type getCuiList.pl --help for help.\s+Usage\: getCuiList\.pl \[OPTIONS\] CONFIGFILE\s*/);

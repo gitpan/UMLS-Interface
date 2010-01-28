@@ -2,16 +2,17 @@
 
 =head1 NAME
 
-queryCui.pl - This program returns all associated terms of a concept.
+getAssociatedTerms.pl - This program returns all associated terms of a concept.
 
 =head1 SYNOPSIS
 
-This program takes in a CUI and returns all of its associated terms
-given the sources and relations specified in the config file
+This program takes in a CUI and returns all of its associated terms either 
+given the sources and relations specified in the config file or in the 
+entire UMLS.
 
 =head1 USAGE
 
-Usage: queryCui.pl [OPTIONS] CUI
+Usage: getAssociatedTerms.pl [OPTIONS] CUI
 
 =head1 INPUT
 
@@ -23,6 +24,16 @@ Concept Unique Identifier (CUI) from the Unified Medical
 Language System (UMLS)
 
 =head2 Optional Arguments:
+
+=head3 --config FILE            
+
+If the configuration file is specified it will return the 
+associated terms only in the given set of sources and 
+relations. 
+
+=head3 --debug
+
+Sets the debug flag for testing
 
 =head3 --username STRING
 
@@ -117,7 +128,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s" );
+GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s" );
 
 
 #  if help is defined, print out help
@@ -154,6 +165,9 @@ my %option_hash = ();
 if(defined $opt_config) {
     $option_hash{"config"} = $opt_config;
 }
+if(defined $opt_debug) {
+    $option_hash{"debug"} = $opt_debug;
+}
 if(defined $opt_verbose) {
     $option_hash{"verbose"} = $opt_verbose;
 }
@@ -186,11 +200,17 @@ die "$errString\n" if($errCode);
 my $cui = shift;
 
 if($umls->validCui($cui)) {
-    print STDERR "ERROR: The concept ($cui) is not valid.\n";
+    print STDERR "ERROR: Input argument ($cui) must be a CUI (C\\d\\d\\d\\d\\d\\d\\d\\d).\n";
     exit;
 }
 
-my @terms = $umls->getTermList($cui); 
+my @terms = ();
+if(defined $opt_config) {
+    @terms = $umls->getTermList($cui); 
+}
+else {
+    @terms = $umls->getAllTerms($cui);
+}
 
 &errorCheck($umls);
 
@@ -219,7 +239,7 @@ sub errorCheck
 ##############################################################################
 sub minimalUsageNotes {
     
-    print "Usage: queryCui.pl [OPTIONS] CUI \n";
+    print "Usage: getAssociatedTerms.pl [OPTIONS] CUI \n";
     &askHelp();
     exit;
 }
@@ -233,9 +253,11 @@ sub showHelp() {
     print "This is a utility that takes as input a cui and returns all of its\n";
     print "possible associated terms given the specified sources and relations.\n\n";
   
-    print "Usage: queryCui.pl [OPTIONS] CUI\n\n";
+    print "Usage: getAssociatedTerms.pl [OPTIONS] CUI\n\n";
 
     print "Options:\n\n";
+    
+    print "--debug                  Sets the debug flag for testing\n\n";
 
     print "--username STRING        Username required to access mysql\n\n";
 
@@ -258,7 +280,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: queryCui.pl,v 1.5 2010/01/07 23:15:44 btmcinnes Exp $';
+    print '$Id: getAssociatedTerms.pl,v 1.4 2010/01/20 16:28:31 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 
@@ -266,6 +288,6 @@ sub showVersion {
 #  function to output "ask for help" message when user's goofed
 ##############################################################################
 sub askHelp {
-    print STDERR "Type queryCui.pl --help for help.\n";
+    print STDERR "Type getAssociatedTerms.pl --help for help.\n";
 }
     

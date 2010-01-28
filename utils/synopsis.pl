@@ -10,6 +10,7 @@ die "Unable to create UMLS::Interface object.\n" if(!$umls);
 
 die "$errString\n" if($errCode);
 
+my $root = $umls->root();
 
 my $term1    = "blood";
 
@@ -17,6 +18,9 @@ my @tList1   = $umls->getConceptList($term1);
 
 my $cui1     = pop @tList1;
 
+if($umls->checkConceptExists($cui1) == 0) { 
+    print "This concept ($cui1) doesn't exist\n";
+} else { print "This concept ($cui1) does exist\n"; }
 
 my $term2    = "cell";
 
@@ -108,6 +112,13 @@ my @parents = $umls->getParents($cui2);
 
 print "The parent(s) of $term2 ($cui2) are: @parents\n\n";
 
+my @relations = $umls->getRelations($cui2);
+
+print "The relation(s) of $term2 ($cui2) are: @relations\n\n";
+
+my @siblings = $umls->getRelated($cui2, "SIB");
+
+print "The sibling(s) of $term2 ($cui2) are: @siblings\n\n";
 
 my @definitions = $umls->getCuiDef($cui1);
 
@@ -119,6 +130,10 @@ foreach $def (@definitions) {
 
 } print "\n";
 
+
+my @sabs = $umls->getSab($cui1);
+
+print "The sources containing $term1 ($cui1) are: @sabs\n";
 
 print "The semantic type(s) of $term1 ($cui1) and the semantic\n";
 
@@ -138,3 +153,6 @@ foreach my $st (@sts) {
     
 } print "\n";
 
+$umls->removeConfigFiles();
+
+$umls->dropConfigTable();

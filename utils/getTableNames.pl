@@ -3,20 +3,22 @@
 =head1 NAME
 
 getTableNames.pl - This program returns the table names associated 
-with a specified configuration file.
+with a specified configuration file or all that have been created
 
 =head1 SYNOPSIS
 
 This program returns the table names associated with a specified 
-configuration file.
+configuration file or all that have been created
 
 =head1 USAGE
 
-Usage: getTableNames.pl [OPTIONS] CONFIGFILE
+Usage: getTableNames.pl [OPTIONS] 
 
 =head1 INPUT
 
-=head2 CONFIGFILE
+=head2 Optional Arguments:
+
+=head3 --config CONFIGFILE
 
 This is the configuration file. The format of the configuration 
 file is as follows:
@@ -40,7 +42,9 @@ If you go to the configuration file directory, there will
 be example configuration files for the different runs that 
 you have performed.
 
-=head2 Optional Arguments:
+=head3 --debug
+
+Sets the debug flag for testing
 
 =head3 --username STRING
 
@@ -135,7 +139,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s");
+GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s");
 
 
 #  if help is defined, print out help
@@ -152,58 +156,81 @@ if( defined $opt_version ) {
     exit;
 }
 
-# At least 1 CUI should be given on the command line.
-if(scalar(@ARGV) < 1) {
-    print STDERR "Configuration file was specified on the command line\n";
-    &minimalUsageNotes();
-    exit;
-}
+my $umls = "";                          
+my %option_hash = ();     
+           
+if(defined $opt_config) { 
+    $option_hash{"config"} = $opt_config;
+}   
+if(defined $opt_debug) { 
+    $option_hash{"debug"} = $opt_debug;
+}   
+if(defined $opt_verbose) { 
+    $option_hash{"verbose"} = $opt_verbose;              
+}                
+if(defined $opt_username) {             
+    $option_hash{"username"} = $opt_username;            
+}                
+if(defined $opt_driver) {               
+    $option_hash{"driver"}   = "mysql"; 
+}                
+if(defined $opt_database) {             
+    $option_hash{"database"} = $database;                
+}                
+if(defined $opt_password) {             
+    $option_hash{"password"} = $opt_password;            
+}                
+if(defined $opt_hostname) {             
+    $option_hash{"hostname"} = $hostname;                
+}                
+if(defined $opt_socket) {               
+    $option_hash{"socket"}   = $socket; 
+}                
 
-my $database = "umls";
-if(defined $opt_database) { $database = $opt_database; }
-my $hostname = "localhost";
-if(defined $opt_hostname) { $hostname = $opt_hostname; }
-my $socket   = "/tmp/mysql.sock";
-if(defined $opt_socket)   { $socket   = $opt_socket;   }
-
-my $umls = "";
-
-my $config = shift;
-
-if(defined $opt_username and defined $opt_password) {
-    $umls = UMLS::Interface->new({"driver" => "mysql", 
-				  "database" => "$database", 
-				  "username" => "$opt_username",  
-				  "password" => "$opt_password", 
-				  "hostname" => "$hostname", 
-				  "socket"   => "$socket",
-			          "config"   => "$config"}); 
-    die "Unable to create UMLS::Interface object.\n" if(!$umls);
-    ($errCode, $errString) = $umls->getError();
-    die "$errString\n" if($errCode);
-}
-else {
-    $umls = UMLS::Interface->new({"config" => "$config"});
-    die "Unable to create UMLS::Interface object.\n" if(!$umls);
-    ($errCode, $errString) = $umls->getError();
-    die "$errString\n" if($errCode);
-}
+$umls = UMLS::Interface->new(\%option_hash);             
+die "Unable to create UMLS::Interface object.\n" if(!$umls);                    
+($errCode, $errString) = $umls->getError();              
+die "$errString\n" if($errCode);               
 
 &errorCheck($umls);
 
-my $hashRef = $umls->returnTableNames();
-&errorCheck($umls);
-
-my $hashkeys = keys %{$hashRef};
-if($hashkeys > 0) {
-    print "\nThe tables associated with the given configuration file are as follows:\n\n";
-    print "    Table\t\t\t\t\tTable Name\n";
-    foreach my $name (sort keys %{$hashRef}) {
-	print "    ${$hashRef}{$name}\t$name\n";
+if(defined $opt_config) {
+    my $hashRef = $umls->returnTableNames();
+    &errorCheck($umls);
+    
+    my $hashkeys = keys %{$hashRef};
+    if($hashkeys > 0) {
+	print "\nThe tables associated with the given configuration file are as follows:\n\n";
+	print "    Table\t\t\t\t\tTable Name\n";
+	foreach my $name (sort keys %{$hashRef}) {
+	    print "    ${$hashRef}{$name}\t$name\n";
+	}
+    }
+    else {
+	print "There are no tables created for this configuration\n";
     }
 }
 else {
-    print "There are no tables created for this configuration\n";
+    my $database = "umlsinterfaceindex";    
+    my $sdb = "";    
+    
+    if(defined $self->{'username'}) {       
+	$sdb = DBI->connect("DBI:mysql:database=$database;mysql_socket=$socket;host\=$hostname",$username, $password, {RaiseError => 1});  
+    }                
+    else {           
+	my $dsn = "DBI:mysql:$database;mysql_read_default_group=client;";  
+	$sdb = DBI->connect($dsn);          
+    }                
+    
+    print "\nTable\t\t\t\t\t\tTable Name\n";
+    my $sql = qq{ select TABLENAME, HEX from tableindex};    
+    my $sth = $sdb->prepare( $sql );        
+    $sth->execute(); 
+    my($name, $hex); 
+    $sth->bind_columns( undef, \$name, \$hex);               
+    while( $sth->fetch() ) {                
+	print "$hex\t$name\n";              
+    } $sth->finish();
 }
 
 sub errorCheck
@@ -220,7 +247,7 @@ sub errorCheck
 ##############################################################################
 sub minimalUsageNotes {
     
-    print "Usage: getTableNames.pl [OPTIONS] CONFIGFILE \n\n";
+    print "Usage: getTableNames.pl [OPTIONS]\n\n";
     &askHelp();
     exit;
 }
@@ -234,9 +261,13 @@ sub showHelp() {
     print "This is a utility that returns the table names\n";
     print "created for a given configuration file\n\n";
   
-    print "Usage: getTableNames.pl [OPTIONS] CONFIGFILE\n\n";
+    print "Usage: getTableNames.pl [OPTIONS] \n\n";
 
     print "Options:\n\n";
+    
+    print "--config FILE            Configuration file\n\n";
+    
+    print "--debug                  Sets the debug flag for testing\n\n";
 
     print "--username STRING        Username required to access mysql\n\n";
 
@@ -257,7 +288,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getTableNames.pl,v 1.1 2009/12/22 21:21:57 btmcinnes Exp $';
+    print '$Id: getTableNames.pl,v 1.3 2010/01/20 16:28:31 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

@@ -1,6 +1,53 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.33 to 0.35
+    1. Added the ability to propogation counts given a propogation file.
+    Currently the format of that file is: Frequency|CUI|String
+
+        So for example: 
+        
+        1|C0018563|hand
+
+        The concept C0018563 has a frequency count of one and is associated 
+        with the term hand. The string really isn't necessary but I like 
+        to know what a CUI means. This input format may be changed in the 
+        future to accept a file but I might also create a program in the 
+        util/ directory that given a file it will create this for you. 
+
+        To do this the propogation parameter must be set to the location
+        of the propogation file.
+
+    2. Added the getPropogationCount.pl program to the util/ directory. This
+    is used to obtain the propogation count of a specified CUI.
+
+    3. Added a getIC() function which takes in a CUI and returns its
+    information content based on the propagation file
+
+    4. I also added a getPropogationCount() function which takes in a CUI
+    and returns the propogation count of a given concept
+
+    5. Added getCuiList() program to the util directory and its associated
+    function in the Interface.pm module. This allows you to get a list of
+    CUIs given the sources and relations in a config file.
+
+    6. Added a --debug option to print out function information for debuging
+    purposes.
+
+    7. Added a --propogation PROPOGATIONFILE option to findPathToRoot.pl
+    which will return the propogation count of the CUIs in the path
+
+    8. Combined the following util programs:
+
+        a. findMaximumCuiDepth and findMinimumCuiDepth => findCuiDepth
+        b. queryCui and queryCui-SAB -> getAssociatedTerms
+
+    9. Changed the name of the following util programs a. queryTerm ->
+    getAssociatedCuis b. dfs -> findDFS
+
+    10. Added a --propogation option for findPathToRoot to return the
+    propogation counts of the CUIs in the path.
+
   Changes from version 0.31 to 0.33
 1. fixed the error in the make tests - they would not work properly
    unless you had the UMLS-Interface environment variable set 

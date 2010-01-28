@@ -43,6 +43,10 @@ you have performed.
 
 =head2 Optional Arguments:
 
+=head3 --debug
+
+Sets the debug flag for testing
+
 =head3 --username STRING
 
 Username is required to access the umls database on MySql
@@ -136,7 +140,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s");
+GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s");
 
 
 #  if help is defined, print out help
@@ -160,35 +164,38 @@ if(scalar(@ARGV) < 1) {
     exit;
 }
 
-my $database = "umls";
-if(defined $opt_database) { $database = $opt_database; }
-my $hostname = "localhost";
-if(defined $opt_hostname) { $hostname = $opt_hostname; }
-my $socket   = "/tmp/mysql.sock";
-if(defined $opt_socket)   { $socket   = $opt_socket;   }
-
-my $umls = "";
-
 my $config = shift;
 
-if(defined $opt_username and defined $opt_password) {
-    $umls = UMLS::Interface->new({"driver" => "mysql", 
-				  "database" => "$database", 
-				  "username" => "$opt_username",  
-				  "password" => "$opt_password", 
-				  "hostname" => "$hostname", 
-				  "socket"   => "$socket",
-			          "config"   => "$config"}); 
-    die "Unable to create UMLS::Interface object.\n" if(!$umls);
-    ($errCode, $errString) = $umls->getError();
-    die "$errString\n" if($errCode);
+my %option_hash = ();
+
+$option_hash{"config"} = $config;
+
+if(defined $opt_debug) {
+    $option_hash{"debug"} = $opt_debug;
 }
-else {
-    $umls = UMLS::Interface->new({"config" => "$config"});
-    die "Unable to create UMLS::Interface object.\n" if(!$umls);
-    ($errCode, $errString) = $umls->getError();
-    die "$errString\n" if($errCode);
+if(defined $opt_username) {
+    $option_hash{"username"} = $opt_username;
 }
+if(defined $opt_driver) {
+    $option_hash{"driver"}   = "mysql";
+}
+if(defined $opt_database) {
+    $option_hash{"database"} = $database;
+}
+if(defined $opt_password) {
+    $option_hash{"password"} = $opt_password;
+}
+if(defined $opt_hostname) {
+    $option_hash{"hostname"} = $hostname;
+}
+if(defined $opt_socket) {
+    $option_hash{"socket"}   = $socket;
+}
+
+$umls = UMLS::Interface->new(\%option_hash); 
+die "Unable to create UMLS::Interface object.\n" if(!$umls);
+($errCode, $errString) = $umls->getError();
+die "$errString\n" if($errCode);
 
 &errorCheck($umls);
 
@@ -230,6 +237,8 @@ sub showHelp() {
 
     print "Options:\n\n";
 
+    print "--debug                  Sets the debug flag for testing\n\n";
+
     print "--username STRING        Username required to access mysql\n\n";
 
     print "--password STRING        Password required to access mysql\n\n";
@@ -249,7 +258,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: removeConfigData.pl,v 1.2 2009/12/30 20:41:34 btmcinnes Exp $';
+    print '$Id: removeConfigData.pl,v 1.3 2010/01/20 16:28:31 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 
