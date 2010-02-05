@@ -2,16 +2,16 @@
 
 =head1 NAME
 
-getPropogationCount.pl - This program returns the propogation count of 
+getPropagationCount.pl - This program returns the propagation count of 
     a specified term or concept.
 
 =head1 SYNOPSIS
 
-This program takes in a cui (or term) and returns its propogation count.
+This program takes in a cui (or term) and returns its propagation count.
 
 =head1 USAGE
 
-Usage: getPropogationCount.pl [OPTIONS] [CUI|TERM]
+Usage: getPropagationCount.pl [OPTIONS] [CUI|TERM]
 
 =head1 INPUT
 
@@ -155,7 +155,7 @@ if(defined $opt_socket)   { $socket   = $opt_socket;   }
 my $umls = "";
 my %option_hash = ();
 
-$option_hash{"propogation"} = 1;
+$option_hash{"propagation"} = 1;
 
 if(defined $opt_config) {
     $option_hash{"config"} = $opt_config;
@@ -233,7 +233,7 @@ foreach my $input (@terms) {
 	#  make certain cui exists in this view
 	if($umls->checkConceptExists($cui) == 0) { next; }	
 
-	my $pcount = $umls->getPropogationCount($cui); 
+	my $pcount = $umls->getPropagationCount($cui); 
 	
 	print STDERR "$pcount\n";
 	&errorCheck($umls);
@@ -242,7 +242,7 @@ foreach my $input (@terms) {
 	    print "Input $input does not exist in this view of the UMLS.\n";
 	}
 	else {
-	    print "The propogation count of $term ($cui) is $pcount. \n";
+	    print "The propagation count of $term ($cui) is $pcount. \n";
 	}
 	$printFlag = 1;
     }
@@ -266,7 +266,7 @@ sub errorCheck
 ##############################################################################
 sub minimalUsageNotes {
     
-    print "Usage: getPropogationCount.pl [OPTIONS] [CUI|TERM]\n";
+    print "Usage: getPropagationCount.pl [OPTIONS] [CUI|TERM]\n";
     &askHelp();
     exit;
 }
@@ -281,7 +281,7 @@ sub showHelp() {
     print "and returns all of its possible children given\n";
     print "a specified set of sources\n\n";
   
-    print "Usage: getPropogationCount.pl [OPTIONS] [CUI|TERM]\n\n";
+    print "Usage: getPropagationCount.pl [OPTIONS] [CUI|TERM]\n\n";
 
     print "Options:\n\n";
 
@@ -308,7 +308,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getPropogationCount.pl,v 1.1 2010/01/28 16:48:55 btmcinnes Exp $';
+    print '$Id: getPropagationCount.pl,v 1.1 2010/02/05 18:58:15 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 
@@ -316,6 +316,6 @@ sub showVersion {
 #  function to output "ask for help" message when user's goofed
 ##############################################################################
 sub askHelp {
-    print STDERR "Type getPropogationCount.pl --help for help.\n";
+    print STDERR "Type getPropagationCount.pl --help for help.\n";
 }
     

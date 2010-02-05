@@ -1,6 +1,12 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.35 to 0.37
+1. Revised the way the propagation of counts is handled
+    2. Renamed everything spelt propogation to propagation
+
+    3. Updated documentation
+
   Changes from version 0.33 to 0.35
     1. Added the ability to propogation counts given a propogation file.
     Currently the format of that file is: Frequency|CUI|String

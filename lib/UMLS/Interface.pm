@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.28 2010/01/28 16:37:10 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.30 2010/02/05 21:27:35 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -50,9 +50,12 @@ use Digest::SHA1  qw(sha1 sha1_hex sha1_base64);
 use bignum qw/hex oct/;
 
 
-$VERSION = '0.35';
+$VERSION = '0.37';
 
 my $debug = 0;
+
+my $option3 = 0;
+my $option2 = 1;
 
 my %roots = ();
 
@@ -110,12 +113,12 @@ my $option_verbose     = 0;
 my $option_forcerun    = 0;
 my $option_cuilist     = 0;
 my $option_realtime    = 0;
-my $option_propogation = 0;
+my $option_propagation = 0;
 
-my %propogationFreq  = ();
-my %propogationHash  = ();
-my $propogationFile  = "";
-my $propogationTotal = 0;
+my %propagationFreq  = ();
+my %propagationHash  = ();
+my $propagationFile  = "";
+my $propagationTotal = 0;
 
 
 my %cycleHash       = ();
@@ -324,7 +327,7 @@ sub _setOptions
     my $verbose      = $params->{'verbose'};
     my $cuilist      = $params->{'cuilist'};
     my $realtime     = $params->{'realtime'};
-    my $propogation  = $params->{'propogation'};
+    my $propagation  = $params->{'propagation'};
     my $debugoption  = $params->{'debug'};
 
     if(defined $forcerun || defined $verbose || defined $cuilist || 
@@ -338,10 +341,10 @@ sub _setOptions
 	print STDERR "   --debug option set\n";
     }
 
-    #  check if the propogation option has been identified
-    if(defined $propogation) {
-	$option_propogation = 1;
-	$propogationFile    = $propogation;
+    #  check if the propagation option has been identified
+    if(defined $propagation) {
+	$option_propagation = 1;
+	$propagationFile    = $propagation;
     }
     
     #  check if the realtime option has been identified
@@ -1400,7 +1403,7 @@ sub getCuiList
 	#  get the cuis for that sab
 	my $cuis = $self->_getCuis($sab);
 	
-	#  add the cuis to the propogation hash
+	#  add the cuis to the propagation hash
 	foreach my $cui (@{$cuis}) { $hash{$cui} = 0 };
     }
     
@@ -1409,6 +1412,14 @@ sub getCuiList
     foreach my $cui (sort keys %childrenTaxonomy) { $hash{$cui} = 0; }
     
     return \%hash;
+}
+
+sub getCuisFromSource {
+    
+    my $self = shift;
+    my $sab = shift;
+    
+    return ($self->_getCuis($sab));
 }
 
 sub _getCuis
@@ -3136,7 +3147,7 @@ sub getIC
     if(! ($self->checkConceptExists($concept))) {
 	return;
     }
-    my $prob = $propogationHash{$concept} / $propogationTotal;
+    my $prob = $propagationHash{$concept} / $propagationTotal;
     
     my $score = 0;
     if($prob > 0) {
@@ -3159,16 +3170,16 @@ sub getFreq
 
     return () if(! ($self->checkConceptExists($concept)));
 
-    return $propogationHash{$concept};
+    return $propagationHash{$concept};
 }
 
-sub getPropogationCuis
+sub getPropagationCuis
 {
     my $self = shift;
 
     return undef if(!defined $self || !ref $self);
     
-    my $function = "getPropogationCuis";
+    my $function = "getPropagationCuis";
     &_debug($function);
     
     #  set the database
@@ -3201,7 +3212,7 @@ sub getPropogationCuis
 	#  get the cuis for that sab
 	my $cuis = $self->_getCuis($sab);
 	
-	#  add the cuis to the propogation hash
+	#  add the cuis to the propagation hash
 	foreach my $cui (@{$cuis}) { $hash{$cui} = 0 };
     }
     
@@ -3212,13 +3223,13 @@ sub getPropogationCuis
     return \%hash;
 }
 
-sub _initializePropogationHash
+sub _initializePropagationHash
 {
     my $self = shift;
 
     return undef if(!defined $self || !ref $self);
     
-    my $function = "_initializePropogationHash";
+    my $function = "_initializePropagationHash";
     &_debug($function);
     
     #  set the database
@@ -3247,39 +3258,43 @@ sub _initializePropogationHash
 	if($self->checkError($function)) { return undef; }
     }
     
-    #  add the cuis to the propogation hash
+    #  add the cuis to the propagation hash
     foreach my $cui (@{$allCui1}) { 
-	$propogationHash{$cui} = "";
-	$propogationFreq{$cui} = 0;
+	if($option3) { $propagationHash{$cui} = ""; }
+	else         { $propagationHash{$cui} = 0;  }
+	$propagationFreq{$cui} = 0;
     }
     foreach my $cui (@{$allCui2}) { 
-	$propogationHash{$cui} = ""; 
-	$propogationFreq{$cui} = 0;
+	if($option3) { $propagationHash{$cui} = ""; }
+	else         { $propagationHash{$cui} = 0;  }
+	$propagationFreq{$cui} = 0;
     }
     
     #  add upper level taxonomy
     foreach my $cui (sort keys %parentTaxonomy)   { 
-	$propogationHash{$cui} = ""; 
-	$propogationFreq{$cui} = 0;
+	if($option3) { $propagationHash{$cui} = ""; }
+	else         { $propagationHash{$cui} = 0;  }
+	$propagationFreq{$cui} = 0;
     }
     foreach my $cui (sort keys %childrenTaxonomy) { 
-	$propogationHash{$cui} = ""; 
-	$propogationFreq{$cui} = 0;
+	if($option3) { $propagationHash{$cui} = ""; }
+	else         { $propagationHash{$cui} = 0;  }
+	$propagationFreq{$cui} = 0;
     }
     
 }
 
-sub _loadPropogationFreq
+sub _loadPropagationFreq
 {
     my $self = shift;
 
    return undef if(!defined $self || !ref $self);
     
-    my $function = "_loadPropogationFreq";
+    my $function = "_loadPropagationFreq";
     &_debug($function);
     
     #  collect the counts for the required cuis
-    open(FILE, $propogationFile) || die "Could not open propogation file: $propogationFile\n";
+    open(FILE, $propagationFile) || die "Could not open propagation file: $propagationFile\n";
     while(<FILE>) {
 	chomp;
 	if($_=~/^#/)    { next; }
@@ -3290,19 +3305,19 @@ sub _loadPropogationFreq
 	#  negative numbers are used as codes - they don't mean anything
 	if($freq < 0) { next; }
 
-	if(exists $propogationFreq{$cui}) {
-	    $propogationFreq{$cui} = $freq;
+	if(exists $propagationFreq{$cui}) {
+	    $propagationFreq{$cui} = $freq;
 	}
     }
 }
 
-sub _loadPropogationTables
+sub _loadPropagationTables
 {
     my $self = shift;
 
     return undef if(!defined $self || !ref $self);
     
-    my $function = "_loadPropogationTables";
+    my $function = "_loadPropagationTables";
     &_debug($function);
     
     #  set the index DB handler
@@ -3319,16 +3334,16 @@ sub _loadPropogationTables
     if($self->checkError($function)) { return (); }
     #  load the table
     my $N = 0;
-    foreach my $cui (sort keys %propogationHash) {
-	#my $freq = $propogationHash{$cui}->as_hex();
-	my $freq = $propogationHash{$cui};
+    foreach my $cui (sort keys %propagationHash) {
+	#my $freq = $propagationHash{$cui}->as_hex();
+	my $freq = $propagationHash{$cui};
 	$sdb->do("INSERT INTO $propTable (CUI, FREQ) VALUES ('$cui', '$freq')");	    
 	if($self->checkError($function)) { return (); }   
 	$N += $freq;
     }
 
-    #  set N (the total propogation count)
-    $propogationTotal = $N;
+    #  set N (the total propagation count)
+    $propagationTotal = $N;
 
     #  add them to the index table
     $sdb->do("INSERT INTO tableindex (TABLENAME, HEX) VALUES ('$propTableHuman', '$propTable')");
@@ -3336,13 +3351,13 @@ sub _loadPropogationTables
 
 }
 
-sub _setPropogationHash
+sub _setPropagationHash
 {
     my $self = shift;
     
     return undef if(!defined $self || !ref $self);
     
-    my $function = "_setPropogationHash";
+    my $function = "_setPropagationHash";
     &_debug($function);
 
     #  set the index DB handler
@@ -3362,20 +3377,20 @@ sub _setPropogationHash
     $sth->bind_columns( undef, \$cui, \$freq );
     my $N = 0;
     while( $sth->fetch() ) {
-	$propogationHash{$cui} = $freq;
+	$propagationHash{$cui} = $freq;
 	$N += $freq;
     } $sth->finish();
 
-    #  set N (the total propogation count)
-    $propogationTotal = $N;
+    #  set N (the total propagation count)
+    $propagationTotal = $N;
 }
 
-sub getPropogationCount
+sub getPropagationCount
 {
     my $self = shift;
     my $concept = shift;
     
-    my $function = "getPropogationCount";
+    my $function = "getPropagationCount";
     &_debug($function);
 
     $self->_propogateCounts();
@@ -3396,8 +3411,8 @@ sub getPropogationCount
 	return undef;
     } 
 
-    if(exists $propogationHash{$concept}) {
-	return $propogationHash{$concept};
+    if(exists $propagationHash{$concept}) {
+	return $propagationHash{$concept};
     }
     else {
 	return -1;
@@ -3412,20 +3427,20 @@ sub _propogateCounts
     
     return undef if(!defined $self || !ref $self);
     
-    if($option_propogation) {
+    if($option_propagation) {
 
 	my $function = "_propogateCounts";
 	&_debug($function);
 
 	#  check if the parent and child tables exist and 
 	#  if they do just return otherwise create them
-	my $pkey = keys (%propogationHash);
+	my $pkey = keys (%propagationHash);
 
-        #  if propogation hash
+        #  if propagation hash
 	if($pkey > 0) { return; }
 	
 	elsif($self->_checkTableExists($propTable)) {
-	    $self->_setPropogationHash();
+	    $self->_setPropagationHash();
 	}
 	else {
 	    	    
@@ -3433,60 +3448,41 @@ sub _propogateCounts
 	    $self->_setUpperLevelTaxonomy();
 	    if($self->checkError("_setUpperLevelTaxonomy")) { return (); }
 	    
-	    #  initialize the propogation hash
-	    $self->_initializePropogationHash();
+	    #  initialize the propagation hash
+	    $self->_initializePropagationHash();
 	    
-	    #  load the propogation frequency hash
-	    $self->_loadPropogationFreq();
+	    #  load the propagation frequency hash
+	    $self->_loadPropagationFreq();
 	    
-	    #  propogate the counts
-	    &_debug("_propogation");
-	    my @array = ();
-	    $self->_propogation($umlsRoot, \@array);
+	    if($option3) {
+		#  propogate the counts
+		&_debug("_propagation3");
+		my @array = ();
+		$self->_propagation3($umlsRoot, \@array);
 	    
-	    #  tally up the propogation counts
-	    $self->_tallyCounts();
-
-	    #  load the propogation tables
-	    $self->_loadPropogationTables();
-	}
-    }
-}
-
-sub _tallyCounts
-{
-
-    my $self = shift;
-    
-    return undef if(!defined $self || !ref $self);
-    
-    my $function = "_tallyCounts";
-    &_debug($function);
-    
-    foreach my $cui (sort keys %propogationHash) {
-	my $set    = $propogationHash{$cui};
-	my $pcount = $propogationFreq{$cui};
-
-	my %hash = ();
-	while($set=~/(C[0-9][0-9][0-9][0-9][0-9][0-9][0-9])/g) {
-	    my $c = $1;
-	    if(! (exists $hash{$c}) ) {
-		$pcount += $propogationFreq{$c};
-		$hash{$c}++;
+		#  tally up the propagation counts
+		$self->_tallyCounts();
 	    }
+	    else {
+		#  propogate the counts
+		&_debug("_propagation");
+		my @array = ();
+		$self->_propagation($umlsRoot, \@array);
+	    }
+	    
+	    #  load the propagation tables
+	    $self->_loadPropagationTables();
 	}
-	
-	$propogationHash{$cui} = $pcount;
     }
 }
 
-sub _propogation
+sub _propagation
 {
     my $self    = shift;
     my $concept = shift;
     my $array   = shift;
 
-    my $function = "_propogation";
+    my $function = "_propagation";
     
     #  check the concept is there
     if(!$concept) {
@@ -3513,20 +3509,138 @@ sub _propogation
 	return ();
     }
     
-
-
     #  set up the new path
     my @intermediate = @{$array};
     push @intermediate, $concept;
     my $series = join " ", @intermediate;
 
+    #  we have already been down this route if the propagation count
+    #  for this concept has already been tallied so just return the 
+    #  count
+    if($propagationHash{$concept} > 0) { return $propagationHash{$concept}; }
 
+    #  get the frequency of the concept
+    my $count = $propagationFreq{$concept};
+
+    #  if defined $option2 we are going to use the 1/p counts
+    if($option2) {
+	#  get the parents of the concept
+	my @parents = $self->_getParentsForDFS($concept);
+	if($self->checkError("_getParentsForDFS")) { return (); }
+	if($#parents >= 0) {
+	    $count = $count / ($#parents+1);
+	}
+    }
+    
     #  get all the children
     my @children = $self->_getChildrenForDFS($concept);
     if($self->checkError("_getChildrenForDFS")) { return (); }
     
     #  search through the children
-    my $set = $propogationHash{$concept};
+    foreach my $child (@children) {
+	
+	#  check that the concept is not one of the forbidden concepts
+	if($self->_forbiddenConcept($concept)) { next; }
+	
+	#  check if child cui has already in the path
+	my $flag = 0;
+	foreach my $cui (@intermediate) {
+	    if($cui eq $child) { $flag = 1; }
+	}
+	
+	#  if it isn't continue on with the depth first search
+	if($flag == 0) {  
+	    $count += $self->_propagation($child, \@intermediate);    
+	}
+    }
+    #  update the propagation count
+    $propagationHash{$concept} = $count;
+    
+    #  return the count
+    return $count;
+}
+
+sub _tallyCounts
+{
+
+    my $self = shift;
+    
+    return undef if(!defined $self || !ref $self);
+    
+    my $function = "_tallyCounts";
+    &_debug($function);
+    
+    foreach my $cui (sort keys %propagationHash) {
+	my $set    = $propagationHash{$cui};
+	my $pcount = $propagationFreq{$cui};
+
+	my %hash = ();
+	while($set=~/(C[0-9][0-9][0-9][0-9][0-9][0-9][0-9])/g) {
+	    my $c = $1;
+	    if(! (exists $hash{$c}) ) {
+		$pcount += $propagationFreq{$c};
+		$hash{$c}++;
+	    }
+	}
+	
+	$propagationHash{$cui} = $pcount;
+    }
+}
+
+sub _propagation3
+{
+    my $self    = shift;
+    my $concept = shift;
+    my $array   = shift;
+
+    my $function = "_propagation";
+    
+    #  check the concept is there
+    if(!$concept) {
+	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "Undefined input values.";
+	$self->{'errorCode'} = 2 if($self->{'errorCode'} < 1);
+	return ();
+    }
+ 
+    #  check that the concept is valid
+    if($self->validCui($concept)) {
+	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "Incorrect input value ($concept).";
+	$self->{'errorCode'} = 2 if($self->{'errorCode'} < 1);
+	return undef;
+    } 
+      
+    #  set the database
+    my $sdb = $self->{'sdb'};
+    if(!$sdb) {
+	$self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "A db is required.";
+	$self->{'errorCode'} = 2;
+	return ();
+    }
+    
+    #  set up the new path
+    my @intermediate = @{$array};
+    push @intermediate, $concept;
+    my $series = join " ", @intermediate;
+
+    #  initialize the set
+    my $set = $propagationHash{$concept};
+
+    #  if the propagation hash already contains a list of CUIs it
+    #  is from its decendants so it has been here before so all we 
+    #  have to do is return the list of ancestors with it added
+    if($set ne "") { 
+	$set .= " $concept";
+	return $set; 
+    }
+
+    #  get all the children
+    my @children = $self->_getChildrenForDFS($concept);
+    if($self->checkError("_getChildrenForDFS")) { return (); }
+    
+    #  search through the children   
     foreach my $child (@children) {
 	
 	#  check that the concept is not one of the forbidden concepts
@@ -3541,18 +3655,20 @@ sub _propogation
 	#  if it isn't continue on with the depth first search
 	if($flag == 0) {  
 	    $set .= " ";
-	    $set .= $self->_propogation($child, \@intermediate);    
+	    $set .= $self->_propagation3($child, \@intermediate);    
 	}
     }
     
+    #  remove duplicates from the set
     my $rset = _breduce($set);
-    $propogationHash{$concept} = $rset;
 
-    open(TMP, ">>tmp") || die "TMP\n";
-    print TMP "$concept: $rset\n";
-    close TMP;
-
+    #  store the set in the propagation hash
+    $propagationHash{$concept} = $rset;
+    
+    #  add the concept to the set
     $rset .= " $concept";
+    
+    #  return the set
     return $rset;
 }
 

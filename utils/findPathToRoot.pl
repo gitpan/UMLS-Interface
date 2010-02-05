@@ -74,6 +74,11 @@ per line) and stores only the path information for those CUIs
 rather than for all of the CUIs given the specified set of 
 sources and relations
 
+=head3 --propagation FILE
+
+This option takes in the propagation file and returns the 
+propagation count of the CUIs in the path
+
 =head3 --help
 
 Displays the quick summary of program options.
@@ -144,7 +149,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "forcerun", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui", "verbose", "cuilist=s", "realtime", "propogation=s");
+GetOptions( "version", "help", "forcerun", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui", "verbose", "cuilist=s", "realtime", "propagation=s");
 
 
 #  if help is defined, print out help
@@ -179,8 +184,8 @@ my $umls = "";
 
 my %option_hash = ();
 
-if(defined $opt_propogation) { 
-    $option_hash{"propogation"} = $opt_propogation;
+if(defined $opt_propagation) { 
+    $option_hash{"propagation"} = $opt_propagation;
 }
 if(defined $opt_debug) {
     $option_hash{"debug"} = $opt_debug;
@@ -266,8 +271,8 @@ foreach my $cui (@c) {
 	    foreach my $element (@array) {
 		my ($t) = $umls->getTermList($element); 
 		print "$element ($t) ";
-		if(defined $opt_propogation) {
-		    my $pc = $umls->getPropogationCount($element);
+		if(defined $opt_propagation) {
+		    my $pc = $umls->getPropagationCount($element);
 		    print "($pc) ";
 		}
 	    } print "\n";
@@ -344,6 +349,10 @@ sub showHelp() {
     print "                         only the path information for those CUIs\n"; 
     print "                         rather than for all of the CUIs\n\n";
 
+    print "--propagation FILE       This option returns the propogation count \n";
+    print "                         of the CUIs in the path based on the coutns\n";
+    print "                         from the propogation file\n\n";
+
     print "--version                Prints the version number\n\n";
  
     print "--help                   Prints this help message.\n\n";
@@ -353,7 +362,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findPathToRoot.pl,v 1.10 2010/01/28 16:37:10 btmcinnes Exp $';
+    print '$Id: findPathToRoot.pl,v 1.11 2010/02/05 17:43:35 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

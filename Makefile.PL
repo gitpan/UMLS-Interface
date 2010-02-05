@@ -22,7 +22,7 @@ WriteMakefile(
               'PREREQ_PM'         => {'DBI' => '0',
 				      'Digest::SHA1' => '0',
                                       'bignum' => '0' },
-              'EXE_FILES'         => [("utils/removeConfigData.pl", "utils/findLeastCommonSubsumer.pl", "utils/findPathToRoot.pl", "utils/findShortestPath.pl", "utils/getChildren.pl", "utils/getParents.pl", "utils/getCuiDef.pl", "utils/getRelated.pl", "utils/getRelations.pl", "utils/getStDef.pl", "utils/getAssociatedTerms.pl", "utils/getAssociatedCuis.pl", "utils/findCuiDepth.pl", "utils/umlsCycles.pl", "utils/getSts.pl", "utils/findDFS.pl", "utils/getTableNames.pl", "utils/getPropogationCount.pl", "utils/getCuiList.pl")],
+              'EXE_FILES'         => [("utils/removeConfigData.pl", "utils/findLeastCommonSubsumer.pl", "utils/findPathToRoot.pl", "utils/findShortestPath.pl", "utils/getChildren.pl", "utils/getParents.pl", "utils/getCuiDef.pl", "utils/getRelated.pl", "utils/getRelations.pl", "utils/getStDef.pl", "utils/getAssociatedTerms.pl", "utils/getAssociatedCuis.pl", "utils/findCuiDepth.pl", "utils/umlsCycles.pl", "utils/getSts.pl", "utils/findDFS.pl", "utils/getTableNames.pl", "utils/getPropagationCount.pl", "utils/getCuiList.pl")],
               'dist'              => {'COMPRESS' => 'gzip -9f', 'SUFFIX' => 'gz'},
               ($] >= 5.005 ?
                ('ABSTRACT_FROM'   => 'lib/UMLS/Interface.pm', # retrieve abstract from module

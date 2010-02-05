@@ -27,7 +27,7 @@ utils/getChildren.pl
 utils/getCuiDef.pl
 utils/getCuiList.pl
 utils/getParents.pl
-utils/getPropogationCount.pl
+utils/getPropagationCount.pl
 utils/getRelated.pl
 utils/getRelations.pl
 utils/getStDef.pl
