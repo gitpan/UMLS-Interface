@@ -25,7 +25,21 @@ Medical Language System
 
 =head2 Optional Arguments:
 
-=head4 --infile FILE
+=head3 --info
+
+This prints out the relation and source information between the 
+CUIs in the path
+
+=head3 --propagation FILE
+
+Takes in a propagation file and then outputs the propagation count 
+and information content of the CUIs in the shortest path
+
+=head3 --length
+
+Prints out the length of the shortest path for ease of counting
+
+=head3 --infile FILE
 
    A file containing pairs of concepts or terms in the following format:
 
@@ -163,7 +177,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui", "infile=s", "forcerun", "verbose", "cuilist=s", "realtime", "debug" );
+GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui", "infile=s", "forcerun", "verbose", "cuilist=s", "realtime", "debug", "propagation=s", "length", "info" );
 
 
 #  if help is defined, print out help
@@ -217,7 +231,9 @@ if(defined $opt_socket)   { $socket   = $opt_socket;   }
 my $umls = "";
 my %option_hash = ();
 
-
+if(defined $opt_propagation) {
+    $option_hash{"propagation"} = $opt_propagation;
+}
 if(defined $opt_debug) {
     $option_hash{"debug"} = $opt_debug;
 }
@@ -270,6 +286,9 @@ foreach my $element (@fileArray) {
     my $flag1 = "cui";
     my $flag2 = "cui";
 
+    my @c1 = ();
+    my @c2 = ();
+
     #  check if the input are CUIs or terms
     if( ($input1=~/C[0-9]+/)) {
 	push @c1, $input1;
@@ -290,7 +309,8 @@ foreach my $element (@fileArray) {
     
     
     my $printFlag = 0;
-    
+    my $precision = 4;      
+    my $floatformat = join '', '%', '.', $precision, 'f';    
     foreach $cui1 (@c1) {
 	foreach $cui2 (@c2) {
 	    
@@ -326,15 +346,48 @@ foreach my $element (@fileArray) {
 	    if($flag2 eq "cui") {
 		($t2) = $umls->getTermList($cui2); 
 	    }
-	    
-	    print "\nThe shortest path between $t1 ($cui1) and $t2 ($cui2):\n";
+
+	    my $length = $#shortestpath + 1;
+	    print "\nThe shortest path ";
+	    if(defined $opt_length) {
+		print "(length: $length) ";
+	    }
+	    print "between $t1 ($cui1) and $t2 ($cui2):\n";
 	    print "  => ";
-	    foreach my $concept (@shortestpath) {
+	    foreach my $i (0..$#shortestpath) {
+		#  get the concept
+		my $concept = $shortestpath[$i];
+		
+		#  get one of the terms associated with the concept
 		my ($t) = $umls->getTermList($concept); 
+		&errorCheck($umls);
+		#  print out the concept
 		print "$concept ($t) "; 
+		
+		#  if the propagation option was defined print out 
+		#  the propagation count and IC count
+		if(defined $opt_propagation) { 
+                    my $v1 = $umls->getPropagationCount($concept);
+		    &errorCheck($umls);
+                    my $pc = sprintf $floatformat, $v1; 
+                    my $v2 = $umls->getIC($concept);          
+		    &errorCheck($umls);
+                    my $ic = sprintf $floatformat, $v2;
+                    print "($pc, $ic) ";
+                }     
+		
+		#  if the info option was defined print out 
+		#  the relation and source information
+		if( (defined $opt_info) and ($i < $#shortestpath) ) {
+		    my $second = $shortestpath[$i+1];
+		    
+		    my @relations = $umls->getRelationsBetweenCuis($concept, $second);
+		    &errorCheck($umls);
+		    print " => @relations => ";
+		}
 	    }
 	    print "\n";
-
+	    
 	    $printFlag = 1;
 	    
 	}
@@ -378,6 +431,12 @@ sub showHelp() {
 
     print "Options:\n\n";
 
+    print "--info                   Outputs the source and relation information\n";
+    print "                         between the concepts in the path\n\n";
+
+    print "--propagation FILE       Outputs the propagation count and the \n";
+    print "                         IC of the CUIs in the path\n\n";
+
     print "--infile FILE            File containing TERM or CUI pairs\n\n";
     
     print "--debug                  Sets the debug flag for testing\n\n";
@@ -418,7 +477,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findShortestPath.pl,v 1.7 2010/01/20 16:28:31 btmcinnes Exp $';
+    print '$Id: findShortestPath.pl,v 1.10 2010/02/17 20:19:39 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

@@ -25,6 +25,32 @@ Medical Language System
 
 =head2 Optional Arguments:
 
+=head3 --depth
+
+The minimum and maximum depth of the least common subsummer
+
+=head3 --propagation
+
+The Information Content of the least common subsumer
+
+=head3 --infile
+
+   A file containing pairs of concepts or terms in the following format:
+
+    term1<>term2 
+    
+    or 
+
+    cui1<>cui2
+ 
+    or 
+    
+    cui1<>term2
+
+    or 
+
+    term1<>cui2
+
 =head3 --debug
 
 Sets the debug flag for testing
@@ -146,7 +172,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui", "forcerun", "verbose", "cuilist=s", "realtime");
+GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui", "forcerun", "verbose", "cuilist=s", "realtime", "infile=s", "depth", "propagation=s");
 
 
 #  if help is defined, print out help
@@ -163,13 +189,6 @@ if( defined $opt_version ) {
     exit;
 }
 
-# At least 2 terms and/or cuis should be given on the command line.
-if(scalar(@ARGV) < 2) {
-    print STDERR "Two terms and/or CUIs are required\n";
-    &minimalUsageNotes();
-    exit;
-}
-
 my $database = "umls";
 if(defined $opt_database) { $database = $opt_database; }
 my $hostname = "localhost";
@@ -179,9 +198,14 @@ if(defined $opt_socket)   { $socket   = $opt_socket;   }
 
 my $umls = "";
 
+my $precision   = 4;    
+my $floatformat = join '', '%', '.', $precision, 'f';   
+
 my %option_hash = ();
 
-
+if(defined $opt_propagation) {
+    $option_hash{"propagation"} = $opt_propagation;
+}
 if(defined $opt_debug) {
     $option_hash{"debug"} = $opt_debug;
 }
@@ -229,76 +253,119 @@ die "$errString\n" if($errCode);
 &errorCheck($umls);
 
 
-my $input1 = shift;
-my $input2 = shift;
-
-my $flag1 = "cui";
-my $flag2 = "cui";
-
-#  check if the input are CUIs or terms
-if( ($input1=~/C[0-9]+/)) {
-    push @c1, $input1;
-}
-else {
-    @c1 = $umls->getConceptList($input1); 
-    &errorCheck($umls);
-    $flag1 = "term";
-}
-if( ($input2=~/C[0-9]+/)) {
-    push @c2, $input2; 
-    $flag2 = "term";
-}
-else {
-    @c2 = $umls->getConceptList($input2); 
-    &errorCheck($umls);
-    $flag = "term";
-}
-
-my $printFlag = 0;
-
-foreach $cui1 (@c1) {
-    foreach $cui2 (@c2) {
-
-	if($umls->validCui($cui1)) {
-	    print STDERR "ERROR: The concept ($cui1) is not valid.\n";
-	    exit;
-	}
-	if($umls->validCui($cui2)) {
-	    print STDERR "ERROR: The concept ($cui2) is not valid.\n";
-	    exit;
-	}
-
-	if(($umls->checkConceptExists($cui1) == 0) or
-	   ($umls->checkConceptExists($cui2) == 0) ) { next; }
-	
-	my $lcs = $umls->findLeastCommonSubsumer($cui1, $cui2);
-	
-	&errorCheck($umls);
-
-	my $t1 = $input1;
-	my $t2 = $input2;
-	
-	if($flag1 eq "term") {
-	    ($t1) = $umls->getTermList($cui1); 
-	}
-
-	if($flag2 eq "term") {
-	    ($t2) = $umls->getTermList($cui2); 
-	}
-	
-
-	my ($t) = $umls->getTermList($lcs);
-	
-	print "\nThe least common subsumer between $t1 ($cui1) and $t2 ($cui2) is $t ($lcs)\n";
-	
-	$printFlag = 1;
+my @fileArray = ();
+if(defined $opt_infile) {
+    open(FILE, $opt_infile) || die "Could not open infile: $opt_infile\n";
+    while(<FILE>) {
+	chomp;
+	if($_=~/^\s*$/) { next; }
+	push @fileArray, $_;
     }
+    close FILE;
+}
+else {
+    # At least 2 terms and/or cuis should be given on the command line.
+    if( scalar(@ARGV) < 2 ) {
+	print STDERR "Two terms and/or CUIs are required\n";
+	&minimalUsageNotes();
+	exit;
+    }
+    
+    my $i1 = shift;
+    my $i2 = shift;
+    
+    my $string = "$i1<>$i2";
+    push @fileArray, $string;
 }
 
-if( !($printFlag) ) {
-    print "\n";
-    print "There is not a least common subsumer between $input1 \n";
-    print "and $input2 given the current view of the UMLS.\n\n";
+foreach my $element (@fileArray) {
+    
+    my ($input1, $input2) = split/<>/, $element;
+
+    my $flag1 = "cui";
+    my $flag2 = "cui";
+
+    my @c1 = ();
+    my @c2 = ();
+
+    #  check if the input are CUIs or terms
+    if( ($input1=~/C[0-9]+/)) {
+	push @c1, $input1;
+    }
+    else {
+	@c1 = $umls->getConceptList($input1); 
+	&errorCheck($umls);
+	$flag1 = "term";
+    }
+    if( ($input2=~/C[0-9]+/)) {
+	push @c2, $input2; 
+	$flag2 = "term";
+    }
+    else {
+	@c2 = $umls->getConceptList($input2); 
+	&errorCheck($umls);
+	$flag = "term";
+    }
+    
+    my $printFlag = 0;
+    
+    foreach $cui1 (@c1) {
+	foreach $cui2 (@c2) {
+
+	    if($umls->validCui($cui1)) {
+		print STDERR "ERROR: The concept ($cui1) is not valid.\n";
+		exit;
+	    }
+	    if($umls->validCui($cui2)) {
+		print STDERR "ERROR: The concept ($cui2) is not valid.\n";
+		exit;
+	    }
+	    
+	    if(($umls->checkConceptExists($cui1) == 0) or
+	       ($umls->checkConceptExists($cui2) == 0) ) { next; }
+	    
+	    my $lcs = $umls->findLeastCommonSubsumer($cui1, $cui2);
+	    
+	    &errorCheck($umls);
+	    
+	    my $t1 = $input1;
+	    my $t2 = $input2;
+	    
+	    if($flag1 eq "term") {
+		($t1) = $umls->getTermList($cui1); 
+	    }
+	    
+	    if($flag2 eq "term") {
+		($t2) = $umls->getTermList($cui2); 
+	    }
+	    
+	    
+	    my ($t) = $umls->getTermList($lcs);
+	    
+
+	    print "\nThe least common subsumer between $t1 ($cui1) and $t2 ($cui2) is $t ($lcs) ";
+	    if(defined $opt_depth) {
+		my $min = $umls->findMinimumDepth($lcs);
+		&errorCheck($umls);
+		my $max = $umls->findMaximumDepth($lcs);
+		&errorCheck($umls);
+		print "with a min and max depth of $min and $max ";
+	    }
+	    if(defined $opt_propagation) {
+		my $ic = sprintf $floatformat, $umls->getIC($lcs);
+		&errorCheck($umls);
+		print "with an IC of $ic ";
+	    }
+	    print "\n";
+	    
+	    $printFlag = 1;
+	}
+    }
+    
+    if( !($printFlag) ) {
+	print "\n";
+	print "There is not a least common subsumer between $input1 and $input2 given the current view of the UMLS.\n\n";
+    }
 }
 	
 sub errorCheck
@@ -333,6 +400,12 @@ sub showHelp() {
 
     print "Options:\n\n";
 
+    print "--infile FILE            File containing TERM or CUI pairs\n\n";
+
+    print "--depth                  Outputs the depth of the lcs\n\n";
+
+    print "--propagation FILE       Outputs the IC of the lcs\n\n";
+
     print "--debug                  Sets the debug flag for testing.\n\n";
 
     print "--username STRING        Username required to access mysql\n\n";
@@ -346,6 +419,7 @@ sub showHelp() {
     print "--socket STRING          Socket used by mysql (DEFAULT: /tmp.mysql.sock)\n\n";
 
     print "--config FILE            Configuration file\n\n";
+
 
     print "--realtime               This option will not create a database of the\n";
     print "                         path information for all of concepts but just\n"; 
@@ -373,7 +447,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findLeastCommonSubsumer.pl,v 1.8 2010/01/20 16:28:31 btmcinnes Exp $';
+    print '$Id: findLeastCommonSubsumer.pl,v 1.9 2010/02/17 18:24:11 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

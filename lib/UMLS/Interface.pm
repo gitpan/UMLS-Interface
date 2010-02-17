@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.30 2010/02/05 21:27:35 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.33 2010/02/17 20:19:39 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -50,7 +50,7 @@ use Digest::SHA1  qw(sha1 sha1_hex sha1_base64);
 use bignum qw/hex oct/;
 
 
-$VERSION = '0.37';
+$VERSION = '0.39';
 
 my $debug = 0;
 
@@ -117,9 +117,17 @@ my $option_propagation = 0;
 
 my %propagationFreq  = ();
 my %propagationHash  = ();
+my %propagationTemp  = ();
+
+my %propagationTuiHash = ();
+my $propagationTuiTotal = 0;
+
 my $propagationFile  = "";
 my $propagationTotal = 0;
 
+my $propagation_tokens = 0;
+my $observed_types     = 0;
+my $unobserved_types   = 0;
 
 my %cycleHash       = ();
 
@@ -400,7 +408,7 @@ sub _setDatabase
     my $password     = $params->{'password'};
 
     if(! defined $database) { $database = "umls";            }
-    if(! defined $socket)   { $socket   = "/tmp/mysql.sock"; }
+    if(! defined $socket)   { $socket   = "/var/run/mysqld/mysqld.sock"; }
     if(! defined $hostname) { $hostname = "localhost";       }
     
     print STDERR "$database\n";
@@ -1895,9 +1903,13 @@ sub _setDepth {
 	    if($self->checkError("_markCycles")) { return (); }   		
 
 	    #  create the table in the umls database
-	    my $ar1 = $sdb->do("CREATE TABLE IF NOT EXISTS $tableName (CUI char(8), DEPTH int, PATH varchar(450))");
+	    $sdb->do("CREATE TABLE IF NOT EXISTS $tableName (CUI char(8), DEPTH int, PATH varchar(450))");
 	    if($self->checkError($function)) { return (); }
 	    
+	    #  insert the name into the index
+	    $sdb->do("INSERT INTO tableindex (TABLENAME, HEX) VALUES ('$tableNameHuman', '$tableName')");
+	    if($self->checkError($function)) { return (); }   
+
 
 	    #  for each root - this is for when we allow multiple roots
 	    #  right now though we only have one - the umlsRoot
@@ -2161,7 +2173,6 @@ sub _checkRelations
 
     while($relations=~/REL=\'(.*?)\'/g) {
 	my $r = $1;
-	print STDERR "checking $r\n";
 	if(! (exists $hash{$r})) {
 	    $self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
 	    $self->{'errorString'} .= "Relation ($r) doesn't exist for the given source. ";
@@ -3054,6 +3065,75 @@ sub getRelations
     return @{$arrRef};
 }
 
+#  Returns the relations and its source between two concepts
+sub getRelationsBetweenCuis
+{
+    my $self     = shift;
+    my $concept1 = shift;
+    my $concept2 = shift;
+
+    return () if(!defined $self || !ref $self);
+    
+    my $function = "getRelationBetweenCuis";
+    &_debug($function);
+
+    if(!$concept1) {
+	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "Undefined input values.";
+	$self->{'errorCode'} = 2 if($self->{'errorCode'} < 1);
+	return ();
+    }
+    if(!$concept2) {
+	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "Undefined input values.";
+	$self->{'errorCode'} = 2 if($self->{'errorCode'} < 1);
+	return ();
+    }
+
+    if($self->validCui($concept1)) {
+	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "Incorrect input value ($concept1).";
+	$self->{'errorCode'} = 2 if($self->{'errorCode'} < 1);
+	return undef;
+    } 
+    if($self->validCui($concept2)) {
+	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "Incorrect input value ($concept2).";
+	$self->{'errorCode'} = 2 if($self->{'errorCode'} < 1);
+	return undef;
+    } 
+    
+    my $db = $self->{'db'};
+    if(!$db) {
+	$self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "A db is required.";
+	$self->{'errorCode'} = 2;
+	return ();
+    }
+    
+    $self->{'traceString'} = "";
+    
+    #  get the Relations
+    my $sql = "";
+    if($umlsall) {
+	$sql = qq{ select distinct REL, SAB from MRREL where (CUI1='$concept1' and CUI2='$concept2') };
+    }
+    else {
+	$sql = qq{ select distinct REL, SAB from MRREL where (CUI1='$concept1' and CUI2='$concept2') and ($sources) };
+    }
+    my $sth = $db->prepare( $sql );
+    $sth->execute();
+    my($rel, $sab);
+    $sth->bind_columns( undef, \$rel, \$sab );
+    my @array = ();
+    while( $sth->fetch() ) {
+	my $str = "$rel ($sab)";
+	push @array, $str;
+    } $sth->finish();
+    
+    return @array;
+}
+
 
 #  Depth First Search (DFS) in order to determine 
 #  the maximum depth of the taxonomy and obtain 
@@ -3147,13 +3227,42 @@ sub getIC
     if(! ($self->checkConceptExists($concept))) {
 	return;
     }
-    my $prob = $propagationHash{$concept} / $propagationTotal;
+
+    #  witten bell smoothing
+    #my $count = 0;
+    #if($propagationHash{$concept} == 0) {
+    #$count = $observed_types / ( $unobserved_types * ($propagationTotal + $observed_types) );
+    #}
+    #   old add one smoothing
+    #else {
+    #$count = $propagationHash{$concept} / ($propagationTotal + $observed_types);
+    #}
+    # my prob = $count / $propagationTotal;
+    
+    #  add one
+    #my $count = $propagationHash{$concept} + 1;
+    #my $prob = $count / ($propagationTotal + $observed_types + $unobserved_types);
+    
+    #   semantic type IC
+    #my @sts = $self->getSt($concept);
+    
+    #my $stprob = 0;
+    #foreach my $st (@sts) {
+    #$stprob += ($propagationTuiHash{$st} / $propagationTuiTotal);
+    #}
+    #my $prob = $stprob / ($#sts + 1);
+
+
+    #  regular IC
+    my $prob = $propagationHash{$concept} / ($propagationTotal);
+    
     
     my $score = 0;
     if($prob > 0) {
 	$score = -log($prob);
     }
     return $score;
+    
     #return ($prob > 0) ? -log($prob) : 0;
 }
 
@@ -3244,8 +3353,10 @@ sub _initializePropagationHash
     #  select all the CUIs from MRREL for the defined $source
     my $allCui1 = ""; my $allCui2 = "";
     if($umlsall) {
+	if($debug) { print STDERR "select CUI1 from MRREL where ($relations)\n"; }
        	$allCui1 = $db->selectcol_arrayref("select CUI1 from MRREL where ($relations)");
 	if($self->checkError($function)) { return undef; }
+	if($debug) { print STDERR "select CUI2 from MRREL where ($relations)\n"; }
 	$allCui2 = $db->selectcol_arrayref("select CUI2 from MRREL where ($relations)");
 	if($self->checkError($function)) { return undef; }
     }
@@ -3257,7 +3368,10 @@ sub _initializePropagationHash
 	$allCui2 = $db->selectcol_arrayref("select CUI2 from MRREL where ($relations) and ($sources)");
 	if($self->checkError($function)) { return undef; }
     }
-    
+
+    #  clear out the hash just in case
+    %propagationHash = ();
+
     #  add the cuis to the propagation hash
     foreach my $cui (@{$allCui1}) { 
 	if($option3) { $propagationHash{$cui} = ""; }
@@ -3281,7 +3395,6 @@ sub _initializePropagationHash
 	else         { $propagationHash{$cui} = 0;  }
 	$propagationFreq{$cui} = 0;
     }
-    
 }
 
 sub _loadPropagationFreq
@@ -3306,7 +3419,7 @@ sub _loadPropagationFreq
 	if($freq < 0) { next; }
 
 	if(exists $propagationFreq{$cui}) {
-	    $propagationFreq{$cui} = $freq;
+	    $propagationFreq{$cui} += $freq ;
 	}
     }
 }
@@ -3330,7 +3443,7 @@ sub _loadPropagationTables
     }    
 
     #  create the table
-    $sdb->do("CREATE TABLE IF NOT EXISTS $propTable (CUI char(8), FREQ char(42))");
+    $sdb->do("CREATE TABLE IF NOT EXISTS $propTable (CUI char(8), FREQ double precision(17,4))");
     if($self->checkError($function)) { return (); }
     #  load the table
     my $N = 0;
@@ -3440,7 +3553,15 @@ sub _propogateCounts
 	if($pkey > 0) { return; }
 	
 	elsif($self->_checkTableExists($propTable)) {
+	    #  load the propagation hash from the database
 	    $self->_setPropagationHash();
+
+	    #  set smoothing variables
+	    #$self->_setSmoothingVariables();
+	    
+	    #  set propogation TUI hash
+	    #$self->_setPropagationTuiHash();
+
 	}
 	else {
 	    	    
@@ -3472,8 +3593,62 @@ sub _propogateCounts
 	    
 	    #  load the propagation tables
 	    $self->_loadPropagationTables();
+	    
+	    #  set smoothing variables
+	    #$self->_setSmoothingVariables();
+	    
+	    #  set the propogation TUI hash
+	    #$self->_setPropagationTuiHash();
 	}
     }
+}
+
+sub _setPropagationTuiHash
+{
+    my $self = shift;
+
+    my $function = "_setPropagationTuiHash";
+    &_debug($function);
+    
+    foreach my $cui (sort keys %propagationHash) {
+	my @sts = $self->getSt($cui);
+	foreach my $st (@sts) {
+	    $propagationTuiHash{$st}++;
+	    $propagationTuiTotal++;
+	}
+    }
+}
+
+sub _setSmoothingVariables 
+{
+    my $self = shift;
+
+    my $function = "_setSmoothingVariables";
+    &_debug($function);
+
+    #  set the database
+    my $sdb = $self->{'sdb'};
+    if(!$sdb) {
+	$self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "A db is required.";
+	$self->{'errorCode'} = 2;
+	return ();
+    }
+
+    #  set propagation tokens
+    $propagation_tokens = $propagationHash{$umlsRoot};
+
+    #  set observed types
+    my $arrRef1 = $sdb->selectcol_arrayref("select count(*) from $propTable where FREQ = 0");
+    if($self->checkError($function)) { return (); }
+    $unobserved_types = shift @{$arrRef1};
+
+    #  set unobserved types
+    my $arrRef2 = $sdb->selectcol_arrayref("select count(*) from $propTable;");
+    if($self->checkError($function)) { return (); }
+    my $total_types = shift @{$arrRef2};
+    $observed_types = $total_types - $unobserved_types;
+
 }
 
 sub _propagation
@@ -3531,7 +3706,6 @@ sub _propagation
 	    $count = $count / ($#parents+1);
 	}
     }
-    
     #  get all the children
     my @children = $self->_getChildrenForDFS($concept);
     if($self->checkError("_getChildrenForDFS")) { return (); }
@@ -3555,7 +3729,8 @@ sub _propagation
     }
     #  update the propagation count
     $propagationHash{$concept} = $count;
-    
+    $propagationTemp{$concept}++;
+
     #  return the count
     return $count;
 }
@@ -4108,9 +4283,10 @@ sub findShortestPath
     return () if(! ($self->checkConceptExists($concept1)));
     return () if(! ($self->checkConceptExists($concept2)));
 
+    
     #  find the shortest path and lcs 
     my($lcs, $path) = $self->_findShortestPath($concept1, $concept2);
-    
+
     #  return the path information
     if(! defined $path) {
 	my @array = ();
@@ -4233,7 +4409,6 @@ sub findLeastCommonSubsumer
 }
 
 
-
 #  this function finds the shortest path between 
 #  two concepts and returns the path. in the process 
 #  it determines the least common subsumer for that 
@@ -4336,7 +4511,7 @@ sub _findShortestPath
 	    }
 	}
     }
-    
+
     # If no paths exist 
     if(!scalar(keys(%lcsPaths))) {
 	# set trace
@@ -4933,6 +5108,12 @@ UMLS::Interface - Perl interface to the Unified Medical Language System (UMLS)
 
  print "The relation(s) of $term2 ($cui2) are: @relations\n\n";
 
+ my @rel_sab = $umls->getRelationsBetweenCuis($cui1, "C1524024");
+
+ print "The relation (source) between $cui1 and $cui2 :\n";
+
+ print "@rel_sab\n";
+   
  my @siblings = $umls->getRelated($cui2, "SIB");
 
  print "The sibling(s) of $term2 ($cui2) are: @siblings\n\n";

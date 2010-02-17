@@ -21,7 +21,7 @@ my %option_hash = ();
 
 #  set the option hash
 $option_hash{"realtime"} = 1;
-$option_hash{"debug"} = 1;
+#$option_hash{"debug"} = 1;
 
 #  connect to the UMLS-Interface
 my $umls = UMLS::Interface->new(\%option_hash);
@@ -139,7 +139,9 @@ else             { print "ok 20\n";    }
 
 #  check the findLeastCommonSubsumer() function
 $expected = "C0015385";
-my $lcs = $umls->findLeastCommonSubsumer("C0015385", "C0018563");
+my $lcs = "";
+$lcs = $umls->findLeastCommonSubsumer("C0015385", "C0018563");
+
 if($lcs eq $expected) { print "ok 21\n"; }
 else                  { print "not ok 21\n";    }
 
@@ -201,3 +203,8 @@ $obtained = $umls->returnTableNames();
 my $keys = keys %{$obtained};
 if($keys >= 0) { print "ok 31\n";    }
 else           { print "no ok 31\n"; }
+
+#  check the getRelationsBetweenCuis() function
+$obtained = $umls->getRelationsBetweenCuis("C0018563", "C0015385");
+
+

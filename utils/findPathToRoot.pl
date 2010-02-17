@@ -246,6 +246,8 @@ else {
 &errorCheck($umls);
 
 my $printFlag = 0;
+my $precision = 4;
+my $floatformat = join '', '%', '.', $precision, 'f';
 
 foreach my $cui (@c) {
     
@@ -272,8 +274,11 @@ foreach my $cui (@c) {
 		my ($t) = $umls->getTermList($element); 
 		print "$element ($t) ";
 		if(defined $opt_propagation) {
-		    my $pc = $umls->getPropagationCount($element);
-		    print "($pc) ";
+		    my $v1 = $umls->getPropagationCount($element);
+		    my $pc = sprintf $floatformat, $v1;
+		    my $v2 = $umls->getIC($element);
+		    my $ic = sprintf $floatformat, $v2;
+		    print "($pc, $ic) ";
 		}
 	    } print "\n";
 	    
@@ -362,7 +367,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findPathToRoot.pl,v 1.11 2010/02/05 17:43:35 btmcinnes Exp $';
+    print '$Id: findPathToRoot.pl,v 1.12 2010/02/16 15:01:19 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 
