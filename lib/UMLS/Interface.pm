@@ -50,12 +50,13 @@ use Digest::SHA1  qw(sha1 sha1_hex sha1_base64);
 use bignum qw/hex oct/;
 
 
-$VERSION = '0.39';
+$VERSION = '0.41';
 
 my $debug = 0;
 
-my $option3 = 0;
-my $option2 = 1;
+my $option4 = 0; # Teds 1/p
+my $option3 = 0; # decendants
+my $option2 = 0; # my 1/p
 
 my %roots = ();
 
@@ -2013,12 +2014,6 @@ sub _config {
 		    elsif($type eq "REL"  and $det eq "exclude") { $excluderel{$element}++;  }
 		    elsif($type eq "RELA" and $det eq "include") { $includerela{$element}++; }
 		    elsif($type eq "RELA" and $det eq "exclude") { $excluderela{$element}++; }
-		    else {
-			$self->{'errorCode'} = 2;
-			$self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
-			$self->{'errorString'} .= "Configuration file entry not valid ($_).";
-			return ();
-		    }
 		}
 	    }
 	    else {
@@ -3221,7 +3216,7 @@ sub getIC
 
     return undef if(!defined $self || !ref $self);
     
-    my $function = "_getIC";
+    my $function = "getIC";
     &_debug($function);
 
     if(! ($self->checkConceptExists($concept))) {
@@ -3274,7 +3269,7 @@ sub getFreq
 
     return undef if(!defined $self || !ref $self);
     
-    my $function = "_getIC";
+    my $function = "getFreq";
     &_debug($function);
 
     return () if(! ($self->checkConceptExists($concept)));
@@ -3372,28 +3367,31 @@ sub _initializePropagationHash
     #  clear out the hash just in case
     %propagationHash = ();
 
+    my $smooth = 1;
+    print STDERR "SMOOTH: $smooth\n";
+
     #  add the cuis to the propagation hash
     foreach my $cui (@{$allCui1}) { 
 	if($option3) { $propagationHash{$cui} = ""; }
 	else         { $propagationHash{$cui} = 0;  }
-	$propagationFreq{$cui} = 0;
+	$propagationFreq{$cui} = $smooth;
     }
     foreach my $cui (@{$allCui2}) { 
 	if($option3) { $propagationHash{$cui} = ""; }
 	else         { $propagationHash{$cui} = 0;  }
-	$propagationFreq{$cui} = 0;
+	$propagationFreq{$cui} = $smooth;
     }
     
     #  add upper level taxonomy
     foreach my $cui (sort keys %parentTaxonomy)   { 
 	if($option3) { $propagationHash{$cui} = ""; }
 	else         { $propagationHash{$cui} = 0;  }
-	$propagationFreq{$cui} = 0;
+	$propagationFreq{$cui} = $smooth;
     }
     foreach my $cui (sort keys %childrenTaxonomy) { 
 	if($option3) { $propagationHash{$cui} = ""; }
 	else         { $propagationHash{$cui} = 0;  }
-	$propagationFreq{$cui} = 0;
+	$propagationFreq{$cui} = $smooth;
     }
 }
 
@@ -3419,7 +3417,7 @@ sub _loadPropagationFreq
 	if($freq < 0) { next; }
 
 	if(exists $propagationFreq{$cui}) {
-	    $propagationFreq{$cui} += $freq ;
+	    $propagationFreq{$cui} += $freq;
 	}
     }
 }
@@ -3727,9 +3725,16 @@ sub _propagation
 	    $count += $self->_propagation($child, \@intermediate);    
 	}
     }
+    if($option4) {
+	#  get the parents of the concept
+	my @parents = $self->_getParentsForDFS($concept);
+	if($self->checkError("_getParentsForDFS")) { return (); }
+	if($#parents >= 0) {
+	    $count = $count / ($#parents+1);
+	}
+    }
     #  update the propagation count
     $propagationHash{$concept} = $count;
-    $propagationTemp{$concept}++;
 
     #  return the count
     return $count;
@@ -4284,16 +4289,13 @@ sub findShortestPath
     return () if(! ($self->checkConceptExists($concept2)));
 
     
-    #  find the shortest path and lcs 
-    my($lcs, $path) = $self->_findShortestPath($concept1, $concept2);
-
-    #  return the path information
-    if(! defined $path) {
-	my @array = ();
-	$path=\@array;
+    #  find the shortest path(s) and lcs - there may be more than one
+    my $hashRef = $self->_findShortestPath($concept1, $concept2);
+    my @paths = ();
+    while( my ($lcs, $path) = each %$hashRef ) {
+        push @paths, $path;
     }
-    
-    return @{$path};
+    return @paths;
 }   
 #  this function sets the CVF row to NULL 
 sub _resetCVF 
@@ -4398,16 +4400,15 @@ sub findLeastCommonSubsumer
 	$self->{'errorCode'} = 2;
 	return undef;
     }
-        
-    my($lcs, $path) = $self->_findShortestPath($concept1, $concept2);
 
-    if(! (defined $path)) {
-	undef $lcs;
+    #  find the shortest path(s) and lcs - there may be more than one
+    my $hashRef = $self->_findShortestPath($concept1, $concept2);
+    my @lcses = ();
+    while( my ($lcs, $path) = each %$hashRef ) {
+        push @lcses, $lcs;
     }
-
-    return $lcs;
+    return @lcses;
 }
-
 
 #  this function finds the shortest path between 
 #  two concepts and returns the path. in the process 
@@ -4435,17 +4436,6 @@ sub _findShortestPath
 	return undef;
     }
    
-    # check if the path is located in the cache
-    if($self->{'doCache'} && defined $self->{'pathCache'}->{"${concept1}::$concept2"}) {
-	if(defined $self->{'traceCache'}->{"${concept1}::$concept2"}) {
-	    $self->{'traceString'} = $self->{'traceCache'}->{"${concept1}::$concept2"} 
-	    if($self->{'trace'});
-	}
-	return ($self->{'lcsCache'}=>{"${concept1}::$concept2"}, 
-		$self->{'pathCache'}->{"${concept1}::$concept2"});
-    
-    }
-
     # Get the paths to root for each ofhte concepts
     my $lTrees = $self->pathsToRoot($concept1);
     if($self->checkError("pathsToRoot")) { return (); }
@@ -4522,32 +4512,23 @@ sub _findShortestPath
     }
 
     #  get the lcs
-    ($lcs) = sort {$lcsLengths{$a} <=> $lcsLengths{$b}} keys(%lcsLengths);
+    my %returnHash = ();
 
-    # store path and lcs in the trace string
-    if($self->{'trace'}) {
-	$self->{'traceString'} .= "LCS: $lcs   ";
-	$self->{'traceString'} .= "Path length: $lcsLengths{$lcs}.\n\n";
+    my $prev_len = -1;
+    foreach my $lcs (sort {$lcsLengths{$a} <=> $lcsLengths{$b}} keys(%lcsLengths)) {
+	if($prev_len == -1) {
+	    $returnHash{$lcs} = $lcsPaths{$lcs};
+	}
+	elsif($prev_len == $lcsLengths{$lcs}) {
+	    $returnHash{$lcs} = $lcsPaths{$lcs};
+	}
+	else {
+	    last;
+	}
+	$prev_len = $lcsLengths{$lcs};
     }
     
-    #  set the cache
-    if($self->{'doCache'}) {
-	$self->{'pathCache'}->{"${concept1}::$concept2"}  = $lcsPaths{$lcs};
-	$self->{'lcsCache'}->{"${concept1}::$concept2"}   = $lcs;
-	$self->{'traceCache'}->{"${concept1}::$concept2"} = $self->{'traceString'} 
-	if($self->{'trace'});
-	push(@{$self->{'cacheQ'}}, "${concept1}::$concept2");
-	if($self->{'maxCacheSize'} >= 0) {
-	    while(scalar(@{$self->{'cacheQ'}}) > $self->{'maxCacheSize'}) {
-		my $delItem = shift(@{$self->{'cacheQ'}});
-		delete $self->{'pathCache'}->{$delItem};
-		delete $self->{'traceCache'}->{$delItem};
-	    }
-	}
-    }
-
-    #  return path and lcs information
-    return ($lcs, $lcsPaths{$lcs});
+    return \%returnHash;
 }
 
 #  Method to check to see if a concept exists
@@ -4797,6 +4778,9 @@ sub getCuiDef
 
     #  get the definitions
     my $arrRef = $db->selectcol_arrayref("select DEF from MRDEF where CUI=\'$concept\'");
+
+   
+	
     if($self->checkError($function)) { return (); }
     
     return (@{$arrRef});

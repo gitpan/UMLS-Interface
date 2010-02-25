@@ -48,6 +48,10 @@ The socket your mysql is using. DEFAULT: /tmp/mysql.sock
 
 Database contain UMLS DEFAULT: umls
 
+=head3 --sab
+
+Prints out the source the come from
+
 =head4 --help
 
 Displays the quick summary of program options.
@@ -118,7 +122,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s" );
+GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "sab" );
 
 
 #  if help is defined, print out help
@@ -205,7 +209,13 @@ else {
     print "The CUIs associated with $term are:\n";
     my $i = 1;
     foreach my $cui (@cuis) {
-	print "$i. $cui\n"; $i++;
+	if(defined $opt_sab) {
+	    my $sab = $umls->getSab($cui);
+	    print "$i. $cui ($sab)\n"; $i++;
+	}
+	else {
+	    print "$i. $cui\n"; $i++;
+	}
     }
 }
 
@@ -241,6 +251,8 @@ sub showHelp() {
 
     print "Options:\n\n";
     
+    print "--sab                    Prints out the source of the CUI\n\n";
+
     print "--debug                  Sets the debug flag for testing\n\n";
 
     print "--username STRING        Username required to access mysql\n\n";
@@ -264,7 +276,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getAssociatedCuis.pl,v 1.2 2010/01/20 16:28:31 btmcinnes Exp $';
+    print '$Id: getAssociatedCuis.pl,v 1.3 2010/02/25 19:54:15 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

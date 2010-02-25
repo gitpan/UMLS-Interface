@@ -1,21 +1,29 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.39 to 0.41
+     1. Modified the findShortestPath and findLeastCommonSubsumer 
+        functions to return all of the paths and LCS's if there 
+        is more than one.
+
   Changes from version 0.37 to 0.39
-1. Added the following options to findLeastCommonSubsumer
-   a. --infile            File containing TERM or CUI pairs
-   b. --depth             Outputs the depth of the lcs
-   c. --propagation FILE  Outputs the IC of the lcs
-    2. Added the following options to findShortestPath a. --propagation FILE
-    Outputs the IC of the lcs b. --length Outputs the length of the path c.
-    --info Outputs the source and relation information between the concepts
-    in the path
+     1. Added the following options to findLeastCommonSubsumer
+       a. --infile            File containing TERM or CUI pairs
+       b. --depth             Outputs the depth of the lcs
+       c. --propagation FILE  Outputs the IC of the lcs
+     2. Added the following options to findShortestPath    
+       a. --propagation FILE  Outputs the IC of the lcs
+       b. --length            Outputs the length of the path
+       c. --info              Outputs the source and relation
+                              information between the concepts 
+                              in the path
 
   Changes from version 0.35 to 0.37
-1. Revised the way the propagation of counts is handled
-    2. Renamed everything spelt propogation to propagation
+     1. Revised the way the propagation of counts is handled
 
-    3. Updated documentation
+     2. Renamed everything spelt propogation to propagation
+
+     3. Updated documentation
 
   Changes from version 0.33 to 0.35
     1. Added the ability to propogation counts given a propogation file.

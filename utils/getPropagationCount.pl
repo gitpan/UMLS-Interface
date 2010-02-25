@@ -23,6 +23,14 @@ A concept (CUI) or a term from the Unified Medical Language System
 
 =head2 Optional Arguments:
 
+=head3 --propagation FILE
+
+The file containing the frequency counts for propagation
+
+=head3 --infile FILE
+
+A file containing a list of concepts or terms.
+
 =head3 --debug
 
 Sets the debug flag for testing
@@ -121,7 +129,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "file=s" );
+GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "infile=s", "propagation=s");
 
 
 #  if help is defined, print out help
@@ -139,7 +147,7 @@ if( defined $opt_version ) {
 }
 
 # At least 1 term should be given on the command line.
-if(scalar(@ARGV) < 1) {
+if( (scalar(@ARGV) < 1) and !(defined $opt_infile) ){
     print STDERR "No term was specified on the command line\n";
     &minimalUsageNotes();
     exit;
@@ -155,7 +163,7 @@ if(defined $opt_socket)   { $socket   = $opt_socket;   }
 my $umls = "";
 my %option_hash = ();
 
-$option_hash{"propagation"} = 1;
+$option_hash{"propagation"} = $opt_propagation;
 
 if(defined $opt_config) {
     $option_hash{"config"} = $opt_config;
@@ -192,9 +200,13 @@ die "$errString\n" if($errCode);
 
 &errorCheck($umls);
 
+my $precision = 2;
+my $floatformat = join '', '%', '.', $precision, 'f';
+
+
 my @terms = ();
-if(defined $opt_file) {
-    open(FILE, $opt_file) || die "Could not open file: $file\n";
+if(defined $opt_infile) {
+    open(FILE, $opt_infile) || die "Could not open file: $file\n";
     while(<FILE>) {
 	chomp;
 	push @terms, $_;
@@ -233,16 +245,16 @@ foreach my $input (@terms) {
 	#  make certain cui exists in this view
 	if($umls->checkConceptExists($cui) == 0) { next; }	
 
-	my $pcount = $umls->getPropagationCount($cui); 
-	
-	print STDERR "$pcount\n";
+	my $pcount = sprintf $floatformat, $umls->getPropagationCount($cui); 
+	my $ic     = sprintf $floatformat, $umls->getIC($cui);
+
 	&errorCheck($umls);
 	
 	if($pcount < 0) {
 	    print "Input $input does not exist in this view of the UMLS.\n";
 	}
 	else {
-	    print "The propagation count of $term ($cui) is $pcount. \n";
+	    print "The propagation count of $term ($cui) is $pcount ($ic). \n";
 	}
 	$printFlag = 1;
     }
@@ -308,7 +320,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getPropagationCount.pl,v 1.1 2010/02/05 18:58:15 btmcinnes Exp $';
+    print '$Id: getPropagationCount.pl,v 1.2 2010/02/25 19:54:15 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

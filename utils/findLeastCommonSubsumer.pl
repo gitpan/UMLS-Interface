@@ -324,7 +324,7 @@ foreach my $element (@fileArray) {
 	    if(($umls->checkConceptExists($cui1) == 0) or
 	       ($umls->checkConceptExists($cui2) == 0) ) { next; }
 	    
-	    my $lcs = $umls->findLeastCommonSubsumer($cui1, $cui2);
+	    my @lcses = $umls->findLeastCommonSubsumer($cui1, $cui2);
 	    
 	    &errorCheck($umls);
 	    
@@ -338,36 +338,36 @@ foreach my $element (@fileArray) {
 	    if($flag2 eq "term") {
 		($t2) = $umls->getTermList($cui2); 
 	    }
-	    
-	    
+	  	    
 	    my ($t) = $umls->getTermList($lcs);
 	    
+	    foreach my $lcs (@lcses) {
 
-	    print "\nThe least common subsumer between $t1 ($cui1) and $t2 ($cui2) is $t ($lcs) ";
-	    if(defined $opt_depth) {
-		my $min = $umls->findMinimumDepth($lcs);
-		&errorCheck($umls);
-		my $max = $umls->findMaximumDepth($lcs);
-		&errorCheck($umls);
-		print "with a min and max depth of $min and $max ";
+		print "\nThe least common subsumer between $t1 ($cui1) and $t2 ($cui2) is $t ($lcs) ";
+		if(defined $opt_depth) {
+		    my $min = $umls->findMinimumDepth($lcs);
+		    &errorCheck($umls);
+		    my $max = $umls->findMaximumDepth($lcs);
+		    &errorCheck($umls);
+		    print "with a min and max depth of $min and $max ";
+		}
+		if(defined $opt_propagation) {
+		    my $ic = sprintf $floatformat, $umls->getIC($lcs);
+		    &errorCheck($umls);
+		    print "with an IC of $ic ";
+		}
+		print "\n";
+		
+		$printFlag = 1;
 	    }
-	    if(defined $opt_propagation) {
-		my $ic = sprintf $floatformat, $umls->getIC($lcs);
-		&errorCheck($umls);
-		print "with an IC of $ic ";
-	    }
-	    print "\n";
-	    
-	    $printFlag = 1;
 	}
     }
-    
     if( !($printFlag) ) {
 	print "\n";
 	print "There is not a least common subsumer between $input1 and $input2 given the current view of the UMLS.\n\n";
     }
 }
-	
+
 sub errorCheck
 {
     my $obj = shift;
@@ -447,7 +447,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findLeastCommonSubsumer.pl,v 1.9 2010/02/17 18:24:11 btmcinnes Exp $';
+    print '$Id: findLeastCommonSubsumer.pl,v 1.10 2010/02/25 19:54:15 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

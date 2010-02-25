@@ -330,12 +330,10 @@ foreach my $element (@fileArray) {
 		next; 
 	    }
 		    
-	    my @shortestpath = $umls->findShortestPath($cui1, $cui2);
-	    
-	    &errorCheck($umls);
-	    
-	    if($#shortestpath < 0) { next; }
+	    my @shortestpaths = $umls->findShortestPath($cui1, $cui2);
 
+	    &errorCheck($umls);
+	   
 	    my $t1 = $input1;
 	    my $t2 = $input2;
 	    
@@ -347,49 +345,51 @@ foreach my $element (@fileArray) {
 		($t2) = $umls->getTermList($cui2); 
 	    }
 
-	    my $length = $#shortestpath + 1;
-	    print "\nThe shortest path ";
-	    if(defined $opt_length) {
-		print "(length: $length) ";
-	    }
-	    print "between $t1 ($cui1) and $t2 ($cui2):\n";
-	    print "  => ";
-	    foreach my $i (0..$#shortestpath) {
-		#  get the concept
-		my $concept = $shortestpath[$i];
-		
-		#  get one of the terms associated with the concept
-		my ($t) = $umls->getTermList($concept); 
-		&errorCheck($umls);
-		#  print out the concept
-		print "$concept ($t) "; 
-		
-		#  if the propagation option was defined print out 
-		#  the propagation count and IC count
-		if(defined $opt_propagation) { 
-                    my $v1 = $umls->getPropagationCount($concept);
-		    &errorCheck($umls);
-                    my $pc = sprintf $floatformat, $v1; 
-                    my $v2 = $umls->getIC($concept);          
-		    &errorCheck($umls);
-                    my $ic = sprintf $floatformat, $v2;
-                    print "($pc, $ic) ";
-                }     
-		
-		#  if the info option was defined print out 
-		#  the relation and source information
-		if( (defined $opt_info) and ($i < $#shortestpath) ) {
-		    my $second = $shortestpath[$i+1];
-		    
-		    my @relations = $umls->getRelationsBetweenCuis($concept, $second);
-		    &errorCheck($umls);
-		    print " => @relations => ";
+	    foreach my $path (@shortestpaths) {
+		my @shortestpath = @{$path};
+
+		my $length = $#shortestpath + 1;
+		print "\nThe shortest path ";
+		if(defined $opt_length) {
+		    print "(length: $length) ";
 		}
+		print "between $t1 ($cui1) and $t2 ($cui2):\n";
+		print "  => ";
+		foreach my $i (0..$#shortestpath) {
+		    #  get the concept
+		    my $concept = $shortestpath[$i];
+		
+		    #  get one of the terms associated with the concept
+		    my ($t) = $umls->getTermList($concept); 
+		    &errorCheck($umls);
+		    #  print out the concept
+		    print "$concept ($t) "; 
+		    
+		    #  if the propagation option was defined print out 
+		    #  the propagation count and IC count
+		    if(defined $opt_propagation) { 
+			my $v1 = $umls->getPropagationCount($concept);
+			&errorCheck($umls);
+			my $pc = sprintf $floatformat, $v1; 
+			my $v2 = $umls->getIC($concept);          
+			&errorCheck($umls);
+			my $ic = sprintf $floatformat, $v2;
+			print "($pc, $ic) ";
+		    }     
+		    
+		    #  if the info option was defined print out 
+		    #  the relation and source information
+		    if( (defined $opt_info) and ($i < $#shortestpath) ) {
+			my $second = $shortestpath[$i+1];
+			my @relations = $umls->getRelationsBetweenCuis($concept, $second);
+			&errorCheck($umls);
+			print " => @relations => ";
+		    }
+		}
+		print "\n";
+		
+		$printFlag = 1;
 	    }
-	    print "\n";
-	    
-	    $printFlag = 1;
-	    
 	}
     }
     
@@ -477,7 +477,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findShortestPath.pl,v 1.10 2010/02/17 20:19:39 btmcinnes Exp $';
+    print '$Id: findShortestPath.pl,v 1.11 2010/02/25 19:54:15 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 
