@@ -189,6 +189,31 @@ if( defined $opt_version ) {
     exit;
 }
 
+my @fileArray = ();
+if(defined $opt_infile) {
+    open(FILE, $opt_infile) || die "Could not open infile: $opt_infile\n";
+    while(<FILE>) {
+	chomp;
+	if($_=~/^\s*$/) { next; }
+	push @fileArray, $_;
+    }
+    close FILE;
+}
+else {
+    # At least 2 terms and/or cuis should be given on the command line.
+    if( scalar(@ARGV) < 2 ) {
+	print STDERR "Two terms and/or CUIs are required\n";
+	&minimalUsageNotes();
+	exit;
+    }
+    
+    my $i1 = shift;
+    my $i2 = shift;
+    
+    my $string = "$i1<>$i2";
+    push @fileArray, $string;
+}
+
 my $database = "umls";
 if(defined $opt_database) { $database = $opt_database; }
 my $hostname = "localhost";
@@ -253,31 +278,6 @@ die "$errString\n" if($errCode);
 &errorCheck($umls);
 
 
-my @fileArray = ();
-if(defined $opt_infile) {
-    open(FILE, $opt_infile) || die "Could not open infile: $opt_infile\n";
-    while(<FILE>) {
-	chomp;
-	if($_=~/^\s*$/) { next; }
-	push @fileArray, $_;
-    }
-    close FILE;
-}
-else {
-    # At least 2 terms and/or cuis should be given on the command line.
-    if( scalar(@ARGV) < 2 ) {
-	print STDERR "Two terms and/or CUIs are required\n";
-	&minimalUsageNotes();
-	exit;
-    }
-    
-    my $i1 = shift;
-    my $i2 = shift;
-    
-    my $string = "$i1<>$i2";
-    push @fileArray, $string;
-}
-
 foreach my $element (@fileArray) {
     
     my ($input1, $input2) = split/<>/, $element;
@@ -338,11 +338,12 @@ foreach my $element (@fileArray) {
 	    if($flag2 eq "term") {
 		($t2) = $umls->getTermList($cui2); 
 	    }
-	  	    
-	    my ($t) = $umls->getTermList($lcs);
+	  	   
 	    
 	    foreach my $lcs (@lcses) {
 
+		my ($t) = $umls->getTermList($lcs);
+		
 		print "\nThe least common subsumer between $t1 ($cui1) and $t2 ($cui2) is $t ($lcs) ";
 		if(defined $opt_depth) {
 		    my $min = $umls->findMinimumDepth($lcs);
@@ -447,7 +448,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findLeastCommonSubsumer.pl,v 1.10 2010/02/25 19:54:15 btmcinnes Exp $';
+    print '$Id: findLeastCommonSubsumer.pl,v 1.11 2010/03/01 23:06:23 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

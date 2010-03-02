@@ -74,10 +74,15 @@ per line) and stores only the path information for those CUIs
 rather than for all of the CUIs given the specified set of 
 sources and relations
 
+=head3 --info
+
+This prints out the relation and source information between the 
+CUIs in the path
+
 =head3 --propagation FILE
 
-This option takes in the propagation file and returns the 
-propagation count of the CUIs in the path
+Takes in a propagation file and then outputs the propagation count 
+and information content of the CUIs in the shortest path
 
 =head3 --help
 
@@ -149,7 +154,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "forcerun", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui", "verbose", "cuilist=s", "realtime", "propagation=s");
+GetOptions( "version", "help", "forcerun", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui", "verbose", "cuilist=s", "realtime", "propagation=s", "info");
 
 
 #  if help is defined, print out help
@@ -270,7 +275,8 @@ foreach my $cui (@c) {
 	foreach  $path (@{$paths}) {
 	    my @array = split/\s+/, $path;
 	    print "  => ";
-	    foreach my $element (@array) {
+	    foreach my $i (0..$#array){
+		my $element = $array[$i];
 		my ($t) = $umls->getTermList($element); 
 		print "$element ($t) ";
 		if(defined $opt_propagation) {
@@ -279,6 +285,12 @@ foreach my $cui (@c) {
 		    my $v2 = $umls->getIC($element);
 		    my $ic = sprintf $floatformat, $v2;
 		    print "($pc, $ic) ";
+		}
+		if( (defined $opt_info) and ($i < $#array) ) {
+		    my $second = $array[$i+1];
+		    my @relations = $umls->getRelationsBetweenCuis($element, $second);
+		    &errorCheck($umls);
+		    print " => @relations => ";
 		}
 	    } print "\n";
 	    
@@ -367,7 +379,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findPathToRoot.pl,v 1.12 2010/02/16 15:01:19 btmcinnes Exp $';
+    print '$Id: findPathToRoot.pl,v 1.13 2010/03/01 23:06:23 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

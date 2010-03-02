@@ -1,6 +1,12 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.41 to 0.43
+    1. Added the terms associated to concept2 and the lcs in the
+    findLeastCommonSubsumer program
+
+    2. Added the --info option to the findPathsToRoot program
+
   Changes from version 0.39 to 0.41
      1. Modified the findShortestPath and findLeastCommonSubsumer 
         functions to return all of the paths and LCS's if there 

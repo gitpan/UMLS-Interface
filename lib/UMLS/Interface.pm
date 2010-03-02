@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.33 2010/02/17 20:19:39 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.37 2010/03/01 23:09:04 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -50,7 +50,7 @@ use Digest::SHA1  qw(sha1 sha1_hex sha1_base64);
 use bignum qw/hex oct/;
 
 
-$VERSION = '0.41';
+$VERSION = '0.43';
 
 my $debug = 0;
 
@@ -264,7 +264,7 @@ sub _getMaxDepth
     $d++;
     
     #  check to see if it is the max depth
-    if($d > $max_depth) { $max_depth = $d; }
+    if(($d) > $max_depth) { $max_depth = $d; }
 
     #  if concept is one of the following just return
     #C1274012|Ambiguous concept (inactive concept)
@@ -286,8 +286,8 @@ sub _getMaxDepth
     my $series = join " ", @path;
     
     #  get all the children
-    my @children = $self->_getChildrenForDFS($concept);
-    if($self->checkError("_getChildrenForDFS")) { return (); }
+    my @children = $self->getChildren($concept);
+    if($self->checkError("getChildren")) { return (); }
     
     #  search through the children
     foreach my $child (@children) {
@@ -1600,7 +1600,7 @@ sub _setUpperLevelTaxonomy
     my $self = shift;
     
     my $function = "_setUpperLevelTaxonomy";
-    &_debug($function);
+    #&_debug($function);
     
     return undef if(!defined $self || !ref $self);
     
@@ -1874,10 +1874,11 @@ sub _setDepth {
    
 	    
 	    print STDERR "You have requested the following sources $sourceList.\n";
-	    print STDERR "In order to use these an index needs to be created.\n";
-	    print STDERR "This could be very time consuming. If the index is not\n";
-	    print STDERR "created, you will not be able to use this command with\n";
-	    print STDERR "these sources.\n\n";
+	    print STDERR "In order to use these you either need to create an index\n";
+	    print STDERR "or resubmit this command using --realtime. Creating\n";
+	    print STDERR "an index can be very time-consuming, but once it is\n";
+	    print STDERR "built your commands will run faster than with --realtime.\n\n";
+
 
 	    if($option_forcerun == 0) {
 		print STDERR "Do you want to continue with index creation (y/n)";
@@ -1933,7 +1934,7 @@ sub _setDepth {
     #  set the maximum depth
     my $d = $sdb->selectcol_arrayref("select max(DEPTH) from $tableName");
     if($self->checkError($function)) { return (); }
-    $max_depth = shift @{$d};
+    $max_depth = shift @{$d}; 
 }
 
 sub _loadCycleInformation
@@ -2091,7 +2092,8 @@ sub _config {
     }
 
     if($debug) {
-	print STDERR "SOURCE   : $sources\n";
+	if($umlsall) { print STDERR "SOURCE   : UMLS_ALL\n"; }
+	else         { print STDERR "SOURCE   : $sources\n"; }
 	print STDERR "RELATIONS: $relations\n";
 	print STDERR "PARENTS  : $parentRelations\n";
 	print STDERR "CHILDREN : $childRelations\n\n";
@@ -2794,10 +2796,10 @@ sub _getChildrenForDFS
     else {
 	my $arrRef = "";
 	if($umlsall) {
-	    $arrRef = $db->selectcol_arrayref("select distinct CUI2 from MRREL where CUI1='$concept' and ($childRelations) and CVF is null");
+	    $arrRef = $db->selectcol_arrayref("select distinct CUI2 from MRREL where CUI1='$concept' and ($childRelations)");
 	}
 	else {
-	    $arrRef = $db->selectcol_arrayref("select distinct CUI2 from MRREL where CUI1='$concept' and ($childRelations) and ($sources) and CVF is null");
+	    $arrRef = $db->selectcol_arrayref("select distinct CUI2 from MRREL where CUI1='$concept' and ($childRelations) and ($sources)");
 	}
 	if($self->checkError($function)) { return (); }
 	
@@ -2882,7 +2884,7 @@ sub getChildren
     return () if(!defined $self || !ref $self);
     
     my $function = "getChildren";
-    &_debug($function);
+    #&_debug($function);
 
     if(!$concept) {
 	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
@@ -2917,6 +2919,7 @@ sub getChildren
     if($concept eq $umlsRoot) {
 	return (keys %sab_hash);
     }
+
     #  otherwise everything is normal so return its children
     else {
 	my $arrRef = "";
@@ -2951,7 +2954,7 @@ sub getParents
     return () if(!defined $self || !ref $self);
     
     my $function = "getParents";
-    &_debug($function);
+    #&_debug($function);
 
     if(!$concept) {
 	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
@@ -3107,6 +3110,13 @@ sub getRelationsBetweenCuis
     }
     
     $self->{'traceString'} = "";
+
+    my @array = ();
+
+    if($concept1 eq $umlsRoot) { 
+	push @array, "CHD (source)";
+	return @array;
+    }
     
     #  get the Relations
     my $sql = "";
@@ -3120,7 +3130,6 @@ sub getRelationsBetweenCuis
     $sth->execute();
     my($rel, $sab);
     $sth->bind_columns( undef, \$rel, \$sab );
-    my @array = ();
     while( $sth->fetch() ) {
 	my $str = "$rel ($sab)";
 	push @array, $str;
@@ -3167,8 +3176,8 @@ sub _initializeDepthFirstSearch
     }
 
     #  get the children
-    my @children = $self->_getChildrenForDFS($concept);
-    if($self->checkError("_getChildrenForDFS")) { return (); }
+    my @children = $self->getChildren($concept);
+    if($self->checkError("getChildren")) { return (); }
 
     #  foreach of the children continue down the taxonomy
     foreach my $child (@children) {
@@ -3223,42 +3232,9 @@ sub getIC
 	return;
     }
 
-    #  witten bell smoothing
-    #my $count = 0;
-    #if($propagationHash{$concept} == 0) {
-    #$count = $observed_types / ( $unobserved_types * ($propagationTotal + $observed_types) );
-    #}
-    #   old add one smoothing
-    #else {
-    #$count = $propagationHash{$concept} / ($propagationTotal + $observed_types);
-    #}
-    # my prob = $count / $propagationTotal;
-    
-    #  add one
-    #my $count = $propagationHash{$concept} + 1;
-    #my $prob = $count / ($propagationTotal + $observed_types + $unobserved_types);
-    
-    #   semantic type IC
-    #my @sts = $self->getSt($concept);
-    
-    #my $stprob = 0;
-    #foreach my $st (@sts) {
-    #$stprob += ($propagationTuiHash{$st} / $propagationTuiTotal);
-    #}
-    #my $prob = $stprob / ($#sts + 1);
-
-
-    #  regular IC
     my $prob = $propagationHash{$concept} / ($propagationTotal);
     
-    
-    my $score = 0;
-    if($prob > 0) {
-	$score = -log($prob);
-    }
-    return $score;
-    
-    #return ($prob > 0) ? -log($prob) : 0;
+    return ($prob > 0) ? -log($prob) : 0;
 }
 
 sub getFreq
@@ -3367,7 +3343,7 @@ sub _initializePropagationHash
     #  clear out the hash just in case
     %propagationHash = ();
 
-    my $smooth = 1;
+    my $smooth = 0;
     print STDERR "SMOOTH: $smooth\n";
 
     #  add the cuis to the propagation hash
@@ -3420,6 +3396,8 @@ sub _loadPropagationFreq
 	    $propagationFreq{$cui} += $freq;
 	}
     }
+
+
 }
 
 sub _loadPropagationTables
@@ -3698,16 +3676,17 @@ sub _propagation
     #  if defined $option2 we are going to use the 1/p counts
     if($option2) {
 	#  get the parents of the concept
-	my @parents = $self->_getParentsForDFS($concept);
-	if($self->checkError("_getParentsForDFS")) { return (); }
+	my @parents = $self->getParents($concept);
+	if($self->checkError("getParents")) { return (); }
 	if($#parents >= 0) {
 	    $count = $count / ($#parents+1);
 	}
     }
     #  get all the children
-    my @children = $self->_getChildrenForDFS($concept);
-    if($self->checkError("_getChildrenForDFS")) { return (); }
-    
+    my @children = $self->getChildren($concept);
+    if($self->checkError("getChildren")) { return (); }
+
+    my $havechildflag = 0;
     #  search through the children
     foreach my $child (@children) {
 	
@@ -3723,19 +3702,27 @@ sub _propagation
 	#  if it isn't continue on with the depth first search
 	if($flag == 0) {  
 	    $count += $self->_propagation($child, \@intermediate);    
+	    $havechildflag++;
 	}
     }
+    
+    if($havechildflag == 0) { $count++; }
+    
     if($option4) {
 	#  get the parents of the concept
-	my @parents = $self->_getParentsForDFS($concept);
-	if($self->checkError("_getParentsForDFS")) { return (); }
+	my @parents = $self->getParents($concept);
+	if($self->checkError("getParents")) { return (); }
 	if($#parents >= 0) {
 	    $count = $count / ($#parents+1);
 	}
     }
+        
     #  update the propagation count
     $propagationHash{$concept} = $count;
 
+    open(OUT, ">>out") || die "OUT\n";
+    print OUT "$concept $count $havechildflag $#children\n";
+    close OUT;
     #  return the count
     return $count;
 }
@@ -3817,8 +3804,8 @@ sub _propagation3
     }
 
     #  get all the children
-    my @children = $self->_getChildrenForDFS($concept);
-    if($self->checkError("_getChildrenForDFS")) { return (); }
+    my @children = $self->getChildren($concept);
+    if($self->checkError("getChildren")) { return (); }
     
     #  search through the children   
     foreach my $child (@children) {
@@ -3933,8 +3920,8 @@ sub _cuiToRoot
 	}
 	
 	#  get all the parents
-	my @parents = $self->_getParentsForDFS($concept);
-	if($self->checkError("_getParentsForDFS")) { return (); }
+	my @parents = $self->getParents($concept);
+	if($self->checkError("getParents")) { return (); }
 	
 	#  if there are no children we are finished with this concept
 	if($#parents < 0) {
@@ -4047,8 +4034,8 @@ sub _depthFirstSearch
     }
     
     #  get all the children
-    my @children = $self->_getChildrenForDFS($concept);
-    if($self->checkError("_getChildrenForDFS")) { return (); }
+    my @children = $self->getChildren($concept);
+    if($self->checkError("getChildren")) { return (); }
     
     #  search through the children
     foreach my $child (@children) {
@@ -4288,15 +4275,20 @@ sub findShortestPath
     return () if(! ($self->checkConceptExists($concept1)));
     return () if(! ($self->checkConceptExists($concept2)));
 
-    
+
+
     #  find the shortest path(s) and lcs - there may be more than one
-    my $hashRef = $self->_findShortestPath($concept1, $concept2);
+    my $hash = $self->_findShortestPath($concept1, $concept2);
+
     my @paths = ();
-    while( my ($lcs, $path) = each %$hashRef ) {
-        push @paths, $path;
+    foreach my $element (sort keys %{$hash}) {
+	if(! ($element=~/C[0-9]+/) ) { next; }
+	push @paths, ${$hash}{$element};
     }
+    
     return @paths;
-}   
+}
+
 #  this function sets the CVF row to NULL 
 sub _resetCVF 
 {
@@ -4402,11 +4394,14 @@ sub findLeastCommonSubsumer
     }
 
     #  find the shortest path(s) and lcs - there may be more than one
-    my $hashRef = $self->_findShortestPath($concept1, $concept2);
+    my $hash = $self->_findShortestPath($concept1, $concept2);
+
     my @lcses = ();
-    while( my ($lcs, $path) = each %$hashRef ) {
-        push @lcses, $lcs;
+    foreach my $element (sort keys %{$hash}) {
+	if(! ($element=~/C[0-9]+/) ) { next; }
+	push @lcses, $element;
     }
+           
     return @lcses;
 }
 
@@ -4435,14 +4430,14 @@ sub _findShortestPath
 	$self->{'errorCode'} = 2;
 	return undef;
     }
-   
+
     # Get the paths to root for each ofhte concepts
     my $lTrees = $self->pathsToRoot($concept1);
     if($self->checkError("pathsToRoot")) { return (); }
 
     my $rTrees = $self->pathsToRoot($concept2);
     if($self->checkError("pathsToRoot")) { return (); }
-    
+   
     
     # set the trace
     if($self->{'trace'}) {
@@ -4501,7 +4496,7 @@ sub _findShortestPath
 	    }
 	}
     }
-
+    
     # If no paths exist 
     if(!scalar(keys(%lcsPaths))) {
 	# set trace
@@ -4512,15 +4507,20 @@ sub _findShortestPath
     }
 
     #  get the lcs
-    my %returnHash = ();
-
+    my @returnarray = ();
+    my %returnhash  = ();
+    
     my $prev_len = -1;
     foreach my $lcs (sort {$lcsLengths{$a} <=> $lcsLengths{$b}} keys(%lcsLengths)) {
 	if($prev_len == -1) {
-	    $returnHash{$lcs} = $lcsPaths{$lcs};
+	    my $string = "$lcs : $lcsPaths{$lcs}";
+	    push @returnarray, $string;
+	    $returnhash{$lcs} = $lcsPaths{$lcs};
 	}
 	elsif($prev_len == $lcsLengths{$lcs}) {
-	    $returnHash{$lcs} = $lcsPaths{$lcs};
+	    my $string = "$lcs : $lcsPaths{$lcs}";
+	    push @returnarray, $string;
+	    $returnhash{$lcs} = $lcsPaths{$lcs};
 	}
 	else {
 	    last;
@@ -4528,7 +4528,8 @@ sub _findShortestPath
 	$prev_len = $lcsLengths{$lcs};
     }
     
-    return \%returnHash;
+    return \%returnhash;
+    #return \@returnarray;
 }
 
 #  Method to check to see if a concept exists
