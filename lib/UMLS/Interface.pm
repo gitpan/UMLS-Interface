@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.37 2010/03/01 23:09:04 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.39 2010/03/11 18:14:04 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -50,12 +50,12 @@ use Digest::SHA1  qw(sha1 sha1_hex sha1_base64);
 use bignum qw/hex oct/;
 
 
-$VERSION = '0.43';
+$VERSION = '0.45';
 
 my $debug = 0;
 
 my $option4 = 0; # Teds 1/p
-my $option3 = 0; # decendants
+my $option3 = 1; # decendants
 my $option2 = 0; # my 1/p
 
 my %roots = ();
@@ -205,10 +205,6 @@ sub depth
     
     return undef if(!defined $self || !ref $self);
     $self->{'traceString'} = "";
-
-    #  set the upper level taxonomy if required
-    $self->_setUpperLevelTaxonomy();
-    if($self->checkError("_setUpperLevelTaxonomy")) { return (); }	
 
     #  get the depth and set the path information
     if($option_realtime) {
@@ -845,6 +841,10 @@ sub _initialize
     $self->_connectIndexDB();
     if($self->checkError("_connectIndexDB")) { return (); }	
 
+    #  set the upper level taxonomy
+    $self->_setUpperLevelTaxonomy();
+    if($self->checkError("_setUpperLevelTaxonomy")) { return (); }
+
     #  propogate counts up if it has been defined 
     #  the database must be up to do this
     $self->_propogateCounts();
@@ -936,7 +936,8 @@ sub getRelated
 
     my $function = "getRelated";
     &_debug($function);
-    
+    &_input($function, "$concept $rel"); 
+
     if(!$concept || !$rel) {
 	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
 	$self->{'errorString'} .= "Undefined input values.";
@@ -959,11 +960,6 @@ sub getRelated
 	return 1;
     }    
 
-
-    #  set the upper level taxonomy if required
-    $self->_setUpperLevelTaxonomy();
-    if($self->checkError("_setUpperLevelTaxonomy")) { return (); }	
-
     #  return all the relations 'rel' for cui 'concept'
     my $arrRef = "";
     if($umlsall) {
@@ -975,7 +971,11 @@ sub getRelated
     
     #  check for errors
     if($self->checkError($function)) { return(); }
-        
+    
+    #  print the output if debug
+    my $output = join " ", @{$arrRef};
+    &_output($function, $output);
+
     return @{$arrRef};
 }
 
@@ -1051,7 +1051,7 @@ sub getAllTerms
     
     my $function = "getAllTerms";
     &_debug($function);
-    
+    &_input($function, $concept); 
  
     if(!$concept) {
 	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
@@ -1104,7 +1104,11 @@ sub getAllTerms
 	my $index = "$str - $sabs";
 	$retHash{$index}++;
     }
-    
+
+    #  return the output if debug is on
+    my $output = keys %retHash;
+    &_output($function, $output);
+
     return keys(%retHash);
 }
 
@@ -1118,7 +1122,8 @@ sub getConceptList
 
     my $function = "getConceptList";
     &_debug($function);
-    
+    &_input($function, $term); 
+
     if(!$term) {
 	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
 	$self->{'errorString'} .= "Undefined input values.";
@@ -1145,6 +1150,10 @@ sub getConceptList
     
     if($self->checkError($function)) { return (); }
     
+
+    my $output = join " ", @{$arrRef};
+    &_output($function, $output);
+
     return @{$arrRef};
     
 }
@@ -1161,6 +1170,7 @@ sub pathsToRoot
 
     my $function = "pathsToRoot";
     &_debug($function);
+    &_input($function, $concept);
 
     $self->{'traceString'} = "";
     
@@ -1196,11 +1206,6 @@ sub pathsToRoot
 	$self->{'errorCode'} = 2;
 	return ();
     }    
-
-    #  determine the cycles and depth of the taxonomy if not already done
-    #  set the upper level taxonomy if required
-    $self->_setUpperLevelTaxonomy();
-    if($self->checkError("_setUpperLevelTaxonomy")) { return (); }
 
     #  if the realtime option is set get the paths otherwise 
     #  they are or should be stored in the database 
@@ -1241,9 +1246,11 @@ sub pathsToRoot
 	push @gpaths, $path;
     }
 
-    my $rpaths = \@gpaths;
+    #  print the output if debug is set
+    my $output = join "\n", @gpaths;
+    &_output($function, $output);
 
-    return $rpaths;
+    return \@gpaths;
     
 }
 
@@ -1379,7 +1386,7 @@ sub getCuiList
     
     my $function = "_getCuiList";
     &_debug($function);
-    
+
     #  set up the database
     my $db = $self->{'db'};
     if(!$db) {
@@ -1390,11 +1397,7 @@ sub getCuiList
     }    
     
     $self->{'traceString'} = "";
-    
-    #  set the upper level taxonomy 
-    $self->_setUpperLevelTaxonomy();
-    if($self->checkError("_setUpperLevelTaxonomy")) { return (); }   
-    
+        
     #  get the sabs in the config file
     my @sabs = ();
     if($umlsall) {
@@ -1428,7 +1431,18 @@ sub getCuisFromSource {
     my $self = shift;
     my $sab = shift;
     
-    return ($self->_getCuis($sab));
+    my $function = "getCuisFromSource";
+
+    &_debug($function);
+    &_input($function, $sab);  
+
+    my $arrRef = $self->_getCuis($sab);
+    
+    my $output = join " ", @{$arrRef};
+
+    &_output($function, $output);
+
+    return ($arrRef);
 }
 
 sub _getCuis
@@ -1441,7 +1455,7 @@ sub _getCuis
     
     my $function = "_getCuis";
     &_debug($function);
-            
+
     #  set up the database
     my $db = $self->{'db'};
     if(!$db) {
@@ -1895,10 +1909,10 @@ sub _setDepth {
 	    }
 	    
 	    #  mark the CVF
-	    $self->_resetCVF();
-	    if($self->checkError("_resetCVF")) { return (); }   		
-	    $self->_markCVF();
-	    if($self->checkError("_markCVF")) { return (); }   		
+	    #$self->_resetCVF();
+	    #if($self->checkError("_resetCVF")) { return (); }   		
+	    #$self->_markCVF();
+	    #if($self->checkError("_markCVF")) { return (); }   		
 
 	    # mark the cycles;
 	    $self->_markCycles();
@@ -1959,6 +1973,22 @@ sub _debug
 {
     my $function = shift;
     if($debug) { print STDERR "In $function\n"; }
+}
+
+sub _output
+{
+    my $function = shift;
+    my $output   = shift;
+
+    if($debug) { print STDERR "  OUTPUT for $function: $output\n"; }
+}
+
+sub _input
+{
+    my $function = shift;
+    my $input    = shift;
+
+    if($debug) { print STDERR "  INPUT for $function: $input\n"; }
 }
 
 #  This sets the sources that are to be used. These sources 
@@ -2675,7 +2705,8 @@ sub _checkSab
 
     my $function = "_checkSab";
     &_debug($function);
-    
+    &_input($function, $concept); 
+ 
     if(!$concept) {
 	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
 	$self->{'errorString'} .= "Undefined input values.";
@@ -2693,9 +2724,13 @@ sub _checkSab
     my @sabs = $self->getSab($concept);
     
     foreach my $sab (@sabs) {
-	if(exists $sab_names{$sab}) { return 1; }
+	if(exists $sab_names{$sab}) { 
+	    &_output($function, "1");
+	    return 1; 
+	}
     }
     
+    &_output($function, "0");
     return 0;
 }
 
@@ -2709,8 +2744,7 @@ sub getSab
 
     return () if(!defined $self || !ref $self);
  
-   my $function = "getSab";
-    #&_debug($function);
+    my $function = "getSab";
     
     if(!$concept) {
 	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
@@ -2749,130 +2783,6 @@ sub getSab
     return @{$arrRef};
 }
 
-
-#  Returns the children of a concept - the relations that 
-#  are considered children are predefined by the user.
-#  The default are the RN and CHD relations
-sub _getChildrenForDFS
-{
-    my $self    = shift;
-    my $concept = shift;
-
-    return () if(!defined $self || !ref $self);
-    
-    my $function = "_getChildrenForDFS";
-    #&_debug($function);
-
-    if(!$concept) {
-	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
-	$self->{'errorString'} .= "Undefined input values.";
-	$self->{'errorCode'} = 2 if($self->{'errorCode'} < 1);
-	return ();
-    }
-
-    if($self->validCui($concept)) {
-	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
-	$self->{'errorString'} .= "Incorrect input value ($concept).";
-	$self->{'errorCode'} = 2 if($self->{'errorCode'} < 1);
-	return undef;
-    } 
-
-    my $db = $self->{'db'};
-    if(!$db) {
-	$self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
-	$self->{'errorString'} .= "A db is required.";
-	$self->{'errorCode'} = 2;
-	return ();
-    }
-    
-    $self->{'traceString'} = "";
-
-    #  if the concept is the umls root node cui return
-    #  the source's cuis
-    if($concept eq $umlsRoot) {
-	return (keys %sab_hash);
-    }
-    #  otherwise everything is normal so return its children
-    else {
-	my $arrRef = "";
-	if($umlsall) {
-	    $arrRef = $db->selectcol_arrayref("select distinct CUI2 from MRREL where CUI1='$concept' and ($childRelations)");
-	}
-	else {
-	    $arrRef = $db->selectcol_arrayref("select distinct CUI2 from MRREL where CUI1='$concept' and ($childRelations) and ($sources)");
-	}
-	if($self->checkError($function)) { return (); }
-	
-	my @array = ();
-	if(exists $childrenTaxonomy{$concept}) {
-	    @array = (@{$childrenTaxonomy{$concept}}, @{$arrRef});
-	}
-	else {
-	    @array = @{$arrRef};
-	}
-	return @array; 
-    }
-}
-
-
-#  Returns the parents of a concept - the relations that 
-#  are considered parents are predefined by the user.
-#  The default are the RN and CHD relations
-sub _getParentsForDFS
-{
-    my $self    = shift;
-    my $concept = shift;
-
-    return () if(!defined $self || !ref $self);
-    
-    my $function = "_getParentsForDFS";
-    #&_debug($function);
-
-    if(!$concept) {
-	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
-	$self->{'errorString'} .= "Undefined input values.";
-	$self->{'errorCode'} = 2 if($self->{'errorCode'} < 1);
-	return ();
-    }
-
-    if($self->validCui($concept)) {
-	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
-	$self->{'errorString'} .= "Incorrect input value ($concept).";
-	$self->{'errorCode'} = 2 if($self->{'errorCode'} < 1);
-	return undef;
-    } 
-
-    my $db = $self->{'db'};
-    if(!$db) {
-	$self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
-	$self->{'errorString'} .= "A db is required.";
-	$self->{'errorCode'} = 2;
-	return ();
-    }
-    
-    $self->{'traceString'} = "";
-
-    #  if the concept is the umls root node cui return
-    #  the source's cuis
-    if(exists $parentTaxonomy{$concept}) {
-	return $umlsRoot;
-    }
-    #  otherwise everything is normal so return its parents
-    else {
-	my $arrRef = "";
-	if($umlsall) {
-	    $arrRef = $db->selectcol_arrayref("select distinct CUI2 from MRREL where CUI1='$concept' and ($parentRelations) and CVF is null");
-	}
-	else {
-	    $arrRef = $db->selectcol_arrayref("select distinct CUI2 from MRREL where CUI1='$concept' and ($parentRelations) and ($sources) and CVF is null");
-	}
-	if($self->checkError($function)) { return (); }
-	
-        my @array = @{$arrRef};
-	return @array; 
-    }
-}
-
 #  Returns the children of a concept - the relations that 
 #  are considered children are predefined by the user.
 #  The default are the RN and CHD relations
@@ -2884,8 +2794,7 @@ sub getChildren
     return () if(!defined $self || !ref $self);
     
     my $function = "getChildren";
-    #&_debug($function);
-
+        
     if(!$concept) {
 	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
 	$self->{'errorString'} .= "Undefined input values.";
@@ -2909,10 +2818,6 @@ sub getChildren
     }
     
     $self->{'traceString'} = "";
-
-    #  set the upper level taxonomy if required
-    $self->_setUpperLevelTaxonomy();
-    if($self->checkError("_setUpperLevelTaxonomy")) { return (); }
 
     #  if the concept is the umls root node cui return
     #  the source's cuis
@@ -2954,7 +2859,6 @@ sub getParents
     return () if(!defined $self || !ref $self);
     
     my $function = "getParents";
-    #&_debug($function);
 
     if(!$concept) {
 	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
@@ -2979,10 +2883,6 @@ sub getParents
     }
     
     $self->{'traceString'} = "";
-
-    #  set the upper level taxonomy if required
-    $self->_setUpperLevelTaxonomy();
-    if($self->checkError("_setUpperLevelTaxonomy")) { return (); }
         
     #  if the cui is a root return an empty array
     if(exists $roots{$concept}) {
@@ -3025,6 +2925,7 @@ sub getRelations
     
     my $function = "getRelations";
     &_debug($function);
+    &_input($function, $concept); 
 
     if(!$concept) {
 	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
@@ -3059,6 +2960,9 @@ sub getRelations
 	$arrRef = $db->selectcol_arrayref("select distinct REL from MRREL where (CUI1='$concept' or CUI2='$concept') and ($sources) and CUI1!=CUI2");
     }
     if($self->checkError($function)) { return (); }
+
+    my $output = join " ", @{$arrRef};
+    &_output($function, $output);
     
     return @{$arrRef};
 }
@@ -3074,6 +2978,7 @@ sub getRelationsBetweenCuis
     
     my $function = "getRelationBetweenCuis";
     &_debug($function);
+    &_input($function, "$concept1 $concept2"); 
 
     if(!$concept1) {
 	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
@@ -3135,6 +3040,10 @@ sub getRelationsBetweenCuis
 	push @array, $str;
     } $sth->finish();
     
+
+    my $output = join " ", @array;
+    &_output($function, $output);
+
     return @array;
 }
 
@@ -3153,7 +3062,8 @@ sub _initializeDepthFirstSearch
     
     my $function = "_initializeDepthFirstSearch";
     &_debug($function);
-    
+    &_input($function, "$concept $d $root");  
+
     #  check the parameters are defined
     if(!(defined $concept) || !(defined $d) || !(defined $root)) {
 	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
@@ -3227,14 +3137,20 @@ sub getIC
     
     my $function = "getIC";
     &_debug($function);
+    &_input($function, $concept); 
 
     if(! ($self->checkConceptExists($concept))) {
-	return;
+	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "Concept ($concept) doesn't exist.";
+	$self->{'errorCode'} = 2;
+	return undef;
     }
-
     my $prob = $propagationHash{$concept} / ($propagationTotal);
     
-    return ($prob > 0) ? -log($prob) : 0;
+    my $output = ($prob > 0 and $prob < 1) ? -log($prob) : 0;
+    &_output($function, $output);
+
+    return ($prob > 0 and $prob < 1) ? -log($prob) : 0;
 }
 
 sub getFreq
@@ -3242,13 +3158,21 @@ sub getFreq
     my $self = shift;
     my $concept = shift;
 
-
     return undef if(!defined $self || !ref $self);
     
     my $function = "getFreq";
     &_debug($function);
+    &_input($function, $concept); 
 
-    return () if(! ($self->checkConceptExists($concept)));
+    if(! ($self->checkConceptExists($concept))) {
+	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "Concept ($concept) doesn't exist.";
+	$self->{'errorCode'} = 2;
+	return undef;
+    }
+
+    my $output = $propagationHash{$concept};
+    &_output($function, $output);
 
     return $propagationHash{$concept};
 }
@@ -3270,10 +3194,6 @@ sub getPropagationCuis
 	$self->{'errorCode'} = 2;
 	return ();
     }
-
-    #  set the upper level taxonomy 
-    $self->_setUpperLevelTaxonomy();
-    if($self->checkError("_setUpperLevelTaxonomy")) { return (); }   
     
     #  get the sabs in the config file
     my @sabs = ();
@@ -3343,7 +3263,7 @@ sub _initializePropagationHash
     #  clear out the hash just in case
     %propagationHash = ();
 
-    my $smooth = 0;
+    my $smooth = 1;
     print STDERR "SMOOTH: $smooth\n";
 
     #  add the cuis to the propagation hash
@@ -3382,6 +3302,7 @@ sub _loadPropagationFreq
     
     #  collect the counts for the required cuis
     open(FILE, $propagationFile) || die "Could not open propagation file: $propagationFile\n";
+    my $N = 0;
     while(<FILE>) {
 	chomp;
 	if($_=~/^#/)    { next; }
@@ -3391,11 +3312,21 @@ sub _loadPropagationFreq
 
 	#  negative numbers are used as codes - they don't mean anything
 	if($freq < 0) { next; }
-
+    
+        $N += $freq;
+        #$N++;
+	
 	if(exists $propagationFreq{$cui}) {
 	    $propagationFreq{$cui} += $freq;
 	}
     }
+    
+    my $pkeys = keys %propagationFreq;
+    $N += $pkeys;
+
+    print STDERR "PROPAGATION TOTAL : $N\n";
+
+    $propagationTotal = $N;
 
 
 }
@@ -3424,16 +3355,19 @@ sub _loadPropagationTables
     #  load the table
     my $N = 0;
     foreach my $cui (sort keys %propagationHash) {
-	#my $freq = $propagationHash{$cui}->as_hex();
 	my $freq = $propagationHash{$cui};
-	$sdb->do("INSERT INTO $propTable (CUI, FREQ) VALUES ('$cui', '$freq')");	    
+	$sdb->do("INSERT INTO $propTable (CUI, FREQ) VALUES ('$cui', '$freq')");
 	if($self->checkError($function)) { return (); }   
 	$N += $freq;
     }
-
+    
+    $sdb->do("INSERT INTO $propTable (CUI, FREQ) VALUES ('PT', '$propagationTotal')");
+    if($self->checkError($function)) { return (); }   
+    
     #  set N (the total propagation count)
-    $propagationTotal = $N;
-
+    #$propagationTotal = $N;
+    #$propagationTotal = $self->getFreq($umlsRoot);
+    
     #  add them to the index table
     $sdb->do("INSERT INTO tableindex (TABLENAME, HEX) VALUES ('$propTableHuman', '$propTable')");
     if($self->checkError($function)) { return (); }   
@@ -3466,12 +3400,18 @@ sub _setPropagationHash
     $sth->bind_columns( undef, \$cui, \$freq );
     my $N = 0;
     while( $sth->fetch() ) {
-	$propagationHash{$cui} = $freq;
-	$N += $freq;
+	if($cui=~/PT/) {
+	    $propagationTotal = $freq;
+	}
+	else {
+	    $propagationHash{$cui} = $freq;
+	    $N += $freq;
+	}
     } $sth->finish();
-
+    
     #  set N (the total propagation count)
-    $propagationTotal = $N;
+    #$propagationTotal = $N;
+    #$propagationTotal = $self->getFreq($umlsRoot);
 }
 
 sub getPropagationCount
@@ -3540,11 +3480,7 @@ sub _propogateCounts
 
 	}
 	else {
-	    	    
-	    #  set the upper level taxonomy
-	    $self->_setUpperLevelTaxonomy();
-	    if($self->checkError("_setUpperLevelTaxonomy")) { return (); }
-	    
+	    	    	    
 	    #  initialize the propagation hash
 	    $self->_initializePropagationHash();
 	    
@@ -3706,7 +3642,7 @@ sub _propagation
 	}
     }
     
-    if($havechildflag == 0) { $count++; }
+    #if($havechildflag == 0) { $count++; }
     
     if($option4) {
 	#  get the parents of the concept
@@ -3856,6 +3792,7 @@ sub _cuiToRoot
 
     my $function = "_cuiToRoot";
     &_debug($function);
+    &_input($function, $concept);
 
     #  set the database
     my $sdb = $self->{'sdb'};
@@ -4052,10 +3989,10 @@ sub _depthFirstSearch
 	    if($self->checkError("_depthFirstSearch")) { return (); }
 	}
 	#  otherwise mark it and stop that path
-	else { 
-	    $self->_storeCycle($child, $concept); 
-	    if($self->checkError("_storeCycle")) { return (); }
-	}
+	#else { 
+	    #$self->_storeCycle($child, $concept); 
+	    #if($self->checkError("_storeCycle")) { return (); }
+	#}
     }
 }
 
@@ -4069,7 +4006,8 @@ sub findMinimumDepth
 
     my $function = "findMinimumDepth";
     &_debug($function);
-    
+    &_input($function, $cui);  
+
     #  check the cui is there
     if(!$cui) {
 	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
@@ -4087,11 +4025,13 @@ sub findMinimumDepth
     } 
 
     #  check that the cui exists
-    return () if(! ($self->checkConceptExists($cui)));
+    if(! ($self->checkConceptExists($cui))) {
+	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "Concept ($cui) doesn't exist.";
+	$self->{'errorCode'} = 2;
+	return undef;
+    }
 
-    #  set the upper level taxonomy
-    $self->_setUpperLevelTaxonomy();
-    if($self->checkError("_setUpperLevelTaxonomy")) { return (); }
 
     #  get the database
     my $sdb = $self->{'sdb'};
@@ -4146,7 +4086,8 @@ sub findMaximumDepth
 
     my $function = "findMaximumDepth";
     &_debug($function);
-
+    &_input($function, $cui);
+    
     return () if(!defined $self || !ref $self);
     
     #  check the cui is there
@@ -4154,7 +4095,7 @@ sub findMaximumDepth
 	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
 	$self->{'errorString'} .= "Undefined input values.";
 	$self->{'errorCode'} = 2 if($self->{'errorCode'} < 1);
-	return ();
+	return undef;
     }
     
     #  check that it is valid
@@ -4165,13 +4106,13 @@ sub findMaximumDepth
 	return undef;
     } 
 
-    #  check that the cui exists
-    return () if(! ($self->checkConceptExists($cui)));
-
-    #  set the upper level taxonomy
-    $self->_setUpperLevelTaxonomy();
-    if($self->checkError("_setUpperLevelTaxonomy")) { return (); }
-
+    if(! ($self->checkConceptExists($cui))) {
+	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "Concept ($cui) doesn't exist.";
+	$self->{'errorCode'} = 2;
+	return undef;
+    }
+        
     #  get the database
     my $sdb = $self->{'sdb'};
     if(!$sdb) {
@@ -4181,13 +4122,16 @@ sub findMaximumDepth
 	return ();
     }    
 
+    #  initialize max
     my $max = 0;
-    
+
+    #  if realtime option is set
     if($option_realtime) {
 	#  initialize the path storage
 	@path_storage = ();
 	my @array     = (); 
 	
+	#  get all the paths from the cui to the root
 	$self->_cuiToRoot($cui, \@array);
 	
 	# get the maximum depth
@@ -4196,21 +4140,21 @@ sub findMaximumDepth
 	    if( ($#array+1) > $max) { $max = $#array + 1; }
 	}
     }
+    #  otherwise
     else {
-
 	#  set the depth
 	$self->_setDepth();
 	if($self->checkError("_setDepth")) { return (); }
-	
-	#  look for its maximum depth
+		
 	my $d = $sdb->selectcol_arrayref("select max(DEPTH) from $tableName where CUI=\'$cui\'");
 	if($self->checkError($function)) { return (); }
 	$max = shift @{$d}; $max++;
     }
 
-    #  return the maximum depth
+    #  print the oputput if debug option is set
+    &_output($function, $max);
     
-
+    #  return the maximum depth
     return $max;    
 }
 
@@ -4244,6 +4188,7 @@ sub findShortestPath
 
     my $function = "findShortestPath";
     &_debug($function);
+    &_input($function, "$concept1 $concept2");
     
     return () if(!defined $self || !ref $self);
     
@@ -4272,20 +4217,32 @@ sub findShortestPath
     } 
 
     #  check that concept1 and concept2 exist
-    return () if(! ($self->checkConceptExists($concept1)));
-    return () if(! ($self->checkConceptExists($concept2)));
-
-
+    if(! ($self->checkConceptExists($concept1))) {
+	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "Concept ($concept1) doesn't exist.";
+	$self->{'errorCode'} = 2;
+	return undef;
+    }
+    if(! ($self->checkConceptExists($concept2))) {
+	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "Concept ($concept2) doesn't exist.";
+	$self->{'errorCode'} = 2;
+	return undef;
+    }
 
     #  find the shortest path(s) and lcs - there may be more than one
     my $hash = $self->_findShortestPath($concept1, $concept2);
-
-    my @paths = ();
-    foreach my $element (sort keys %{$hash}) {
-	if(! ($element=~/C[0-9]+/) ) { next; }
-	push @paths, ${$hash}{$element};
-    }
     
+    my @paths = (); my $output = "";
+    foreach my $path (sort keys %{$hash}) {
+	if($path=~/C[0-9]+/) {
+	    push @paths, $path;
+	    $output .= "$path\n";
+	}
+    } chop $output;
+    
+    &_output($function, $output);
+
     return @paths;
 }
 
@@ -4353,7 +4310,8 @@ sub findLeastCommonSubsumer
 
     my $function = "findLeastCommonSubsumer";
     &_debug($function);
-
+    &_input($function, "$concept1 $concept2"); 
+    
     $self->{'traceString'} = "" if($self->{'trace'});
 
     # Undefined input cannot go unpunished.
@@ -4363,7 +4321,8 @@ sub findLeastCommonSubsumer
 	$self->{'errorCode'} = 2 if($self->{'errorCode'} < 1);
 	return undef;
     }
-    
+   
+    #  check that concept1 and concept2 are valid
     if($self->validCui($concept1)) {
 	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
 	$self->{'errorString'} .= "Incorrect input value ($concept1).";
@@ -4377,8 +4336,7 @@ sub findLeastCommonSubsumer
 	$self->{'errorCode'} = 2 if($self->{'errorCode'} < 1);
 	return undef;
     } 
-    
-    
+   
     #  check that concept1 and concept2 exist
     if(! ($self->checkConceptExists($concept1))) {
 	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
@@ -4392,16 +4350,21 @@ sub findLeastCommonSubsumer
 	$self->{'errorCode'} = 2;
 	return undef;
     }
-
+    
     #  find the shortest path(s) and lcs - there may be more than one
     my $hash = $self->_findShortestPath($concept1, $concept2);
 
     my @lcses = ();
-    foreach my $element (sort keys %{$hash}) {
-	if(! ($element=~/C[0-9]+/) ) { next; }
-	push @lcses, $element;
+    foreach my $path (sort keys %{$hash}) {
+	if(${$hash}{$path}=~/C[0-9]+/) {
+	    push @lcses, ${$hash}{$path};
+	}
     }
-           
+    
+    #  print the output parameters if debug is on
+    my $output = join " ", @lcses;
+    &_output($function, $output);
+    
     return @lcses;
 }
 
@@ -4419,7 +4382,8 @@ sub _findShortestPath
 
     my $function = "_findShortestPath";
     &_debug($function);
-    
+    &_input($function, "$concept1 $concept2");
+
     $self->{'traceString'} = "" if($self->{'trace'});
     
     #  get the database
@@ -4506,30 +4470,25 @@ sub _findShortestPath
 	return 0;
     }
 
-    #  get the lcs
-    my @returnarray = ();
-    my %returnhash  = ();
-    
+    #  get the lcses and their associated path(s)
+    my %rhash    = ();
     my $prev_len = -1;
+    my $output   = "";
     foreach my $lcs (sort {$lcsLengths{$a} <=> $lcsLengths{$b}} keys(%lcsLengths)) {
-	if($prev_len == -1) {
-	    my $string = "$lcs : $lcsPaths{$lcs}";
-	    push @returnarray, $string;
-	    $returnhash{$lcs} = $lcsPaths{$lcs};
+	if( ($prev_len == -1) or ($prev_len == $lcsLengths{$lcs}) ) {
+	    my $path = join " ", @{$lcsPaths{$lcs}};
+	    $rhash{$path} = $lcs;
+	    $output .= "$lcs : $path\n";
 	}
-	elsif($prev_len == $lcsLengths{$lcs}) {
-	    my $string = "$lcs : $lcsPaths{$lcs}";
-	    push @returnarray, $string;
-	    $returnhash{$lcs} = $lcsPaths{$lcs};
-	}
-	else {
-	    last;
-	}
+	else { last; }
 	$prev_len = $lcsLengths{$lcs};
-    }
+    } chop $output;
     
-    return \%returnhash;
-    #return \@returnarray;
+    #  print the output if debug is on
+    &_output($function, $output);
+
+    #  return a reference to the hash containing the lcses and their path(s)
+    return \%rhash;
 }
 
 #  Method to check to see if a concept exists
@@ -4541,6 +4500,8 @@ sub checkConceptExists {
     return () if(!defined $self || !ref $self);
     
     my $function = "checkConceptExists";
+    &_debug($function);
+    &_input($function, $concept);
 
     if(!$concept) {
 	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
@@ -4563,10 +4524,15 @@ sub checkConceptExists {
 	$self->{'errorCode'} = 2;
 	return undef;
     }
-
+    
     #  check to see if it is the root
-    if($concept eq $umlsRoot) { return 1; }
+    if($concept eq $umlsRoot) { &_output($function, "1"); return 1; }
 
+    #  check to see if it exists in the upper level taxonomy
+    if(exists $parentTaxonomy{$concept})   {  &_output($function, "1"); return 1; }
+    if(exists $childrenTaxonomy{$concept}) {  &_output($function, "1"); return 1; }
+    
+    #  get the count from MRREL
     my $arrRef = "";
     if($umlsall) {
 	$arrRef = $db->selectcol_arrayref("select count(*) from MRREL where (CUI1='$concept' or CUI2='$concept') and ($relations)");
@@ -4577,9 +4543,11 @@ sub checkConceptExists {
     if($self->checkError($function)) { return (); }
 
     my $count = shift @{$arrRef};
+
+    my $output = ($count == 0) ? 0 : 1; 
+    &_output($function, $output); 
     
-    if($count == 0) { return 0; }
-    else            { return 1; }
+    return ($count == 0) ? 0 : 1; 
 }
 
 # Subroutine to get the Least Common Subsumer of two paths to the root of a taxonomy
@@ -4654,7 +4622,8 @@ sub getStString
 
     my $function = "getStString";
     &_debug($function);
-    
+    &_input($function, $st); 
+
     my $db = $self->{'db'};
     if(!$db) {
 	$self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
@@ -4685,7 +4654,8 @@ sub getStAbr
 
     my $function = "getStString";
     &_debug($function);
-    
+    &_input($function, $tui); 
+
     my $db = $self->{'db'};
     if(!$db) {
 	$self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
@@ -4716,7 +4686,8 @@ sub getStDef
 
     my $function = "getStDef";
     &_debug($function);
-    
+    &_input($function, $st); 
+
     my $db = $self->{'db'};
     if(!$db) {
 	$self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
@@ -4747,7 +4718,8 @@ sub getCuiDef
 
     my $function = "getCuiDef";
     &_debug($function);
-    
+    &_input($function, $concept); 
+
     return () if(!defined $self || !ref $self);
     
     $self->{'traceString'} = "";

@@ -258,7 +258,7 @@ if($opt_verbose) {
 }
 
 #  get the first set of children and start the 
-my @children= $umls->_getChildrenForDFS($root); 
+my @children= $umls->getChildren($root); 
 &errorCheck($umls);
 
 #  update the branching variables
@@ -364,7 +364,7 @@ sub _depthFirstSearch
     $paths_to_root++;
 
     #  get all the children
-    my @children = $umls->_getChildrenForDFS($concept);
+    my @children = $umls->getChildren($concept);
 
     
     my $branches = 0;
@@ -460,7 +460,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findDFS.pl,v 1.2 2010/01/20 16:28:31 btmcinnes Exp $';
+    print '$Id: findDFS.pl,v 1.3 2010/03/11 18:14:04 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

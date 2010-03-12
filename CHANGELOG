@@ -1,6 +1,10 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.43 to 0.45
+    Modified the way that the path information was being returned. It was
+    causing some problems with UMLS-Similarity
+
   Changes from version 0.41 to 0.43
     1. Added the terms associated to concept2 and the lcs in the
     findLeastCommonSubsumer program

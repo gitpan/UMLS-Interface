@@ -322,7 +322,7 @@ foreach my $element (@fileArray) {
 	    if($umls->validCui($cui2)) {
 		print STDERR "ERROR: The concept ($cui2) is not valid.\n";
 		exit;
-	    }
+	    }	
 	    if(! ($umls->checkConceptExists($cui1)) ) {
 		next; 
 	    }
@@ -346,8 +346,9 @@ foreach my $element (@fileArray) {
 	    }
 
 	    foreach my $path (@shortestpaths) {
-		my @shortestpath = @{$path};
+		my @shortestpath = split/\s+/, $path;
 
+		
 		my $length = $#shortestpath + 1;
 		print "\nThe shortest path ";
 		if(defined $opt_length) {
@@ -477,7 +478,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findShortestPath.pl,v 1.11 2010/02/25 19:54:15 btmcinnes Exp $';
+    print '$Id: findShortestPath.pl,v 1.12 2010/03/11 18:14:04 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

@@ -257,9 +257,10 @@ foreach my $cui (@c) {
     }
 
     #  make certain cui exists in this view
-    if($umls->checkConceptExists($cui) == 0) { next; }
-    
-    
+    if(! ($umls->checkConceptExists($cui)) ) {
+	next; 
+    }
+            
     #  get the minimum depth
     if(defined $opt_minimum) {
 	my $min = $umls->findMinimumDepth($cui);
@@ -364,7 +365,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findCuiDepth.pl,v 1.2 2010/01/20 16:28:31 btmcinnes Exp $';
+    print '$Id: findCuiDepth.pl,v 1.3 2010/03/11 18:14:04 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 
