@@ -1,0 +1,15 @@
+Unknown option: realtime
+
+UMLS-Interface Configuration Information
+  Sources:
+    MSH
+  Relations:
+    CHD
+    PAR
+  Database: 
+    umls (MMSYS-2009AA-20090325)
+
+The children of hand (C0018563) are: 
+  finger(C0016129)
+  wrists(C0043262)
+  metacarpus(C1578693)

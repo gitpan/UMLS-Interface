@@ -1,6 +1,18 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.45 to 0.47
+    1. Added a t/ test case for each of the programs in the utils/ directory
+
+    2. Added the --infile option for findPathsToRoot.pl
+
+        The format consists of a CUI or term each on its 
+        own line.
+
+    3. Added the --infile option for findCuiDepth.pl
+
+        The format is the same as above.
+
   Changes from version 0.43 to 0.45
     Modified the way that the path information was being returned. It was
     causing some problems with UMLS-Similarity

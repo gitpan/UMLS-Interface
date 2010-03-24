@@ -1,0 +1,16 @@
+
+User Options:
+   --realtime option set
+
+UMLS-Interface Configuration Information
+  Sources:
+    MTH
+  Relations:
+    RB
+    RN
+  Database: 
+    umls (MMSYS-2009AA-20090325)
+
+
+The shortest path between cerebrovascular accident (C0038454) and infarction (C0021308):
+  => C0038454 (cerebrovascular accident) C0728936 () C0012634 (disease) C0220961 (metathesaurus names) C0679332 () C0027540 (necrosis) C0021308 (infarction) 

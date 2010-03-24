@@ -1,0 +1,12 @@
+Unknown option: realtime
+
+UMLS-Interface Configuration Information
+  Sources:
+    MSH
+  Relations:
+    CHD
+    PAR
+  Database: 
+    umls (MMSYS-2009AA-20090325)
+
+No CUIs are associated with hand (C0018563) given the relation (rn).

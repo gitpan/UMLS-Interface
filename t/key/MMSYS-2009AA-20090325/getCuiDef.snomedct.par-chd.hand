@@ -1,0 +1,14 @@
+
+UMLS-Interface Configuration Information
+  Sources:
+    SNOMEDCT
+  Relations:
+    CHD
+    PAR
+  Database: 
+    umls (MMSYS-2009AA-20090325)
+
+The definition(s) of hand (C0018563):
+  1. part of the upper limb distal to the wrist including carpus, metacarpus and fingers.
+  2. The distal portion of the upper extremity. It consists of the carpus, metacarpus, and digits.
+There are no definitions for hand (C1281583)

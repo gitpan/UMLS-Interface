@@ -1,0 +1,17 @@
+
+User Options:
+   --realtime option set
+
+UMLS-Interface Configuration Information
+  Sources:
+    MSH
+  Relations:
+    CHD
+    PAR
+  Database: 
+    umls (MMSYS-2009AA-20090325)
+
+The minimum depth of hand (C0018563) is 9
+The maximum depth of hand (C0018563) is 9
+The minimum depth of skull (C0037303) is 9
+The maximum depth of skull (C0037303) is 9

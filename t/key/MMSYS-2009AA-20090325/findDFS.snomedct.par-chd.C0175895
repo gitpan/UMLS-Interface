@@ -1,0 +1,19 @@
+Unknown option: config
+
+UMLS-Interface Configuration Information
+  Sources:
+    SNOMEDCT
+  Relations:
+    CHD
+    PAR
+  Database: 
+    umls (MMSYS-2009AA-20090325)
+
+max_depth : 0
+paths_to_root : 0
+sources : SNOMEDCT
+max_branch : 0
+avg_branch : 0
+leaf_count : 1
+node_count : 0
+root : C0175895

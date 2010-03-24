@@ -24,6 +24,17 @@ A concept (CUI) or a term from the Unified Medical Language System
 
 =head2 Optional Arguments:
 
+=head3 --infile
+
+File containing a list of CUIs or terms. Each CUI or term 
+is required to be on its own line. For example:
+
+CUI1
+term1
+CUI2
+CUI3
+...
+
 =head3 --debug
 
 Sets the debug flag for testing
@@ -154,7 +165,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "forcerun", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui", "verbose", "cuilist=s", "realtime", "propagation=s", "info");
+GetOptions( "version", "help", "forcerun", "debug", "infile=s", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui", "verbose", "cuilist=s", "realtime", "propagation=s", "info");
 
 
 #  if help is defined, print out help
@@ -172,7 +183,7 @@ if( defined $opt_version ) {
 }
 
 # At least 1 term should be given on the command line.
-if(scalar(@ARGV) < 1) {
+if( (!(defined $opt_infile)) and (scalar(@ARGV) < 1) ) {
     print STDERR "No term was specified on the command line\n";
     &minimalUsageNotes();
     exit;
@@ -236,43 +247,58 @@ die "$errString\n" if($errCode);
 
 &errorCheck($umls);
 
-my $input = shift;
-my $term  = $input;
-
-my @c = ();
-if($input=~/C[0-9]+/) {
-    push @c, $input;
-    ($term) = $umls->getTermList($input);
+my @inputarray = ();
+if(defined $opt_infile) {
+    open(FILE, $opt_infile) || die "Could not open infile $opt_infile\n";
+    while(<FILE>) { 
+	chomp; 
+	$_=~s/^\s+//g;
+	$_=~s/\s+$//g;
+	push @inputarray, $_;
+    }
 }
 else {
-    @c = $umls->getConceptList($input);
+    my $input = shift;
+    push @inputarray, $input;
 }
 
-&errorCheck($umls);
+foreach my $input (@inputarray) {
+    my $term  = $input;
 
-my $printFlag = 0;
-my $precision = 4;
-my $floatformat = join '', '%', '.', $precision, 'f';
-
-foreach my $cui (@c) {
-    
-    if($umls->validCui($cui)) {
-	print STDERR "ERROR: The concept ($cui) is not valid.\n";
-	exit;
-    }
-
-    #  make certain cui exists in this view
-    if($umls->checkConceptExists($cui) == 0) { next; }
-
-    my $paths = $umls->pathsToRoot($cui);
-    &errorCheck($umls);
-    
-    if($#{$paths} < 0) {
-	print "There are no paths between $term ($cui) and the root.\n";
+    my @c = ();
+    if($input=~/C[0-9]+/) {
+	push @c, $input;
+	($term) = $umls->getTermList($input);
     }
     else {
-	print "The paths between $term ($cui) and the root:\n";
-	foreach  $path (@{$paths}) {
+	@c = $umls->getConceptList($input);
+    }
+    
+    &errorCheck($umls);
+    
+    my $printFlag = 0;
+    my $precision = 4;
+    my $floatformat = join '', '%', '.', $precision, 'f';
+    
+    foreach my $cui (@c) {
+	
+	if($umls->validCui($cui)) {
+	    print STDERR "ERROR: The concept ($cui) is not valid.\n";
+	    exit;
+	}
+	
+	#  make certain cui exists in this view
+	if($umls->checkConceptExists($cui) == 0) { next; }
+	
+	my $paths = $umls->pathsToRoot($cui);
+	&errorCheck($umls);
+	
+	if($#{$paths} < 0) {
+	    print "There are no paths between $term ($cui) and the root.\n";
+	}
+	else {
+	    print "The paths between $term ($cui) and the root:\n";
+	    foreach  $path (@{$paths}) {
 	    my @array = split/\s+/, $path;
 	    print "  => ";
 	    foreach my $i (0..$#array){
@@ -295,12 +321,13 @@ foreach my $cui (@c) {
 	    } print "\n";
 	    
 	    $printFlag = 1;
+	    }
 	}
     }
-}
-
-if(! ($printFlag) ) {
-    print "There are not a path from the given $input to the root.\n";
+    
+    if(! ($printFlag) ) {
+	print "There are not a path from the given $input to the root.\n";
+    }
 }
 
 sub errorCheck
@@ -379,7 +406,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findPathToRoot.pl,v 1.13 2010/03/01 23:06:23 btmcinnes Exp $';
+    print '$Id: findPathToRoot.pl,v 1.14 2010/03/24 08:32:42 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

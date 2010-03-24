@@ -1,0 +1,13 @@
+Unknown option: realtime
+
+UMLS-Interface Configuration Information
+  Sources:
+    SNOMEDCT
+  Relations:
+    CHD
+    PAR
+  Database: 
+    umls (MMSYS-2009AA-20090325)
+
+No CUIs are associated with hand (C0018563) given the relation (sib).
+No CUIs are associated with hand (C1281583) given the relation (sib).

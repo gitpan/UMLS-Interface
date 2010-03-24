@@ -1,0 +1,15 @@
+
+User Options:
+   --realtime option set
+
+UMLS-Interface Configuration Information
+  Sources:
+    MTH
+  Relations:
+    RB
+    RN
+  Database: 
+    umls (MMSYS-2009AA-20090325)
+
+
+The least common subsumer between C0038454 (C0038454) and infarction (C0021308) is metathesaurus names (C0220961) 

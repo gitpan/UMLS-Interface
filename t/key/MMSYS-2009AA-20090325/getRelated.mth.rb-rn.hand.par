@@ -1,0 +1,11 @@
+
+UMLS-Interface Configuration Information
+  Sources:
+    MTH
+  Relations:
+    RB
+    RN
+  Database: 
+    umls (MMSYS-2009AA-20090325)
+
+No CUIs are associated with hand (C0018563) given the relation (par).

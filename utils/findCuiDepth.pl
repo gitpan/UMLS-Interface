@@ -28,6 +28,12 @@ Medical Language System (UMLS)
 
 This sets the debug flag for testing
 
+=head3 --infile
+
+This option takes a list of CUIs or TERMs and returns 
+their depth. Note one CUI or TERM per line is the expected 
+format.
+
 =head3 --minimum
 
 Finds just the minimum CUI depth
@@ -153,7 +159,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "forcerun", "debug", "verbose", "cuilist=s", "realtime", "minimum", "maximum");
+GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "forcerun", "debug", "verbose", "cuilist=s", "realtime", "minimum", "maximum", "infile=s");
 
 
 #  if help is defined, print out help
@@ -171,7 +177,7 @@ if( defined $opt_version ) {
 }
 
 # At least 1 CUI should be given on the command line.
-if(scalar(@ARGV) < 1) {
+if( (!defined $opt_infile) and (scalar(@ARGV) < 1) ) {
     print STDERR "No term was specified on the command line\n";
     &minimalUsageNotes();
     exit;
@@ -233,61 +239,78 @@ die "$errString\n" if($errCode);
 
 &errorCheck($umls);
 
-my $input = shift;
-my $term  = $input;
+my @inputarray = ();
 
-my @c = ();
-if($input=~/C[0-9]+/) {
-    push @c, $input;
-    ($term) = $umls->getTermList($input);
+if(defined $opt_infile) {
+    open(FILE, $opt_infile) || die "Could not open infile : $opt_infile\n";
+    while(<FILE>) {
+	chomp;
+	$_=~s/^\s+//g;
+	$_=~s/\s+$//g;
+	push @inputarray, $_;
+    }
 }
 else {
-    @c = $umls->getConceptList($input);
+    my $input = shift;
+    push @inputarray, $input;
 }
 
-&errorCheck($umls);
+foreach my $input (@inputarray) {
 
-my $printFlag = 0;
-
-foreach my $cui (@c) {
-    #  check that the cui is valid
-    if($umls->validCui($cui)) {
-	print STDERR "ERROR: The concept ($cui) is not valid.\n";
-	exit;
-    }
-
-    #  make certain cui exists in this view
-    if(! ($umls->checkConceptExists($cui)) ) {
-	next; 
-    }
-            
-    #  get the minimum depth
-    if(defined $opt_minimum) {
-	my $min = $umls->findMinimumDepth($cui);
-	&errorCheck($umls);
-	print "The minimum depth of $term ($cui) is $min\n";
-    }
-    #  get the maximum depth
-    elsif(defined $opt_maximum) {
-	my $max = $umls->findMaximumDepth($cui);
-	&errorCheck($umls);
-	print "The maximum depth of $term ($cui) is $max\n";
+    my $term  = $input;
+    
+    my @c = ();
+    if($input=~/C[0-9]+/) {
+	push @c, $input;
+	($term) = $umls->getTermList($input);
     }
     else {
-	my $min = $umls->findMinimumDepth($cui);
-	&errorCheck($umls);
-	print "The minimum depth of $term ($cui) is $min\n";
+	@c = $umls->getConceptList($input);
+    }
+    &errorCheck($umls);
+
+    my $printFlag = 0;
+
+    foreach my $cui (@c) {
+	#  check that the cui is valid
+	if($umls->validCui($cui)) {
+	    print STDERR "ERROR: The concept ($cui) is not valid.\n";
+	    exit;
+	}
 	
-	my $max = $umls->findMaximumDepth($cui);
-	&errorCheck($umls);
-	print "The maximum depth of $term ($cui) is $max\n";
+	#  make certain cui exists in this view
+	if(! ($umls->checkConceptExists($cui)) ) {
+	    next; 
+	}
+	
+	#  get the minimum depth
+	if(defined $opt_minimum) {
+	    my $min = $umls->findMinimumDepth($cui);
+	    &errorCheck($umls);
+	    print "The minimum depth of $term ($cui) is $min\n";
+	}
+	#  get the maximum depth
+	elsif(defined $opt_maximum) {
+	    my $max = $umls->findMaximumDepth($cui);
+	    &errorCheck($umls);
+	    print "The maximum depth of $term ($cui) is $max\n";
+	}
+	else {
+	    my $min = $umls->findMinimumDepth($cui);
+	    &errorCheck($umls);
+	    print "The minimum depth of $term ($cui) is $min\n";
+	    
+	    my $max = $umls->findMaximumDepth($cui);
+	    &errorCheck($umls);
+	    print "The maximum depth of $term ($cui) is $max\n";
+	}
+	
+	$printFlag = 1;
     }
     
-    $printFlag = 1;
-}
-
-if(! ($printFlag) ) {
-    print "$input does not exist in this view of the UMLS.\n";
+    if(! ($printFlag) ) {
+	print "$input does not exist in this view of the UMLS.\n";
+    }
 }
 
 sub errorCheck
@@ -321,6 +344,12 @@ sub showHelp() {
     print "Usage: findCuiDepth.pl [OPTIONS] [TERM|CUI]\n\n";
 
     print "Options:\n\n";
+
+    print "--debug                  This option prints out  the debug\n";
+    print "                         information.\n\n";
+    
+    print "--infile                 This option takes a list of CUIs or\n";
+    print "                         TERMS and returns their depth. \n\n";
 
     print "--minimum                Returns the minimum depth (DEFAULT)\n\n";
     
@@ -365,7 +394,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findCuiDepth.pl,v 1.3 2010/03/11 18:14:04 btmcinnes Exp $';
+    print '$Id: findCuiDepth.pl,v 1.4 2010/03/23 21:41:11 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

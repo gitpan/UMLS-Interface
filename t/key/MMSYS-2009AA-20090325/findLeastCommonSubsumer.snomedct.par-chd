@@ -1,0 +1,18 @@
+
+User Options:
+   --realtime option set
+
+UMLS-Interface Configuration Information
+  Sources:
+    SNOMEDCT
+  Relations:
+    CHD
+    PAR
+  Database: 
+    umls (MMSYS-2009AA-20090325)
+
+
+The least common subsumer between C0459385 (C0459385) and infratentorial brain structure (C0228067) is brain part (body structure) (C0445620) 
+
+There is not a least common subsumer between C0175895 and C0009814 given the current view of the UMLS.
+

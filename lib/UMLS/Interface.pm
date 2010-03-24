@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.39 2010/03/11 18:14:04 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.43 2010/03/24 14:50:18 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -50,7 +50,7 @@ use Digest::SHA1  qw(sha1 sha1_hex sha1_base64);
 use bignum qw/hex oct/;
 
 
-$VERSION = '0.45';
+$VERSION = '0.47';
 
 my $debug = 0;
 
@@ -130,6 +130,7 @@ my $propagation_tokens = 0;
 my $observed_types     = 0;
 my $unobserved_types   = 0;
 
+my %defHash         = ();
 my %cycleHash       = ();
 
 
@@ -408,8 +409,6 @@ sub _setDatabase
     if(! defined $socket)   { $socket   = "/var/run/mysqld/mysqld.sock"; }
     if(! defined $hostname) { $hostname = "localhost";       }
     
-    print STDERR "$database\n";
-
     my $db = "";
 
     #  create the database object...
@@ -551,12 +550,13 @@ sub _setVersion
 	$self->{'errorString'} .= "No version info in table MRDOC.";
 	return ();
     }
-    
+
     ($version) = @{$arrRef}; 
+    
 }    
 
 #  set the configuration environment variable
-sub _setConfigurationVariable
+sub _setEnvironmentVariable
 {
     my $self = shift;
 
@@ -609,7 +609,7 @@ sub _setConfigurationVariable
 }
 
 #  set the table and file names that store the upper level taxonomy and path information
-sub _setTableAndFileNames
+sub _setConfigurationFile
 {
 
     my $self = shift;
@@ -701,7 +701,7 @@ sub _setTableAndFileNames
     }
     
     print STDERR "  Database: \n";
-    print STDERR "    $database\n\n";
+    print STDERR "    $database ($version)\n\n";
 }
 
 #  create the configuration file 
@@ -818,12 +818,12 @@ sub _initialize
     if($self->checkError("_setRoots")) { return (); }	
     
     #  set the umls interface configuration variable
-    $self->_setConfigurationVariable();
-    if($self->checkError("_setConfigurationVariable")) { return (); }	
+    $self->_setEnvironmentVariable();
+    if($self->checkError("_setEnvironmentVariable")) { return (); }	
 
     #  set the table and file names for indexing
-    $self->_setTableAndFileNames();
-    if($self->checkError("_setTableAndFileNames")) { return (); }	
+    $self->_setConfigurationFile();
+    if($self->checkError("_setConfigurationFile")) { return (); }	
     
     #  set the configfile
     $self->_setConfigFile();
@@ -1169,8 +1169,8 @@ sub pathsToRoot
     return () if(!defined $self || !ref $self);
 
     my $function = "pathsToRoot";
-    &_debug($function);
-    &_input($function, $concept);
+    #&_debug($function);
+    #&_input($function, $concept);
 
     $self->{'traceString'} = "";
     
@@ -1255,13 +1255,13 @@ sub pathsToRoot
 }
 
 #  this function sets the taxonomy arrays
-sub _setTaxonomyArrays 
+sub _loadTaxonomyArrays 
 {
     my $self = shift;
 
     return undef if(!defined $self || !ref $self);
 
-    my $function = "_setTaxonomyArrays";
+    my $function = "_loadTaxonomyArrays";
     &_debug($function);
 
     #  set the index DB handler
@@ -1634,8 +1634,8 @@ sub _setUpperLevelTaxonomy
     
     #  check if the parent and child tables exist and if they do just return otherwise create them
     if($self->_checkTableExists($childTable) and $self->_checkTableExists($parentTable)) {
-	$self->_setTaxonomyArrays();
-	if($self->checkError("_setTaxonomyArrays")) { return (); }   
+	$self->_loadTaxonomyArrays();
+	if($self->checkError("_loadTaxonomyArrays")) { return (); }   
 	return;
     }
     else {
@@ -1835,7 +1835,7 @@ sub _setDepth {
     return () if(!defined $self || !ref $self);
 
     my $function = "_setDepth";
-    &_debug($function);
+    #&_debug($function);
     
     #  check that the database exists
     my $db = $self->{'db'};
@@ -1980,7 +1980,7 @@ sub _output
     my $function = shift;
     my $output   = shift;
 
-    if($debug) { print STDERR "  OUTPUT for $function: $output\n"; }
+    #if($debug) { print STDERR "  OUTPUT for $function: $output\n"; }
 }
 
 sub _input
@@ -1988,7 +1988,7 @@ sub _input
     my $function = shift;
     my $input    = shift;
 
-    if($debug) { print STDERR "  INPUT for $function: $input\n"; }
+    #if($debug) { print STDERR "  INPUT for $function: $input\n"; }
 }
 
 #  This sets the sources that are to be used. These sources 
@@ -2022,7 +2022,7 @@ sub _config {
 	my %excluderel  = ();
 	my %includerela = ();
 	my %excluderela = ();
-
+	
 	open(FILE, $file) || die "Could not open configuration file: $file\n"; 
 
 	while(<FILE>) {
@@ -2045,6 +2045,7 @@ sub _config {
 		    elsif($type eq "REL"  and $det eq "exclude") { $excluderel{$element}++;  }
 		    elsif($type eq "RELA" and $det eq "include") { $includerela{$element}++; }
 		    elsif($type eq "RELA" and $det eq "exclude") { $excluderela{$element}++; }
+		    elsif($type eq "DEF"  and $det eq "include") { $defHash{$element}++;     }
 		}
 	    }
 	    else {
@@ -3145,7 +3146,9 @@ sub getIC
 	$self->{'errorCode'} = 2;
 	return undef;
     }
-    my $prob = $propagationHash{$concept} / ($propagationTotal);
+    
+    
+    my $prob = $propagationHash{$concept}; # / ($propagationTotal);
     
     my $output = ($prob > 0 and $prob < 1) ? -log($prob) : 0;
     &_output($function, $output);
@@ -3301,7 +3304,7 @@ sub _loadPropagationFreq
     &_debug($function);
     
     #  collect the counts for the required cuis
-    open(FILE, $propagationFile) || die "Could not open propagation file: $propagationFile\n";
+    open(FILE, $propagationFile) || die "Could not open prop file: $propagationFile\n";
     my $N = 0;
     while(<FILE>) {
 	chomp;
@@ -3313,22 +3316,17 @@ sub _loadPropagationFreq
 	#  negative numbers are used as codes - they don't mean anything
 	if($freq < 0) { next; }
     
-        $N += $freq;
-        #$N++;
-	
+	$N += $freq;
+
 	if(exists $propagationFreq{$cui}) {
 	    $propagationFreq{$cui} += $freq;
 	}
     }
-    
     my $pkeys = keys %propagationFreq;
     $N += $pkeys;
-
-    print STDERR "PROPAGATION TOTAL : $N\n";
-
-    $propagationTotal = $N;
-
-
+    foreach my $cui (sort keys %propagationFreq) { 
+	$propagationFreq{$cui} = $propagationFreq{$cui} / $N;
+    }
 }
 
 sub _loadPropagationTables
@@ -3348,10 +3346,11 @@ sub _loadPropagationTables
 	$self->{'errorCode'} = 2;
 	return ();
     }    
-
+    
     #  create the table
-    $sdb->do("CREATE TABLE IF NOT EXISTS $propTable (CUI char(8), FREQ double precision(17,4))");
+    $sdb->do("CREATE TABLE IF NOT EXISTS $propTable (CUI char(8), FREQ double (30,30))");
     if($self->checkError($function)) { return (); }
+
     #  load the table
     my $N = 0;
     foreach my $cui (sort keys %propagationHash) {
@@ -3360,27 +3359,27 @@ sub _loadPropagationTables
 	if($self->checkError($function)) { return (); }   
 	$N += $freq;
     }
-    
-    $sdb->do("INSERT INTO $propTable (CUI, FREQ) VALUES ('PT', '$propagationTotal')");
-    if($self->checkError($function)) { return (); }   
-    
+
+    #$sdb->do("INSERT INTO $propTable (CUI, FREQ) VALUES ('PT', '$propagationTotal')");
+    #if($self->checkError($function)) { return (); }   
     #  set N (the total propagation count)
     #$propagationTotal = $N;
-    #$propagationTotal = $self->getFreq($umlsRoot);
-    
+    $propagationTotal = $self->getFreq($umlsRoot);
+    #$propagationTotal = $propgationHash{$root}; 
+   
     #  add them to the index table
     $sdb->do("INSERT INTO tableindex (TABLENAME, HEX) VALUES ('$propTableHuman', '$propTable')");
     if($self->checkError($function)) { return (); }   
 
 }
 
-sub _setPropagationHash
+sub _loadPropagationHash
 {
     my $self = shift;
     
     return undef if(!defined $self || !ref $self);
     
-    my $function = "_setPropagationHash";
+    my $function = "_loadPropagationHash";
     &_debug($function);
 
     #  set the index DB handler
@@ -3398,17 +3397,18 @@ sub _setPropagationHash
     $sth->execute();
     my($cui, $freq);
     $sth->bind_columns( undef, \$cui, \$freq );
-    my $N = 0;
+    #my $N = 0;
     while( $sth->fetch() ) {
-	if($cui=~/PT/) {
-	    $propagationTotal = $freq;
-	}
-	else {
-	    $propagationHash{$cui} = $freq;
-	    $N += $freq;
-	}
+	#if($cui=~/PT/) {
+	    #$propagationTotal = $freq;
+	    #next;
+	#}
+        #$N += $freq;
+	
+	$propagationHash{$cui} = $freq;
+	
     } $sth->finish();
-    
+
     #  set N (the total propagation count)
     #$propagationTotal = $N;
     #$propagationTotal = $self->getFreq($umlsRoot);
@@ -3470,7 +3470,7 @@ sub _propogateCounts
 	
 	elsif($self->_checkTableExists($propTable)) {
 	    #  load the propagation hash from the database
-	    $self->_setPropagationHash();
+	    $self->_loadPropagationHash();
 
 	    #  set smoothing variables
 	    #$self->_setSmoothingVariables();
@@ -3627,7 +3627,7 @@ sub _propagation
     foreach my $child (@children) {
 	
 	#  check that the concept is not one of the forbidden concepts
-	if($self->_forbiddenConcept($concept)) { next; }
+	if($self->_forbiddenConcept($child)) { next; }
 	
 	#  check if child cui has already in the path
 	my $flag = 0;
@@ -3722,7 +3722,10 @@ sub _propagation3
 	$self->{'errorCode'} = 2;
 	return ();
     }
-    
+
+    #  if the concept is inactive
+    if($self->_forbiddenConcept($concept)) { return; }
+       
     #  set up the new path
     my @intermediate = @{$array};
     push @intermediate, $concept;
@@ -3745,12 +3748,13 @@ sub _propagation3
     
     #  search through the children   
     foreach my $child (@children) {
+
+	my $flag = 0;
 	
 	#  check that the concept is not one of the forbidden concepts
-	if($self->_forbiddenConcept($concept)) { next; }
+	if($self->_forbiddenConcept($child)) { print STDERR "$child\n"; $flag = 1; }
 	
 	#  check if child cui has already in the path
-	my $flag = 0;
 	foreach my $cui (@intermediate) {
 	    if($cui eq $child) { $flag = 1; }
 	}
@@ -4500,8 +4504,8 @@ sub checkConceptExists {
     return () if(!defined $self || !ref $self);
     
     my $function = "checkConceptExists";
-    &_debug($function);
-    &_input($function, $concept);
+    #&_debug($function);
+    #&_input($function, $concept);
 
     if(!$concept) {
 	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
@@ -4709,10 +4713,117 @@ sub getStDef
     return (shift @{$arrRef});
 } 
 
+sub getExtendedDefinition
+{
+    my $self    = shift;
+    my $concept = shift;
+
+    my $function = "getExtendedDefinition";
+    &_debug($function);
+    &_input($function, $concept); 
+
+    return () if(!defined $self || !ref $self);
+    
+    $self->{'traceString'} = "";
+   
+    #  check if concept was obtained
+    if(!$concept) {
+	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "Undefined input values.";
+	$self->{'errorCode'} = 2 if($self->{'errorCode'} < 1);
+	return undef;
+    }
+    
+    #  check if valid concept
+    if($self->validCui($concept)) {
+	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "Incorrect input value ($concept).";
+	$self->{'errorCode'} = 2 if($self->{'errorCode'} < 1);
+	return undef;
+    } 
+   
+    #  get database
+    my $db = $self->{'db'};
+    if(!$db) {
+	$self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "A db is required.";
+	$self->{'errorCode'} = 2;
+	return undef;
+    }
+
+    my @defs = ();
+    
+    my $dkeys = keys %defHash;
+    
+    if( ($dkeys <= 0) or (exists $defHash{"PAR"}) ) {
+	my @parents   = $self->getRelated($concept, "PAR");
+	foreach my $parent (@parents) {
+	    my @pardefs = $self->getCuiDef($parent);
+	    @defs = (@defs, @pardefs);
+	}
+    }
+    if( ($dkeys <= 0) or (exists $defHash{"CHD"}) ) {
+	my @children   = $self->getRelated($concept, "CHD");
+	foreach my $child (@children) { 
+	    my @chddefs = $self->getCuiDef($child);
+	    @defs = (@defs, @chddefs);
+	}
+    }
+    if( ($dkeys <= 0) or (exists $defHash{"SIB"}) ) {
+	my @siblings   = $self->getRelated($concept, "SIB");
+	foreach my $sib (@siblings) {
+	    my @sibdefs = $self->getCuiDef($sib);
+	    @defs = (@defs, @sibdefs);
+	}
+    }
+    if( ($dkeys <= 0) or (exists $defHash{"SYN"}) ) {
+	my @syns   = $self->getRelated($concept, "SYN");
+	foreach my $syn (@syns) {
+	    my @syndefs = $self->getCuiDef($syn);
+	    @defs = (@defs, @syndefs);
+	}
+    }
+    if( ($dkeys <= 0) or (exists $defHash{"RB"}) ) {
+	my @rbs    = $self->getRelated($concept, "RB");
+	foreach my $rb (@rbs) {
+	    my @rbdefs = $self->getCuiDef($rb);
+	    @defs = (@defs, @rbdefs);
+	}
+    }
+    if( ($dkeys <= 0) or (exists $defHash{"RN"}) ) {
+	my @rns    = $self->getRelated($concept, "RN");
+	foreach my $rn (@rns) {
+	    my @rndefs = $self->getCuiDef($rn);
+	    @defs = (@defs, @rndefs);
+	}
+    }
+    if( ($dkeys <= 0) or (exists $defHash{"RO"}) ) {
+	my @ros    = $self->getRelated($concept, "RO");
+	foreach my $ro (@ros) {
+	    my @rodefs = $self->getCuiDef($ro);
+	    @defs = (@defs, @rodefs);
+	}
+    }
+    if( ($dkeys <= 0) or (exists $defHash{"CUI"}) ) {
+	my @def   = $self->getCuiDef($concept);
+	@defs = (@defs, @def);
+    }
+    if( ($dkeys <= 0) or (exists $defHash{"TERM"}) ) {
+	my @terms = $self->getTermList($concept);
+	@defs = (@defs, @terms);
+    }
+
+    my @clean_defs = ();
+    foreach my $def (@defs) {
+	$def=~s/[\.\,\?\'\"\;\:\/\]\[\}\{\!\@\#\$\%\^\&\*\(\)\-\_]//g;
+push @clean_defs, $def;
+    }
+    return \@clean_defs;
+}
+
 #  Subroutine to get a CUIs definition
 sub getCuiDef
 {
-    
     my $self    = shift;
     my $concept = shift;
 

@@ -1,0 +1,13 @@
+Unknown option: realtime
+
+UMLS-Interface Configuration Information
+  Sources:
+    SNOMEDCT
+  Relations:
+    CHD
+    PAR
+  Database: 
+    umls (MMSYS-2009AA-20090325)
+
+The parents of hand structure (C0018563) are: 
+  wrist and hand structures (body structure)(C0584981)

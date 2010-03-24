@@ -1,0 +1,13 @@
+Unknown option: realtime
+
+UMLS-Interface Configuration Information
+  Sources:
+    MSH
+  Relations:
+    CHD
+    PAR
+  Database: 
+    umls (MMSYS-2009AA-20090325)
+
+The related (par) CUIs to hand (C0018563):
+  limbs, upper (C1140618)

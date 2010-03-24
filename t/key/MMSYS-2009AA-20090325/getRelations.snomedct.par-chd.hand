@@ -1,0 +1,23 @@
+Unknown option: realtime
+
+UMLS-Interface Configuration Information
+  Sources:
+    SNOMEDCT
+  Relations:
+    CHD
+    PAR
+  Database: 
+    umls (MMSYS-2009AA-20090325)
+
+The relations of hand (C0018563) are: 
+ RO
+ CHD
+ PAR
+ RB
+ RN
+The relations of hand (C1281583) are: 
+ RB
+ CHD
+ RO
+ RN
+ PAR

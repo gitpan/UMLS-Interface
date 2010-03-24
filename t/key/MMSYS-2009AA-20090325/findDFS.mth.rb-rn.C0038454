@@ -1,0 +1,19 @@
+Unknown option: config
+
+UMLS-Interface Configuration Information
+  Sources:
+    MTH
+  Relations:
+    RB
+    RN
+  Database: 
+    umls (MMSYS-2009AA-20090325)
+
+max_depth : 3
+paths_to_root : 13
+sources : MTH
+max_branch : 6
+avg_branch : 4.33333333333333
+leaf_count : 11
+node_count : 3
+root : C0038454

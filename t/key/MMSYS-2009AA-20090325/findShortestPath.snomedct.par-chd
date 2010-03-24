@@ -1,0 +1,20 @@
+
+User Options:
+   --realtime option set
+
+UMLS-Interface Configuration Information
+  Sources:
+    SNOMEDCT
+  Relations:
+    CHD
+    PAR
+  Database: 
+    umls (MMSYS-2009AA-20090325)
+
+
+The shortest path between brain tissue structure (C0459385) and infratentorial brain structure (C0228067):
+  => C0459385 (brain tissue structure) C0445620 (brain part (body structure)) C0228067 (infratentorial brain structure) 
+
+There is not a path between C0175895 and C0009814
+given the current view of the UMLS.
+

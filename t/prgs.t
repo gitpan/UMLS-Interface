@@ -8,7 +8,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 55;
+use Test::More tests => 52;
 
 BEGIN{ use_ok ('File::Spec') }
 
@@ -247,20 +247,6 @@ ok(-e $util_prg);
 #  check no command line inputs
 $output = `$perl $util_prg 2>&1`;
 like ($output, qr/Configuration file was not specified on the command line\s+Type removeConfigData.pl --help for help.\s+Usage\: removeConfigData\.pl \[OPTIONS\] CONFIGFILE\s*/);
-
-#######################################################################################
-#  check the findDFS.pl program
-#######################################################################################
-$util_prg = File::Spec->catfile('utils', 'findDFS.pl');
-ok(-e $util_prg);
-
-#  check no command line inputs
-$output = `$perl $util_prg 2>&1`;
-like ($output, qr/The config file was not specified on the command line\s+Type findDFS.pl --help for help.\s+Usage\: findDFS\.pl CONFIGFILE \[OPTIONS\]\s*/);
-
-#  check when invalid configuration file is entered
-$output = `$perl $util_prg config 2>&1`;
-like ($output, qr/Could not open configuration file\: config/);
 
 #######################################################################################
 #  check the getCuiList.pl program
