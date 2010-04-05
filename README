@@ -19,9 +19,11 @@ NAME
 
       SAB :: include FMA, MSH
       REL :: include PAR, CHD, RB, RN
+      DEF :: include TERM, CUI, PAR, CHD, RB, RN, SIB, SYN
 
-    where SAB refers to the sources and REL refers to the relations. Another
-    example can be found in the configuration file in the utils/ directory.
+    where SAB refers to the sources, REL refers to the relations and DEF for
+    the relations to inlclude in the extended definition. Another example
+    can be found in the configuration file in the samples/ directory.
 
     You can specify a single source, multiple sources or the entire UMLS
     (using the UMLS_ALL option). Keep in mind that the greater the number of
@@ -48,7 +50,15 @@ NAME
     If you do plan on using a multiple sources or the entire UMLS, we would
     advise you to use the --realtime option which is explained below, in the
     Interface.pm documentation and the path programs in the utils/
-    directory.
+    directory. We also have a am UMLS_ALL option for this so you do not have
+    to specify each and every source. It would be as follows:
+
+      SAB :: include UMLS_ALL
+
+    The extended definition consists of an array containing the definition
+    of a concept and all of its relations definitions. We allow for those
+    relations to be specified in the config file. The default though is all
+    of them.
 
   INSTALL
     To install the module, run the following magic commands:

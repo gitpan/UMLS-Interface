@@ -18,7 +18,7 @@ Usage: getTableNames.pl [OPTIONS]
 
 =head2 Optional Arguments:
 
-=head3 --config CONFIGFILE
+=head3 --config FILE
 
 This is the configuration file. The format of the configuration 
 file is as follows:
@@ -288,7 +288,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getTableNames.pl,v 1.3 2010/01/20 16:28:31 btmcinnes Exp $';
+    print '$Id: getTableNames.pl,v 1.4 2010/03/31 19:38:02 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

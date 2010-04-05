@@ -1,0 +1,15 @@
+
+User Options:
+  --propagation t/options/propagationfile
+   --realtime option set
+
+UMLS-Interface Configuration Information
+  Sources:
+    MSH
+  Relations:
+    CHD
+    PAR
+  Database: 
+    umls (MMSYS-2009AA-20090325)
+
+The information content of  (C0018563) is 8.2080

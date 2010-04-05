@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.43 2010/03/24 14:50:18 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.45 2010/04/01 16:15:32 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -50,7 +50,7 @@ use Digest::SHA1  qw(sha1 sha1_hex sha1_base64);
 use bignum qw/hex oct/;
 
 
-$VERSION = '0.47';
+$VERSION = '0.49';
 
 my $debug = 0;
 
@@ -337,7 +337,7 @@ sub _setOptions
     my $debugoption  = $params->{'debug'};
 
     if(defined $forcerun || defined $verbose || defined $cuilist || 
-       defined $realtime || defined $debugoption) {
+       defined $realtime || defined $debugoption || defined $propagation) {
 	print STDERR "\nUser Options:\n";
     }
 
@@ -351,6 +351,7 @@ sub _setOptions
     if(defined $propagation) {
 	$option_propagation = 1;
 	$propagationFile    = $propagation;
+	print STDERR "  --propagation $propagation\n";
     }
     
     #  check if the realtime option has been identified
@@ -847,8 +848,8 @@ sub _initialize
 
     #  propogate counts up if it has been defined 
     #  the database must be up to do this
-    $self->_propogateCounts();
-    if($self->checkError("_propogateCounts")) { return (); }	
+    $self->_propagateCounts();
+    if($self->checkError("_propagateCounts")) { return (); }	
     
 
 }
@@ -3147,7 +3148,24 @@ sub getIC
 	return undef;
     }
     
-    
+    if($option_realtime) { 
+	
+	#  initialize the propagation hash
+	$self->_initializePropagationHash();
+	
+	#  load the propagation frequency hash
+	$self->_loadPropagationFreq();
+	
+	#  propogate the counts
+	&_debug("_propagation3");
+	my @array = ();
+	$self->_propagation3($concept, \@array);
+	    
+	#  tally up the propagation counts
+	$self->_tallyCounts();
+	
+    }
+        
     my $prob = $propagationHash{$concept}; # / ($propagationTotal);
     
     my $output = ($prob > 0 and $prob < 1) ? -log($prob) : 0;
@@ -3267,7 +3285,8 @@ sub _initializePropagationHash
     %propagationHash = ();
 
     my $smooth = 1;
-    print STDERR "SMOOTH: $smooth\n";
+    
+    if($debug) { print STDERR "SMOOTH: $smooth\n"; }
 
     #  add the cuis to the propagation hash
     foreach my $cui (@{$allCui1}) { 
@@ -3418,11 +3437,13 @@ sub getPropagationCount
 {
     my $self = shift;
     my $concept = shift;
-    
+
+    if($option_realtime) { next; }
+
     my $function = "getPropagationCount";
     &_debug($function);
 
-    $self->_propogateCounts();
+    $self->_propagateCounts();
 
     #  check the concept is there
     if(!$concept) {
@@ -3449,7 +3470,7 @@ sub getPropagationCount
 
 }
 
-sub _propogateCounts
+sub _propagateCounts
 {
 
     my $self = shift;
@@ -3458,16 +3479,16 @@ sub _propogateCounts
     
     if($option_propagation) {
 
-	my $function = "_propogateCounts";
+	my $function = "_propagateCounts";
 	&_debug($function);
 
-	#  check if the parent and child tables exist and 
-	#  if they do just return otherwise create them
+	#  check if the propagation hash exist and if
+	#  it does just return otherwise create them
 	my $pkey = keys (%propagationHash);
 
         #  if propagation hash
 	if($pkey > 0) { return; }
-	
+
 	elsif($self->_checkTableExists($propTable)) {
 	    #  load the propagation hash from the database
 	    $self->_loadPropagationHash();
@@ -3491,6 +3512,7 @@ sub _propogateCounts
 		#  propogate the counts
 		&_debug("_propagation3");
 		my @array = ();
+
 		$self->_propagation3($umlsRoot, \@array);
 	    
 		#  tally up the propagation counts
@@ -4758,67 +4780,71 @@ sub getExtendedDefinition
     if( ($dkeys <= 0) or (exists $defHash{"PAR"}) ) {
 	my @parents   = $self->getRelated($concept, "PAR");
 	foreach my $parent (@parents) {
-	    my @pardefs = $self->getCuiDef($parent);
-	    @defs = (@defs, @pardefs);
+	    my @odefs = $self->getCuiDef($parent);
+	    my $def = "$concept PAR $parent : " . (join " ", @odefs);
+	    push @defs, $def;
 	}
     }
     if( ($dkeys <= 0) or (exists $defHash{"CHD"}) ) {
 	my @children   = $self->getRelated($concept, "CHD");
 	foreach my $child (@children) { 
-	    my @chddefs = $self->getCuiDef($child);
-	    @defs = (@defs, @chddefs);
+	    my @odefs = $self->getCuiDef($child);
+	    my $def = "$concept CHD $child : " . (join " ", @odefs);
+	    push @defs, $def;
 	}
     }
     if( ($dkeys <= 0) or (exists $defHash{"SIB"}) ) {
 	my @siblings   = $self->getRelated($concept, "SIB");
 	foreach my $sib (@siblings) {
-	    my @sibdefs = $self->getCuiDef($sib);
-	    @defs = (@defs, @sibdefs);
+	    my @odefs = $self->getCuiDef($sib);
+	    my $def = "$concept SIB $sib : " . (join " ", @odefs);
+	    push @defs, $def;
 	}
     }
     if( ($dkeys <= 0) or (exists $defHash{"SYN"}) ) {
 	my @syns   = $self->getRelated($concept, "SYN");
 	foreach my $syn (@syns) {
-	    my @syndefs = $self->getCuiDef($syn);
-	    @defs = (@defs, @syndefs);
+	    my @odefs = $self->getCuiDef($syn);
+	    my $def = "$concept SYN $syn : " . (join " ", @odefs);
+	    push @defs, $def;
 	}
     }
     if( ($dkeys <= 0) or (exists $defHash{"RB"}) ) {
 	my @rbs    = $self->getRelated($concept, "RB");
 	foreach my $rb (@rbs) {
-	    my @rbdefs = $self->getCuiDef($rb);
-	    @defs = (@defs, @rbdefs);
+	    my @odefs = $self->getCuiDef($rb);
+	    my $def = "$concept RB $rb : " . (join " ", @odefs);
+	    push @defs, $def;
 	}
     }
     if( ($dkeys <= 0) or (exists $defHash{"RN"}) ) {
 	my @rns    = $self->getRelated($concept, "RN");
 	foreach my $rn (@rns) {
-	    my @rndefs = $self->getCuiDef($rn);
-	    @defs = (@defs, @rndefs);
+	    my @odefs = $self->getCuiDef($rn);
+	    my $def = "$concept RN $rn : " . (join " ", @odefs);
+	    push @defs, $def;
 	}
     }
     if( ($dkeys <= 0) or (exists $defHash{"RO"}) ) {
 	my @ros    = $self->getRelated($concept, "RO");
 	foreach my $ro (@ros) {
-	    my @rodefs = $self->getCuiDef($ro);
-	    @defs = (@defs, @rodefs);
+	    my @odefs = $self->getCuiDef($ro);	
+	    my $def = "$concept RO $ro : " . (join " ", @odefs);
+	    push @defs, $def;
 	}
     }
     if( ($dkeys <= 0) or (exists $defHash{"CUI"}) ) {
-	my @def   = $self->getCuiDef($concept);
-	@defs = (@defs, @def);
+	my @odefs   = $self->getCuiDef($concept);
+	my $def = "$concept CUI $concept : " . (join " ", @odefs);
+	push @defs, $def;
     }
     if( ($dkeys <= 0) or (exists $defHash{"TERM"}) ) {
-	my @terms = $self->getTermList($concept);
-	@defs = (@defs, @terms);
+	my @odefs = $self->getTermList($concept);
+	my $def = "$concept TERM $concept : " . (join " ", @odefs);
+	push @defs, $def;
     }
-
-    my @clean_defs = ();
-    foreach my $def (@defs) {
-	$def=~s/[\.\,\?\'\"\;\:\/\]\[\}\{\!\@\#\$\%\^\&\*\(\)\-\_]//g;
-push @clean_defs, $def;
-    }
-    return \@clean_defs;
+    
+    return \@defs;
 }
 
 #  Subroutine to get a CUIs definition
@@ -4863,8 +4889,6 @@ sub getCuiDef
     #  get the definitions
     my $arrRef = $db->selectcol_arrayref("select DEF from MRDEF where CUI=\'$concept\'");
 
-   
-	
     if($self->checkError($function)) { return (); }
     
     return (@{$arrRef});

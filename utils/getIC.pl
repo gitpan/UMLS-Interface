@@ -2,8 +2,7 @@
 
 =head1 NAME
 
-getIC.pl - This program returns the definition of a concept
-or a term.
+getIC.pl - This program returns the information content of a concept or a term.
 
 =head1 SYNOPSIS
 
@@ -11,7 +10,7 @@ This program takes in a CUI or a term and returns its definitions.
 
 =head1 USAGE
 
-Usage: getIC.pl [OPTIONS] [CUI|TERM]
+Usage: getIC.pl [OPTIONS] PROPAGATIONFILE [CUI|TERM]
 
 =head1 INPUT
 
@@ -22,7 +21,43 @@ Usage: getIC.pl [OPTIONS] [CUI|TERM]
 Concept Unique Identifier (CUI) or a term from the Unified Medical 
 Language System (UMLS)
 
+=head3 PROPAGATIONFILE
+
+File containing the frequency counts
+
 =head2 Optional Arguments:
+
+=head3 --config FILE
+
+This is the configuration file. The format of the configuration 
+file is as follows:
+
+SAB :: <include|exclude> <source1, source2, ... sourceN>
+
+REL :: <include|exclude> <relation1, relation2, ... relationN>
+
+For example, if we wanted to use the MSH vocabulary with only 
+the RB/RN relations, the configuration file would be:
+
+SAB :: include MSH
+REL :: include RB, RN
+
+or 
+
+SAB :: include MSH
+REL :: exclude PAR, CHD
+
+If you go to the configuration file directory, there will 
+be example configuration files for the different runs that 
+you have performed.
+
+=head3 --realtime
+
+This option will not create a database of the IC information
+for all of concepts in the specified set of sources and relations 
+in the config file but obtain the information for just the 
+input concept
+
 
 =head3 --debug
 
@@ -121,7 +156,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "propagation=s" );
+GetOptions( "version", "help", "debug", "realtime", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s" );
 
 
 #  if help is defined, print out help
@@ -145,6 +180,8 @@ if(scalar(@ARGV) < 1) {
     exit;
 }
 
+my $propagationfile = shift;
+
 my $database = "umls";
 if(defined $opt_database) { $database = $opt_database; }
 my $hostname = "localhost";
@@ -155,9 +192,8 @@ if(defined $opt_socket)   { $socket   = $opt_socket;   }
 my $umls = "";
 my %option_hash = ();
 
-if(defined $opt_propagation) {
-    $option_hash{"propagation"} = $opt_propagation;
-}
+$option_hash{"propagation"} = $propagationfile;
+
 if(defined $opt_config) {
     $option_hash{"config"} = $opt_config;
 }
@@ -166,6 +202,9 @@ if(defined $opt_verbose) {
 }
 if(defined $opt_debug) {
     $option_hash{"debug"} = $opt_debug;
+}
+if(defined $opt_realtime) {
+    $option_hash{"realtime"} = $opt_realtime;
 }
 if(defined $opt_username) {
     $option_hash{"username"} = $opt_username;
@@ -206,7 +245,8 @@ else {
 }
 
 my $printFlag = 0;
-
+my $precision = 4;
+my $floatformat = join '', '%', '.', $precision, 'f';
 foreach my $cui (@c) {
     if($umls->validCui($cui)) {
 	print STDERR "ERROR: The concept ($cui) is not valid.\n";
@@ -217,10 +257,11 @@ foreach my $cui (@c) {
     if($umls->checkConceptExists($cui) == 0) { next; }	
 
     my $ic = $umls->getIC($cui); 
-
+    my $pic = sprintf $floatformat, $ic;
+    
     &errorCheck($umls);
 
-    print "The information content of $term ($cui) is $ic\n";
+    print "The information content of $term ($cui) is $pic\n";
 }
 
 sub errorCheck
@@ -237,7 +278,7 @@ sub errorCheck
 ##############################################################################
 sub minimalUsageNotes {
     
-    print "Usage: getIC.pl [OPTIONS] [CUI|TERM] \n";
+    print "Usage: getIC.pl [OPTIONS] PROPAGATIONFILE [CUI|TERM] \n";
     &askHelp();
     exit;
 }
@@ -249,9 +290,9 @@ sub showHelp() {
 
         
     print "This is a utility that takes as input a term \n";
-    print "or a CUI and returns all of its definitions.\n\n";
+    print "or a CUI and returns its information content (IC).\n\n";
   
-    print "Usage: getIC.pl [OPTIONS] [CUI|TERM]\n\n";
+    print "Usage: getIC.pl [OPTIONS] PROPAGATIONFILE [CUI|TERM]\n\n";
 
     print "Options:\n\n";
 
@@ -278,7 +319,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getIC.pl,v 1.1 2010/03/18 14:10:53 btmcinnes Exp $';
+    print '$Id: getIC.pl,v 1.4 2010/03/31 19:38:02 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

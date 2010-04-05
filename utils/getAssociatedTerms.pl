@@ -25,11 +25,29 @@ Language System (UMLS)
 
 =head2 Optional Arguments:
 
-=head3 --config FILE            
+=head3 --config FILE
 
-If the configuration file is specified it will return the 
-associated terms only in the given set of sources and 
-relations. 
+This is the configuration file. The format of the configuration 
+file is as follows:
+
+SAB :: <include|exclude> <source1, source2, ... sourceN>
+
+REL :: <include|exclude> <relation1, relation2, ... relationN>
+
+For example, if we wanted to use the MSH vocabulary with only 
+the RB/RN relations, the configuration file would be:
+
+SAB :: include MSH
+REL :: include RB, RN
+
+or 
+
+SAB :: include MSH
+REL :: exclude PAR, CHD
+
+If you go to the configuration file directory, there will 
+be example configuration files for the different runs that 
+you have performed.
 
 =head3 --debug
 
@@ -280,7 +298,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getAssociatedTerms.pl,v 1.4 2010/01/20 16:28:31 btmcinnes Exp $';
+    print '$Id: getAssociatedTerms.pl,v 1.5 2010/03/31 19:38:02 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

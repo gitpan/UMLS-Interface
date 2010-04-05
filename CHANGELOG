@@ -1,6 +1,21 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.47 to 0.49
+    1. Added the getExtendedDefinition function
+
+    2. Modified the configuration file to accept what relations should be
+    included in the extended defintion. The format is:
+
+        DEF :: include TERM, CUI, PAR, CHD, SIB, SYN, RB, RN
+
+        where TERM refers to the associated terms of a concept
+              CUI refers to the CUIs definition and the rest 
+              are the definition of the relations.
+
+    3. Created a samples/ directory which contains an example of the
+    configuration file
+
   Changes from version 0.45 to 0.47
     1. Added a t/ test case for each of the programs in the utils/ directory
 

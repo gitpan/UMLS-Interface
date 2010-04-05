@@ -1,0 +1,24 @@
+
+UMLS-Interface Configuration Information
+  Sources:
+    MSH
+  Relations:
+    CHD
+    PAR
+  Database: 
+    umls (MMSYS-2009AA-20090325)
+
+The definition(s) of hand (C0018563):
+  1. C0018563 PAR C1140618 : The region of the upper limb in animals, extending from the deltoid region to the HAND, and including the ARM; AXILLA; and SHOULDER. part of the upper extremity between the shoulder and wrist; includes forearm and upper arm. Technically the part of the superior limb between the shoulder and the elbow but commonly used to refer to the whole superior limb.
+  2. C0018563 CHD C0016129 : Subdivision of the hand demarcated from the hand proper by the skin crease in line with the distal edge of finger webs. Examples: thumb, right middle finger, left little finger. one of the five digits of the hand. Subdivision of the hand demarcated from the hand proper by the skin crease in line with the distal edge of finger webs. Examples: thumb, right middle finger, left little finger. Any of the digits of the hand.
+  3. C0018563 CHD C0043262 : The region of the upper limb between the metacarpus and the FOREARM. region of the upper limb between the forearm and the hand.
+  4. C0018563 CHD C1578693 : The region of the HAND between the WRIST and the FINGERS.
+  5. C0018563 SIB C0004454 : (AK-sil-air-ee) Pertaining to the armpit area, including the lymph nodes that are located there. The underside concavity where the arm and the shoulder are joined.
+  6. C0018563 SIB C0013769 : hinge joint between the forearm and upper arm and the corresponding joint in the forelimb.
+  7. C0018563 SIB C0016536 : The structure on the upper limb, between the elbow and the wrist.
+  8. C0018563 SIB C0037004 : junction of the arm and trunk; also that part of the trunk which is bounded at the back by the scapula. The region of the body between the neck and the upper arm.
+  9. C0018563 SIB C0446516 : The superior part of the upper extremity between the SHOULDER and the ELBOW.
+  10. C0018563 RO C0018566 : Alterations or deviations from normal shape or size which result in a disfigurement of the hand occurring at or before birth.
+  11. C0018563 RO C0018571 : General or unspecified injuries to the hand.
+  12. C0018563 CUI C0018563 : part of the upper limb distal to the wrist including carpus, metacarpus and fingers. The distal portion of the upper extremity. It consists of the carpus, metacarpus, and digits.
+  13. C0018563 TERM C0018563 : hand hands

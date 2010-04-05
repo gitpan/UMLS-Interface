@@ -27,6 +27,30 @@ The relation of the given CUI or term.
 
 =head2 Optional Arguments:
 
+=head3 --config FILE
+
+This is the configuration file. The format of the configuration 
+file is as follows:
+
+SAB :: <include|exclude> <source1, source2, ... sourceN>
+
+REL :: <include|exclude> <relation1, relation2, ... relationN>
+
+For example, if we wanted to use the MSH vocabulary with only 
+the RB/RN relations, the configuration file would be:
+
+SAB :: include MSH
+REL :: include RB, RN
+
+or 
+
+SAB :: include MSH
+REL :: exclude PAR, CHD
+
+If you go to the configuration file directory, there will 
+be example configuration files for the different runs that 
+you have performed.
+
 =head3 --debug
 
 Sets the debug flag for testing
@@ -297,7 +321,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getRelated.pl,v 1.7 2010/01/20 16:28:31 btmcinnes Exp $';
+    print '$Id: getRelated.pl,v 1.8 2010/03/31 19:38:02 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 
