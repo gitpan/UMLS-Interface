@@ -5,7 +5,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 12;
+use Test::More tests => 10;
 
 BEGIN {use_ok 'UMLS::Interface'}
 BEGIN{ use_ok ('File::Spec') }
@@ -17,7 +17,7 @@ my %option_hash = ();
 
 #  set the option hash
 $option_hash{"realtime"} = 1;
-#$option_hash{"debug"} = 1;
+$option_hash{"t"} = 1;
 
 #  connect to the UMLS-Interface
 my $umls = UMLS::Interface->new(\%option_hash);
@@ -43,7 +43,7 @@ my $perl     = $^X;
 my $util_prg = File::Spec->catfile('utils', 'getIC.pl');
 
 #  set up for propagation
-my $propagationfile = File::Spec->catfile('t','options', 'propagationfile');
+my $icpropagation = File::Spec->catfile('t','options', 'icpropagation');
 
 my ($keyfile, $file, $output, $term, $config, $cui);
 
@@ -57,7 +57,7 @@ $term    = "hand";
 $file    = "getIC.mth.rb-rn.$term";
 $keyfile = File::Spec->catfile($keydir, $file);
 $config  = File::Spec->catfile('t', 'config', 'config.mth.rb-rn');
-$output = `$perl $util_prg --config $config --realtime $propagationfile $term 2>&1`;
+$output = `$perl $util_prg --config $config $icpropagation $term 2>&1`;
 
 if(-e $keyfile) {
     ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";
@@ -75,37 +75,13 @@ else {
 }
 
 #######################################################################################
-#  check snomedct tests for term
-#######################################################################################
-$term    = "hand";
-$file    = "getIC.snomedct.par-chd.$term";
-$keyfile = File::Spec->catfile($keydir, $file);
-$config  = File::Spec->catfile('t', 'config', 'config.snomedct.par-chd');
-$output = `$perl $util_prg --config $config --realtime $propagationfile $term 2>&1`;
-
-if(-e $keyfile) {
-    ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";
-    my $key = "";
-    while(<KEY>) { $key .= $_; } close KEY;
-    cmp_ok($output, 'eq', $key);
-}
-else {
-    ok(open KEY, ">$keyfile") || diag "Could not open $keyfile: $!";
-    print KEY $output;
-    close KEY;
-  SKIP: {
-      skip ("Generating key, no need to run test", 1);
-    }
-}
-
-#######################################################################################
 #  check msh tests for term
 #######################################################################################
 $term    = "hand";
 $file    = "getIC.msh.par-chd.$term";
 $keyfile = File::Spec->catfile($keydir, $file);
 $config  = File::Spec->catfile('t', 'config', 'config.msh.par-chd');
-$output = `$perl $util_prg --config $config --realtime $propagationfile $term 2>&1`;
+$output = `$perl $util_prg --config $config $icpropagation $term 2>&1`;
 
 if(-e $keyfile) {
     ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";

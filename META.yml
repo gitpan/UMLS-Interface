@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                UMLS-Interface
-version:             0.49
+version:             0.51
 abstract:            Perl interface to the Unified Medical Language System (UMLS)
 license:             ~
 author:              

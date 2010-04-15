@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.45 2010/04/01 16:15:32 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.48 2010/04/15 13:58:10 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -50,13 +50,9 @@ use Digest::SHA1  qw(sha1 sha1_hex sha1_base64);
 use bignum qw/hex oct/;
 
 
-$VERSION = '0.49';
+$VERSION = '0.51';
 
 my $debug = 0;
-
-my $option4 = 0; # Teds 1/p
-my $option3 = 1; # decendants
-my $option2 = 0; # my 1/p
 
 my %roots = ();
 
@@ -115,6 +111,8 @@ my $option_forcerun    = 0;
 my $option_cuilist     = 0;
 my $option_realtime    = 0;
 my $option_propagation = 0;
+my $option_t           = 0;
+my $option_frequency   = 0;
 
 my %propagationFreq  = ();
 my %propagationHash  = ();
@@ -124,12 +122,14 @@ my %propagationTuiHash = ();
 my $propagationTuiTotal = 0;
 
 my $propagationFile  = "";
+my $frequencyFile    = "";
 my $propagationTotal = 0;
 
 my $propagation_tokens = 0;
 my $observed_types     = 0;
 my $unobserved_types   = 0;
 
+my %defsabHash      = ();
 my %defHash         = ();
 my %cycleHash       = ();
 
@@ -335,54 +335,70 @@ sub _setOptions
     my $realtime     = $params->{'realtime'};
     my $propagation  = $params->{'propagation'};
     my $debugoption  = $params->{'debug'};
+    my $t            = $params->{'t'};
+    my $frequency    = $params->{'frequency'};
 
+    if(defined $t) {
+	$option_t = 1;
+    }
+
+    my $output = "";
     if(defined $forcerun || defined $verbose || defined $cuilist || 
        defined $realtime || defined $debugoption || defined $propagation) {
-	print STDERR "\nUser Options:\n";
+	$output .= "\nUser Options:\n";
     }
 
     #  check if the debug option has been been defined
     if(defined $debugoption) { 
 	$debug = 1; 
-	print STDERR "   --debug option set\n";
+	$output .= "   --debug option set\n";
     }
-
+    
     #  check if the propagation option has been identified
     if(defined $propagation) {
 	$option_propagation = 1;
 	$propagationFile    = $propagation;
-	print STDERR "  --propagation $propagation\n";
+	$output .= "  --propagation $propagation\n";
     }
-    
+
+#  check if the frequency option has been identified
+    if(defined $frequency) {
+	$option_frequency = 1;
+	$frequencyFile    = $frequency;
+	$output .= "  --frequency $frequency\n";
+    }
+
     #  check if the realtime option has been identified
     if(defined $realtime) {
 	$option_realtime = 1;
 	
-	print STDERR "   --realtime option set\n";
+	$output .= "   --realtime option set\n";
     }
 
     #  check if verbose run has been identified
     if(defined $verbose) { 
 	$option_verbose = 1;
 	
-	print STDERR "   --verbose option set\n";
+	$output .= "   --verbose option set\n";
     }
 
     #  check if a forced run has been identified
     if(defined $forcerun) {
 	$option_forcerun = 1;
 	
-	print STDERR "   --forcerun option set\n";
+	$output .= "   --forcerun option set\n";
     }
 
     #  check if the cuilist option has been set
     if(defined $cuilist) {
 	$option_cuilist = 1;
 
-    	print STDERR "   --cuilist option set\n";
+    	$output .= "   --cuilist option set\n";
     }
 
-    print STDERR "\n";
+    if($option_t == 0) {
+	print STDERR "$output\n";
+    }
 }
 
 #  method to set the umlsinterface index database
@@ -638,26 +654,25 @@ sub _setConfigurationFile
     $childTable = "$ver";
     $propTable  = "$ver";
     
-    print STDERR "UMLS-Interface Configuration Information\n";
-    print STDERR "  Sources:\n";
+    my $output = "";
+    $output .= "UMLS-Interface Configuration Information\n";
+    $output .= "  Sources:\n";
     foreach my $sab (sort keys %sab_names) {
-    	$tableFile  .= "_$sab";
+	$tableFile  .= "_$sab";
 	$childFile  .= "_$sab";
 	$parentFile .= "_$sab";
-
-    	$cycleFile  .= "_$sab";
+	
+	$cycleFile  .= "_$sab";
 	$configFile .= "_$sab";
 	$tableName  .= "_$sab";
 	$parentTable.= "_$sab";
 	$childTable .= "_$sab";
 	$propTable  .= "_$sab";
-
-	print STDERR "    $sab\n";
 	
-	
+	$output .= "    $sab\n"; 	
     }
     
-    print STDERR "  Relations:\n";
+    $output .= "  Relations:\n";
     while($relations=~/=\'(.*?)\'/g) {
 	my $rel = $1;
 	$rel=~s/\s+//g;
@@ -671,7 +686,7 @@ sub _setConfigurationFile
 	$childTable .= "_$rel";
 	$propTable  .= "_$rel";
 
-	print STDERR "    $rel\n";
+	$output .= "    $rel\n";
     }
     
     $tableFile  .= "_table";
@@ -697,12 +712,16 @@ sub _setConfigurationFile
     $propTable   = "a" . sha1_hex($propTableHuman);
 
     if($option_verbose) {
-	print STDERR "  Configuration file:\n";
-	print STDERR "    $configFile\n";
+	$output .= "  Configuration file:\n";
+	$output .= "    $configFile\n";
     }
     
-    print STDERR "  Database: \n";
-    print STDERR "    $database ($version)\n\n";
+    $output .= "  Database: \n";
+    $output .= "    $database ($version)\n\n";
+    
+    if($option_t == 0) {
+	print STDERR "$output\n";
+    }
 }
 
 #  create the configuration file 
@@ -848,8 +867,8 @@ sub _initialize
 
     #  propogate counts up if it has been defined 
     #  the database must be up to do this
-    $self->_propagateCounts();
-    if($self->checkError("_propagateCounts")) { return (); }	
+    $self->_loadPropagationHash();
+    if($self->checkError("_loadPropagationHash")) { return (); }	
     
 
 }
@@ -2040,13 +2059,14 @@ sub _config {
 		
 		my @array = split/\s*\,\s*/, $list;
 		foreach my $element (@array) {
-		    if(   $type eq "SAB"  and $det eq "include") { $includesab{$element}++;  }
-		    elsif($type eq "SAB"  and $det eq "exclude") { $excludesab{$element}++;  }
-		    elsif($type eq "REL"  and $det eq "include") { $includerel{$element}++;  }
-		    elsif($type eq "REL"  and $det eq "exclude") { $excluderel{$element}++;  }
-		    elsif($type eq "RELA" and $det eq "include") { $includerela{$element}++; }
-		    elsif($type eq "RELA" and $det eq "exclude") { $excluderela{$element}++; }
-		    elsif($type eq "DEF"  and $det eq "include") { $defHash{$element}++;     }
+		    if(   $type eq "SAB"    and $det eq "include") { $includesab{$element}++;  }
+		    elsif($type eq "SAB"    and $det eq "exclude") { $excludesab{$element}++;  }
+		    elsif($type eq "REL"    and $det eq "include") { $includerel{$element}++;  }
+		    elsif($type eq "REL"    and $det eq "exclude") { $excluderel{$element}++;  }
+		    elsif($type eq "RELA"   and $det eq "include") { $includerela{$element}++; }
+		    elsif($type eq "RELA"   and $det eq "exclude") { $excluderela{$element}++; }
+		    elsif($type eq "DEF"    and $det eq "include") { $defHash{$element}++;     }
+		    elsif($type eq "SABDEF" and $det eq "include") { $defsabHash{$element}++;  }
 		}
 	    }
 	    else {
@@ -3148,7 +3168,7 @@ sub getIC
 	return undef;
     }
     
-    if($option_realtime) { 
+    if($option_frequency) { 
 	
 	#  initialize the propagation hash
 	$self->_initializePropagationHash();
@@ -3157,16 +3177,16 @@ sub getIC
 	$self->_loadPropagationFreq();
 	
 	#  propogate the counts
-	&_debug("_propagation3");
+	&_debug("_propagation");
 	my @array = ();
-	$self->_propagation3($concept, \@array);
+	$self->_propagation($concept, \@array);
 	    
 	#  tally up the propagation counts
-	$self->_tallyCounts();
+        $self->_tallyCounts();
 	
     }
         
-    my $prob = $propagationHash{$concept}; # / ($propagationTotal);
+    my $prob = $propagationHash{$concept};
     
     my $output = ($prob > 0 and $prob < 1) ? -log($prob) : 0;
     &_output($function, $output);
@@ -3290,25 +3310,21 @@ sub _initializePropagationHash
 
     #  add the cuis to the propagation hash
     foreach my $cui (@{$allCui1}) { 
-	if($option3) { $propagationHash{$cui} = ""; }
-	else         { $propagationHash{$cui} = 0;  }
+	$propagationHash{$cui} = "";
 	$propagationFreq{$cui} = $smooth;
     }
     foreach my $cui (@{$allCui2}) { 
-	if($option3) { $propagationHash{$cui} = ""; }
-	else         { $propagationHash{$cui} = 0;  }
+	$propagationHash{$cui} = ""; 
 	$propagationFreq{$cui} = $smooth;
     }
     
     #  add upper level taxonomy
     foreach my $cui (sort keys %parentTaxonomy)   { 
-	if($option3) { $propagationHash{$cui} = ""; }
-	else         { $propagationHash{$cui} = 0;  }
+	$propagationHash{$cui} = ""; 
 	$propagationFreq{$cui} = $smooth;
     }
     foreach my $cui (sort keys %childrenTaxonomy) { 
-	if($option3) { $propagationHash{$cui} = ""; }
-	else         { $propagationHash{$cui} = 0;  }
+	$propagationHash{$cui} = ""; 
 	$propagationFreq{$cui} = $smooth;
     }
 }
@@ -3316,121 +3332,51 @@ sub _initializePropagationHash
 sub _loadPropagationFreq
 {
     my $self = shift;
-
-   return undef if(!defined $self || !ref $self);
+    my $fhash = shift;
+    
+    return undef if(!defined $self || !ref $self);
     
     my $function = "_loadPropagationFreq";
     &_debug($function);
-    
-    #  collect the counts for the required cuis
-    open(FILE, $propagationFile) || die "Could not open prop file: $propagationFile\n";
-    my $N = 0;
-    while(<FILE>) {
-	chomp;
-	if($_=~/^#/)    { next; }
-	if($_=~/^\s*$/) { next; }
-	
-	my ($freq, $cui, $str) = split/\|/;
 
-	#  negative numbers are used as codes - they don't mean anything
-	if($freq < 0) { next; }
-    
-	$N += $freq;
-
+    my $N = 0;    
+    foreach my $cui (sort keys %{$fhash}) {
+	my $freq = ${$fhash}{$cui};
 	if(exists $propagationFreq{$cui}) {
 	    $propagationFreq{$cui} += $freq;
 	}
+	$N+= $freq;
     }
+    
     my $pkeys = keys %propagationFreq;
     $N += $pkeys;
+    
     foreach my $cui (sort keys %propagationFreq) { 
 	$propagationFreq{$cui} = $propagationFreq{$cui} / $N;
     }
-}
-
-sub _loadPropagationTables
-{
-    my $self = shift;
-
-    return undef if(!defined $self || !ref $self);
-    
-    my $function = "_loadPropagationTables";
-    &_debug($function);
-    
-    #  set the index DB handler
-    my $sdb = $self->{'sdb'};
-    if(!$sdb) {
-	$self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
-	$self->{'errorString'} .= "A db is required.";
-	$self->{'errorCode'} = 2;
-	return ();
-    }    
-    
-    #  create the table
-    $sdb->do("CREATE TABLE IF NOT EXISTS $propTable (CUI char(8), FREQ double (30,30))");
-    if($self->checkError($function)) { return (); }
-
-    #  load the table
-    my $N = 0;
-    foreach my $cui (sort keys %propagationHash) {
-	my $freq = $propagationHash{$cui};
-	$sdb->do("INSERT INTO $propTable (CUI, FREQ) VALUES ('$cui', '$freq')");
-	if($self->checkError($function)) { return (); }   
-	$N += $freq;
-    }
-
-    #$sdb->do("INSERT INTO $propTable (CUI, FREQ) VALUES ('PT', '$propagationTotal')");
-    #if($self->checkError($function)) { return (); }   
-    #  set N (the total propagation count)
-    #$propagationTotal = $N;
-    $propagationTotal = $self->getFreq($umlsRoot);
-    #$propagationTotal = $propgationHash{$root}; 
-   
-    #  add them to the index table
-    $sdb->do("INSERT INTO tableindex (TABLENAME, HEX) VALUES ('$propTableHuman', '$propTable')");
-    if($self->checkError($function)) { return (); }   
-
 }
 
 sub _loadPropagationHash
 {
     my $self = shift;
     
+    if($option_propagation == 0) { return; }
+    
     return undef if(!defined $self || !ref $self);
     
     my $function = "_loadPropagationHash";
     &_debug($function);
 
-    #  set the index DB handler
-    my $sdb = $self->{'sdb'};
-    if(!$sdb) {
-	$self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
-	$self->{'errorString'} .= "A db is required.";
-	$self->{'errorCode'} = 2;
-	return ();
-    }    
-    
-    #  set the parent taxonomy
-    my $sql = qq{ SELECT CUI, FREQ FROM $propTable};
-    my $sth = $sdb->prepare( $sql );
-    $sth->execute();
-    my($cui, $freq);
-    $sth->bind_columns( undef, \$cui, \$freq );
-    #my $N = 0;
-    while( $sth->fetch() ) {
-	#if($cui=~/PT/) {
-	    #$propagationTotal = $freq;
-	    #next;
-	#}
-        #$N += $freq;
-	
-	$propagationHash{$cui} = $freq;
-	
-    } $sth->finish();
+    open(FILE, $propagationFile) || die "Could not open file $propagationFile\n";
+    while(<FILE>) {
+	chomp;
+	my ($cui, $freq) = split/<>/;
+	if(! (exists $propagationHash{$cui})) { 
+	    $propagationHash{$cui} = 0;
+	}
 
-    #  set N (the total propagation count)
-    #$propagationTotal = $N;
-    #$propagationTotal = $self->getFreq($umlsRoot);
+	$propagationHash{$cui} += $freq;
+    }
 }
 
 sub getPropagationCount
@@ -3470,220 +3416,35 @@ sub getPropagationCount
 
 }
 
-sub _propagateCounts
+sub propagateCounts
 {
 
     my $self = shift;
+    
+    my $fhash = shift;
     
     return undef if(!defined $self || !ref $self);
     
-    if($option_propagation) {
-
-	my $function = "_propagateCounts";
-	&_debug($function);
-
-	#  check if the propagation hash exist and if
-	#  it does just return otherwise create them
-	my $pkey = keys (%propagationHash);
-
-        #  if propagation hash
-	if($pkey > 0) { return; }
-
-	elsif($self->_checkTableExists($propTable)) {
-	    #  load the propagation hash from the database
-	    $self->_loadPropagationHash();
-
-	    #  set smoothing variables
-	    #$self->_setSmoothingVariables();
-	    
-	    #  set propogation TUI hash
-	    #$self->_setPropagationTuiHash();
-
-	}
-	else {
-	    	    	    
-	    #  initialize the propagation hash
-	    $self->_initializePropagationHash();
-	    
-	    #  load the propagation frequency hash
-	    $self->_loadPropagationFreq();
-	    
-	    if($option3) {
-		#  propogate the counts
-		&_debug("_propagation3");
-		my @array = ();
-
-		$self->_propagation3($umlsRoot, \@array);
-	    
-		#  tally up the propagation counts
-		$self->_tallyCounts();
-	    }
-	    else {
-		#  propogate the counts
-		&_debug("_propagation");
-		my @array = ();
-		$self->_propagation($umlsRoot, \@array);
-	    }
-	    
-	    #  load the propagation tables
-	    $self->_loadPropagationTables();
-	    
-	    #  set smoothing variables
-	    #$self->_setSmoothingVariables();
-	    
-	    #  set the propogation TUI hash
-	    #$self->_setPropagationTuiHash();
-	}
-    }
-}
-
-sub _setPropagationTuiHash
-{
-    my $self = shift;
-
-    my $function = "_setPropagationTuiHash";
+    my $function = "propagateCounts";
     &_debug($function);
     
-    foreach my $cui (sort keys %propagationHash) {
-	my @sts = $self->getSt($cui);
-	foreach my $st (@sts) {
-	    $propagationTuiHash{$st}++;
-	    $propagationTuiTotal++;
-	}
-    }
+    #  initialize the propagation hash
+    $self->_initializePropagationHash();
+    
+    #  load the propagation frequency hash
+    $self->_loadPropagationFreq($fhash);
+    
+    #  propagate the counts
+    my @array = ();
+    $self->_propagation($umlsRoot, \@array);
+    
+    #  tally up the propagation counts
+    $self->_tallyCounts();
+    
+    #  return the propagation counts
+    return \%propagationHash;
 }
 
-sub _setSmoothingVariables 
-{
-    my $self = shift;
-
-    my $function = "_setSmoothingVariables";
-    &_debug($function);
-
-    #  set the database
-    my $sdb = $self->{'sdb'};
-    if(!$sdb) {
-	$self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
-	$self->{'errorString'} .= "A db is required.";
-	$self->{'errorCode'} = 2;
-	return ();
-    }
-
-    #  set propagation tokens
-    $propagation_tokens = $propagationHash{$umlsRoot};
-
-    #  set observed types
-    my $arrRef1 = $sdb->selectcol_arrayref("select count(*) from $propTable where FREQ = 0");
-    if($self->checkError($function)) { return (); }
-    $unobserved_types = shift @{$arrRef1};
-
-    #  set unobserved types
-    my $arrRef2 = $sdb->selectcol_arrayref("select count(*) from $propTable;");
-    if($self->checkError($function)) { return (); }
-    my $total_types = shift @{$arrRef2};
-    $observed_types = $total_types - $unobserved_types;
-
-}
-
-sub _propagation
-{
-    my $self    = shift;
-    my $concept = shift;
-    my $array   = shift;
-
-    my $function = "_propagation";
-    
-    #  check the concept is there
-    if(!$concept) {
-	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
-	$self->{'errorString'} .= "Undefined input values.";
-	$self->{'errorCode'} = 2 if($self->{'errorCode'} < 1);
-	return ();
-    }
- 
-    #  check that the concept is valid
-    if($self->validCui($concept)) {
-	$self->{'errorString'} .= "\nWarning (UMLS::Interface->$function()) - ";
-	$self->{'errorString'} .= "Incorrect input value ($concept).";
-	$self->{'errorCode'} = 2 if($self->{'errorCode'} < 1);
-	return undef;
-    } 
-      
-    #  set the database
-    my $sdb = $self->{'sdb'};
-    if(!$sdb) {
-	$self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
-	$self->{'errorString'} .= "A db is required.";
-	$self->{'errorCode'} = 2;
-	return ();
-    }
-    
-    #  set up the new path
-    my @intermediate = @{$array};
-    push @intermediate, $concept;
-    my $series = join " ", @intermediate;
-
-    #  we have already been down this route if the propagation count
-    #  for this concept has already been tallied so just return the 
-    #  count
-    if($propagationHash{$concept} > 0) { return $propagationHash{$concept}; }
-
-    #  get the frequency of the concept
-    my $count = $propagationFreq{$concept};
-
-    #  if defined $option2 we are going to use the 1/p counts
-    if($option2) {
-	#  get the parents of the concept
-	my @parents = $self->getParents($concept);
-	if($self->checkError("getParents")) { return (); }
-	if($#parents >= 0) {
-	    $count = $count / ($#parents+1);
-	}
-    }
-    #  get all the children
-    my @children = $self->getChildren($concept);
-    if($self->checkError("getChildren")) { return (); }
-
-    my $havechildflag = 0;
-    #  search through the children
-    foreach my $child (@children) {
-	
-	#  check that the concept is not one of the forbidden concepts
-	if($self->_forbiddenConcept($child)) { next; }
-	
-	#  check if child cui has already in the path
-	my $flag = 0;
-	foreach my $cui (@intermediate) {
-	    if($cui eq $child) { $flag = 1; }
-	}
-	
-	#  if it isn't continue on with the depth first search
-	if($flag == 0) {  
-	    $count += $self->_propagation($child, \@intermediate);    
-	    $havechildflag++;
-	}
-    }
-    
-    #if($havechildflag == 0) { $count++; }
-    
-    if($option4) {
-	#  get the parents of the concept
-	my @parents = $self->getParents($concept);
-	if($self->checkError("getParents")) { return (); }
-	if($#parents >= 0) {
-	    $count = $count / ($#parents+1);
-	}
-    }
-        
-    #  update the propagation count
-    $propagationHash{$concept} = $count;
-
-    open(OUT, ">>out") || die "OUT\n";
-    print OUT "$concept $count $havechildflag $#children\n";
-    close OUT;
-    #  return the count
-    return $count;
-}
 
 sub _tallyCounts
 {
@@ -3712,7 +3473,7 @@ sub _tallyCounts
     }
 }
 
-sub _propagation3
+sub _propagation
 {
     my $self    = shift;
     my $concept = shift;
@@ -3759,9 +3520,11 @@ sub _propagation3
     #  if the propagation hash already contains a list of CUIs it
     #  is from its decendants so it has been here before so all we 
     #  have to do is return the list of ancestors with it added
-    if($set ne "") { 
-	$set .= " $concept";
-	return $set; 
+    if(defined $set) { 
+	if(! ($set=~/^\s*$/)) { 
+	    $set .= " $concept";
+	    return $set; 
+	}
     }
 
     #  get all the children
@@ -3784,7 +3547,7 @@ sub _propagation3
 	#  if it isn't continue on with the depth first search
 	if($flag == 0) {  
 	    $set .= " ";
-	    $set .= $self->_propagation3($child, \@intermediate);    
+	    $set .= $self->_propagation($child, \@intermediate);    
 	}
     }
     
@@ -4739,7 +4502,7 @@ sub getExtendedDefinition
 {
     my $self    = shift;
     my $concept = shift;
-
+    
     my $function = "getExtendedDefinition";
     &_debug($function);
     &_input($function, $concept); 
@@ -4773,6 +4536,8 @@ sub getExtendedDefinition
 	return undef;
     }
 
+    my $sabflag = 1;
+
     my @defs = ();
     
     my $dkeys = keys %defHash;
@@ -4780,67 +4545,99 @@ sub getExtendedDefinition
     if( ($dkeys <= 0) or (exists $defHash{"PAR"}) ) {
 	my @parents   = $self->getRelated($concept, "PAR");
 	foreach my $parent (@parents) {
-	    my @odefs = $self->getCuiDef($parent);
-	    my $def = "$concept PAR $parent : " . (join " ", @odefs);
-	    push @defs, $def;
+	    my @odefs = $self->getCuiDef($parent, $sabflag);
+	    foreach my $d (@odefs) {
+		my @darray = split/\s+/, $d;
+		my $sab = shift @darray;
+		my $def = "$concept PAR $parent $sab : " . (join " ", @darray);
+		push @defs, $def;
+	    }
 	}
     }
     if( ($dkeys <= 0) or (exists $defHash{"CHD"}) ) {
 	my @children   = $self->getRelated($concept, "CHD");
 	foreach my $child (@children) { 
-	    my @odefs = $self->getCuiDef($child);
-	    my $def = "$concept CHD $child : " . (join " ", @odefs);
-	    push @defs, $def;
+	    my @odefs = $self->getCuiDef($child, $sabflag);
+	    foreach my $d (@odefs) {
+		my @darray = split/\s+/, $d;
+		my $sab = shift @darray;
+		my $def = "$concept CHD $child $sab : " . (join " ", @darray);
+		push @defs, $def;
+	    }
 	}
     }
     if( ($dkeys <= 0) or (exists $defHash{"SIB"}) ) {
 	my @siblings   = $self->getRelated($concept, "SIB");
 	foreach my $sib (@siblings) {
-	    my @odefs = $self->getCuiDef($sib);
-	    my $def = "$concept SIB $sib : " . (join " ", @odefs);
-	    push @defs, $def;
+	    my @odefs = $self->getCuiDef($sib, $sabflag);
+	    foreach my $d (@odefs) {
+		my @darray = split/\s+/, $d;
+		my $sab = shift @darray;
+		my $def = "$concept SIB $sib $sab : " . (join " ", @darray);
+		push @defs, $def;
+	    }
 	}
     }
     if( ($dkeys <= 0) or (exists $defHash{"SYN"}) ) {
 	my @syns   = $self->getRelated($concept, "SYN");
 	foreach my $syn (@syns) {
-	    my @odefs = $self->getCuiDef($syn);
-	    my $def = "$concept SYN $syn : " . (join " ", @odefs);
-	    push @defs, $def;
+	    my @odefs = $self->getCuiDef($syn, $sabflag);
+	    foreach my $d (@odefs) {
+		my @darray = split/\s+/, $d;
+		my $sab = shift @darray;
+		my $def = "$concept SYN $syn $sab : " . (join " ", @darray);
+		push @defs, $def;
+	    }
 	}
     }
     if( ($dkeys <= 0) or (exists $defHash{"RB"}) ) {
 	my @rbs    = $self->getRelated($concept, "RB");
 	foreach my $rb (@rbs) {
-	    my @odefs = $self->getCuiDef($rb);
-	    my $def = "$concept RB $rb : " . (join " ", @odefs);
-	    push @defs, $def;
+	    my @odefs = $self->getCuiDef($rb, $sabflag);
+	    foreach my $d (@odefs) {
+		my @darray = split/\s+/, $d;
+		my $sab = shift @darray;
+		my $def = "$concept RB $rb $sab : " . (join " ", @darray);
+		push @defs, $def;
+	    }
 	}
     }
     if( ($dkeys <= 0) or (exists $defHash{"RN"}) ) {
 	my @rns    = $self->getRelated($concept, "RN");
 	foreach my $rn (@rns) {
-	    my @odefs = $self->getCuiDef($rn);
-	    my $def = "$concept RN $rn : " . (join " ", @odefs);
-	    push @defs, $def;
+	    my @odefs = $self->getCuiDef($rn, $sabflag);
+	    foreach my $d (@odefs) {
+		my @darray = split/\s+/, $d;
+		my $sab = shift @darray;
+		my $def = "$concept RN $rn $sab : " . (join " ", @darray);
+		push @defs, $def;
+	    }
 	}
     }
     if( ($dkeys <= 0) or (exists $defHash{"RO"}) ) {
 	my @ros    = $self->getRelated($concept, "RO");
 	foreach my $ro (@ros) {
-	    my @odefs = $self->getCuiDef($ro);	
-	    my $def = "$concept RO $ro : " . (join " ", @odefs);
-	    push @defs, $def;
+	    my @odefs = $self->getCuiDef($ro, $sabflag);
+	    foreach my $d (@odefs) {
+		my @darray = split/\s+/, $d;
+		my $sab = shift @darray;
+		my $def = "$concept RO $ro $sab : " . (join " ", @darray);
+		push @defs, $def;
+	    }
 	}
     }
     if( ($dkeys <= 0) or (exists $defHash{"CUI"}) ) {
-	my @odefs   = $self->getCuiDef($concept);
-	my $def = "$concept CUI $concept : " . (join " ", @odefs);
-	push @defs, $def;
+	my @odefs   = $self->getCuiDef($concept, $sabflag);
+	foreach my $d (@odefs) {
+	    my @darray = split/\s+/, $d;
+	    my $sab = shift @darray;
+	    my $def = "$concept CUI $concept $sab : " . (join " ", @darray);
+	    push @defs, $def;
+	}
     }
     if( ($dkeys <= 0) or (exists $defHash{"TERM"}) ) {
 	my @odefs = $self->getTermList($concept);
-	my $def = "$concept TERM $concept : " . (join " ", @odefs);
+	my $def = "$concept TERM $concept nosab : " . (join " ", @odefs);
 	push @defs, $def;
     }
     
@@ -4852,6 +4649,7 @@ sub getCuiDef
 {
     my $self    = shift;
     my $concept = shift;
+    my $sabflag = shift;
 
     my $function = "getCuiDef";
     &_debug($function);
@@ -4886,12 +4684,32 @@ sub getCuiDef
 	return undef;
     }
 
-    #  get the definitions
-    my $arrRef = $db->selectcol_arrayref("select DEF from MRDEF where CUI=\'$concept\'");
+    my $hkeys = keys %defsabHash;
+    my $sql = "";
+    if($hkeys > 0) { 
+	my $sources = "(";
+	foreach my $sab (sort keys %defsabHash) { 
+	    $sources .= "SAB=\'$sab\' or ";
+	}
+	chop $sources; chop $sources; chop $sources;
+	$sources .= ")";
 
-    if($self->checkError($function)) { return (); }
+	$sql = qq{ SELECT DEF, SAB FROM MRDEF WHERE CUI=\'$concept\' and $sources };
+    }
+    else {
+	$sql = qq{ SELECT DEF, SAB FROM MRDEF WHERE CUI=\'$concept\' };
+    }
+    my $sth = $db->prepare( $sql );
+    $sth->execute();
+    my($def, $sab);
+    my @defs = ();
+    $sth->bind_columns( undef, \$def, \$sab );
+    while( $sth->fetch() ) {
+	if($sabflag) { push @defs, "$sab $def"; }
+	else         { push @defs, $def;        }
+    } $sth->finish();
     
-    return (@{$arrRef});
+    return (@defs);
 }
 
 #  Subroutine to check if CUI is valid

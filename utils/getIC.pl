@@ -10,7 +10,7 @@ This program takes in a CUI or a term and returns its definitions.
 
 =head1 USAGE
 
-Usage: getIC.pl [OPTIONS] PROPAGATIONFILE [CUI|TERM]
+Usage: getIC.pl [OPTIONS] IC|FREQUENCY FILE [CUI|TERM]
 
 =head1 INPUT
 
@@ -21,9 +21,19 @@ Usage: getIC.pl [OPTIONS] PROPAGATIONFILE [CUI|TERM]
 Concept Unique Identifier (CUI) or a term from the Unified Medical 
 Language System (UMLS)
 
-=head3 PROPAGATIONFILE
+=head3 IC | FREQUENCY FILE
 
-File containing the frequency counts
+File containing the information content or the frequency counts of CUIs in 
+the following format:
+
+    CUI<>freq
+    CUI<>freq
+
+See the example files called icpropagation and icfrequency in the 
+samples/ directory. 
+
+Note: if you are using a frequency file you must specify --icfrequency on 
+the command line because the propagation counts are computed on the fly 
 
 =head2 Optional Arguments:
 
@@ -50,14 +60,6 @@ REL :: exclude PAR, CHD
 If you go to the configuration file directory, there will 
 be example configuration files for the different runs that 
 you have performed.
-
-=head3 --realtime
-
-This option will not create a database of the IC information
-for all of concepts in the specified set of sources and relations 
-in the config file but obtain the information for just the 
-input concept
-
 
 =head3 --debug
 
@@ -156,7 +158,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "debug", "realtime", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s" );
+GetOptions( "version", "help", "debug", "icfrequency", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s" );
 
 
 #  if help is defined, print out help
@@ -180,7 +182,7 @@ if(scalar(@ARGV) < 1) {
     exit;
 }
 
-my $propagationfile = shift;
+my $inputfile = shift;
 
 my $database = "umls";
 if(defined $opt_database) { $database = $opt_database; }
@@ -192,8 +194,12 @@ if(defined $opt_socket)   { $socket   = $opt_socket;   }
 my $umls = "";
 my %option_hash = ();
 
-$option_hash{"propagation"} = $propagationfile;
-
+if(defined $opt_icfrequency) { 
+    $option_hash{"frequency"} = $inputfile;
+}
+else {
+    $option_hash{"propagation"} = $inputfile;
+}
 if(defined $opt_config) {
     $option_hash{"config"} = $opt_config;
 }
@@ -202,9 +208,6 @@ if(defined $opt_verbose) {
 }
 if(defined $opt_debug) {
     $option_hash{"debug"} = $opt_debug;
-}
-if(defined $opt_realtime) {
-    $option_hash{"realtime"} = $opt_realtime;
 }
 if(defined $opt_username) {
     $option_hash{"username"} = $opt_username;
@@ -278,7 +281,7 @@ sub errorCheck
 ##############################################################################
 sub minimalUsageNotes {
     
-    print "Usage: getIC.pl [OPTIONS] PROPAGATIONFILE [CUI|TERM] \n";
+    print "Usage: getIC.pl [OPTIONS] IC | FREQUENCY FILE [CUI|TERM] \n";
     &askHelp();
     exit;
 }
@@ -292,9 +295,14 @@ sub showHelp() {
     print "This is a utility that takes as input a term \n";
     print "or a CUI and returns its information content (IC).\n\n";
   
-    print "Usage: getIC.pl [OPTIONS] PROPAGATIONFILE [CUI|TERM]\n\n";
+    print "Usage: getIC.pl [OPTIONS] IC | FREQUENCY FILE [CUI|TERM]\n\n";
 
     print "Options:\n\n";
+
+    print "--icfrequency            Flag specifying that a frequency file\n";
+    print "                         was specified on the command line\n\n";
+
+    print "--config FILE            Configuration file\n\n";
 
     print "--debug                  Sets the debug flag for testing\n\n";
 
@@ -308,8 +316,6 @@ sub showHelp() {
     
     print "--socket STRING          Socket used by mysql (DEFAULT: /tmp.mysql.sock)\n\n";
 
-    print "--config FILE            Configuration file\n\n";
-
     print "--version                Prints the version number\n\n";
  
     print "--help                   Prints this help message.\n\n";
@@ -319,7 +325,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getIC.pl,v 1.4 2010/03/31 19:38:02 btmcinnes Exp $';
+    print '$Id: getIC.pl,v 1.6 2010/04/15 13:58:10 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

@@ -1,7 +1,6 @@
 
 User Options:
-  --propagation t/options/propagationfile
-   --realtime option set
+  --propagation t/options/icpropagation
 
 UMLS-Interface Configuration Information
   Sources:
@@ -12,4 +11,5 @@ UMLS-Interface Configuration Information
   Database: 
     umls (MMSYS-2009AA-20090325)
 
-The information content of hand (C0018563) is 8.2080
+
+The information content of hand (C0018563) is 8.5293

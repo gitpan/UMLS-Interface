@@ -9,6 +9,7 @@ UMLS-Interface Configuration Information
   Database: 
     umls (MMSYS-2009AA-20090325)
 
+
 The children of hand (C0018563) are: 
   structure of right hand (body structure)(C0230370)
   structure of left hand(C0230371)

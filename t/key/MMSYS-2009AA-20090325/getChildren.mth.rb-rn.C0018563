@@ -8,6 +8,7 @@ UMLS-Interface Configuration Information
   Database: 
     umls (MMSYS-2009AA-20090325)
 
+
 The children of hand (C0018563) are: 
   fingers(C0016129)
   metacarpal bone(C0025526)

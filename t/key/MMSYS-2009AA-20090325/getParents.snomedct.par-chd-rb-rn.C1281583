@@ -11,6 +11,7 @@ UMLS-Interface Configuration Information
   Database: 
     umls (MMSYS-2009AA-20090325)
 
+
 The parents of entire hand (body structure) (C1281583) are: 
   hand structure(C0018563)
   entire body part (body structure)(C1285081)

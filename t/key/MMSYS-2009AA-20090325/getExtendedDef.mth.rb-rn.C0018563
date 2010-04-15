@@ -8,72 +8,28 @@ UMLS-Interface Configuration Information
   Database: 
     umls (MMSYS-2009AA-20090325)
 
+
 The definition(s) of hand (C0018563):
-  1. C0018563 RB C0026860 : The MUSCLES, bones (BONE AND BONES), and CARTILAGE of the body. all of the muscles, the bones, and the cartilages of the body. The system of muscles, tendons, ligaments, bones, joints and associated tissues that move the body and maintain its form.
-  2. C0018563 RB C0037253 : bones and cartilages of the body, including the joints. The framework that supports the soft tissues of vertebrate animals and protects many of their internal organs. The skeletons of vertebrates are made of bone and/or cartilage. Having to do with the skeleton (boney part of the body). Organ system subdivision which consists of the skeleton and the articular system.
-  3. C0018563 RB C0446516 : The superior part of the upper extremity between the SHOULDER and the ELBOW.
-  4. C0018563 RN C0016129 : Subdivision of the hand demarcated from the hand proper by the skin crease in line with the distal edge of finger webs. Examples: thumb, right middle finger, left little finger. one of the five digits of the hand. Subdivision of the hand demarcated from the hand proper by the skin crease in line with the distal edge of finger webs. Examples: thumb, right middle finger, left little finger. Any of the digits of the hand.
-  5. C0018563 RN C0025526 : The five cylindrical bones of the METACARPUS, articulating with the CARPAL BONES proximally and the PHALANGES OF FINGERS distally.
-  6. C0018563 RN C0222222 : 
-  7. C0018563 RN C0222224 : 
-  8. C0018563 RN C0222227 : 
-  9. C0018563 RN C0222228 : 
-  10. C0018563 RN C0222229 : 
-  11. C0018563 RN C0222487 : 
-  12. C0018563 RN C0222489 : 
-  13. C0018563 RN C0222492 : 
-  14. C0018563 RN C0222493 : 
-  15. C0018563 RN C0222494 : 
-  16. C0018563 RN C0223792 : Bone of the hand. Bones that make up the SKELETON of the FINGERS, consisting of two for the THUMB, and three for each of the other fingers.
-  17. C0018563 RN C0224889 : 
-  18. C0018563 RN C0225240 : 
-  19. C0018563 RN C0230370 : 
-  20. C0018563 RN C0230371 : 
-  21. C0018563 RN C0230373 : 
-  22. C0018563 RN C0448064 : The CARPAL BONES; METACARPAL BONES; and FINGER PHALANGES. In each hand there are eight carpal bones, five metacarpal bones, and 14 phalanges.
-  23. C0018563 RN C0459470 : The articulations extending from the WRIST distally to the FINGERS. These include the WRIST JOINT; CARPAL JOINTS; METACARPOPHALANGEAL JOINT; and FINGER JOINT.
-  24. C0018563 RN C1281583 : 
-  25. C0018563 RO C0016539 : The forepart of the foot including the metatarsals and the TOES.
-  26. C0018563 RO C0043262 : The region of the upper limb between the metacarpus and the FOREARM. region of the upper limb between the forearm and the hand.
-  27. C0018563 RO C0177511 : 
-  28. C0018563 RO C0177525 : 
-  29. C0018563 RO C0177535 : 
-  30. C0018563 RO C0177569 : 
-  31. C0018563 RO C0177585 : 
-  32. C0018563 RO C0177587 : 
-  33. C0018563 RO C0177592 : 
-  34. C0018563 RO C0177593 : 
-  35. C0018563 RO C0177597 : 
-  36. C0018563 RO C0177606 : 
-  37. C0018563 RO C0177609 : 
-  38. C0018563 RO C0177705 : 
-  39. C0018563 RO C0177706 : 
-  40. C0018563 RO C0187069 : 
-  41. C0018563 RO C0187138 : 
-  42. C0018563 RO C0187139 : 
-  43. C0018563 RO C0187272 : 
-  44. C0018563 RO C0187278 : 
-  45. C0018563 RO C0187324 : 
-  46. C0018563 RO C0187483 : 
-  47. C0018563 RO C0187495 : 
-  48. C0018563 RO C0187496 : 
-  49. C0018563 RO C0187516 : 
-  50. C0018563 RO C0187589 : 
-  51. C0018563 RO C0187590 : 
-  52. C0018563 RO C0187643 : 
-  53. C0018563 RO C0187661 : 
-  54. C0018563 RO C0187676 : 
-  55. C0018563 RO C0230459 : 
-  56. C0018563 RO C0265594 : 
-  57. C0018563 RO C0444563 : 
-  58. C0018563 RO C0551679 : 
-  59. C0018563 RO C0551680 : 
-  60. C0018563 RO C0699845 : 
-  61. C0018563 RO C0699846 : 
-  62. C0018563 RO C0741992 : 
-  63. C0018563 RO C1261288 : 
-  64. C0018563 RO C1533572 : 
-  65. C0018563 RO C1552290 : 
-  66. C0018563 RO C1552301 : 
-  67. C0018563 CUI C0018563 : part of the upper limb distal to the wrist including carpus, metacarpus and fingers. The distal portion of the upper extremity. It consists of the carpus, metacarpus, and digits.
-  68. C0018563 TERM C0018563 : hand
+  1. C0018563 RB C0026860 MSH : The MUSCLES, bones (BONE AND BONES), and CARTILAGE of the body.
+  2. C0018563 RB C0026860 CSP : all of the muscles, the bones, and the cartilages of the body.
+  3. C0018563 RB C0026860 NCI : The system of muscles, tendons, ligaments, bones, joints and associated tissues that move the body and maintain its form.
+  4. C0018563 RB C0037253 CSP : bones and cartilages of the body, including the joints.
+  5. C0018563 RB C0037253 NCI : The framework that supports the soft tissues of vertebrate animals and protects many of their internal organs. The skeletons of vertebrates are made of bone and/or cartilage.
+  6. C0018563 RB C0037253 NCI : Having to do with the skeleton (boney part of the body).
+  7. C0018563 RB C0037253 FMA : Organ system subdivision which consists of the skeleton and the articular system.
+  8. C0018563 RB C0446516 MSH : The superior part of the upper extremity between the SHOULDER and the ELBOW.
+  9. C0018563 RN C0016129 UWDA : Subdivision of the hand demarcated from the hand proper by the skin crease in line with the distal edge of finger webs. Examples: thumb, right middle finger, left little finger.
+  10. C0018563 RN C0016129 CSP : one of the five digits of the hand.
+  11. C0018563 RN C0016129 FMA : Subdivision of the hand demarcated from the hand proper by the skin crease in line with the distal edge of finger webs. Examples: thumb, right middle finger, left little finger.
+  12. C0018563 RN C0016129 NCI : Any of the digits of the hand.
+  13. C0018563 RN C0025526 MSH : The five cylindrical bones of the METACARPUS, articulating with the CARPAL BONES proximally and the PHALANGES OF FINGERS distally.
+  14. C0018563 RN C0223792 NCI : Bone of the hand.
+  15. C0018563 RN C0223792 MSH : Bones that make up the SKELETON of the FINGERS, consisting of two for the THUMB, and three for each of the other fingers.
+  16. C0018563 RN C0448064 MSH : The CARPAL BONES; METACARPAL BONES; and FINGER PHALANGES. In each hand there are eight carpal bones, five metacarpal bones, and 14 phalanges.
+  17. C0018563 RN C0459470 MSH : The articulations extending from the WRIST distally to the FINGERS. These include the WRIST JOINT; CARPAL JOINTS; METACARPOPHALANGEAL JOINT; and FINGER JOINT.
+  18. C0018563 RO C0016539 MSH : The forepart of the foot including the metatarsals and the TOES.
+  19. C0018563 RO C0043262 MSH : The region of the upper limb between the metacarpus and the FOREARM.
+  20. C0018563 RO C0043262 CSP : region of the upper limb between the forearm and the hand.
+  21. C0018563 CUI C0018563 CSP : part of the upper limb distal to the wrist including carpus, metacarpus and fingers.
+  22. C0018563 CUI C0018563 NCI : The distal portion of the upper extremity. It consists of the carpus, metacarpus, and digits.
+  23. C0018563 TERM C0018563 nosab : hand

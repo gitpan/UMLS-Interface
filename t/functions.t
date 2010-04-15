@@ -21,6 +21,7 @@ my %option_hash = ();
 
 #  set the option hash
 $option_hash{"realtime"} = 1;
+$option_hash{"t"} = 1;
 #$option_hash{"debug"} = 1;
 
 #  connect to the UMLS-Interface

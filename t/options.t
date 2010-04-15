@@ -22,6 +22,7 @@ my $umls        = "";
 
 #  check the realtime option
 $option_hash{"realtime"} = 1;
+$option_hash{"t"} = 1;
 
 $umls = UMLS::Interface->new(\%option_hash);
 if(!$umls) { print "not ok 2\n"; }

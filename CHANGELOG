@@ -1,6 +1,17 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.49 to 0.51
+    1. Modified Interface.pm to accept either a propagation file or a
+    frequency file when returning the information content of a CUI. I also
+    modified the format these files are required.
+
+    2. Added a README in the samples/ directory
+
+    3. Updated documentation
+
+    4. Added example files to the samples/ directory
+
   Changes from version 0.47 to 0.49
     1. Added the getExtendedDefinition function
 

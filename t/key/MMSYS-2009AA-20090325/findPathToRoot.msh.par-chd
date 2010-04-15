@@ -11,6 +11,7 @@ UMLS-Interface Configuration Information
   Database: 
     umls (MMSYS-2009AA-20090325)
 
+
 The paths between hand (C0018563) and the root:
   => C0085567 (**UMLS ROOT**) C1135584 (msh) C1256739 (mesh descriptors) C1256741 (index medicus descriptor) C0002807 (anatomy (mesh category)) C0005898 (regions, body) C0015385 (limbs) C1140618 (limbs, upper) C0018563 (hand) 
 The paths between skull (C0037303) and the root:

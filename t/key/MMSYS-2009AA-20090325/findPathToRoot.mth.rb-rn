@@ -11,6 +11,7 @@ UMLS-Interface Configuration Information
   Database: 
     umls (MMSYS-2009AA-20090325)
 
+
 The paths between cerebrovascular accident (C0038454) and the root:
   => C0085567 (**UMLS ROOT**) C0220961 (metathesaurus names) C0012634 (disease) C0728936 () C0038454 (cerebrovascular accident) 
   => C0085567 (**UMLS ROOT**) C0220961 (metathesaurus names) C0679215 () C0679384 () C0007222 (cardiovascular diseases) C0728936 () C0038454 (cerebrovascular accident) 

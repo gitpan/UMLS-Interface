@@ -1,3 +1,5 @@
 SAB :: include SNOMEDCT
 REL :: include PAR, CHD
 
+DEF :: include PAR, CUI
+SABDEF :: include NCI

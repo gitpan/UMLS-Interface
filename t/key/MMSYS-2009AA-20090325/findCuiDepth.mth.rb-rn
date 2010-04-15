@@ -11,6 +11,7 @@ UMLS-Interface Configuration Information
   Database: 
     umls (MMSYS-2009AA-20090325)
 
+
 The minimum depth of cerebrovascular accident (C0038454) is 5
 The maximum depth of cerebrovascular accident (C0038454) is 14
 The minimum depth of infarction (C0021308) is 5

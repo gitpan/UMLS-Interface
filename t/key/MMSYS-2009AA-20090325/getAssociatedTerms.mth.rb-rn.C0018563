@@ -8,4 +8,5 @@ UMLS-Interface Configuration Information
   Database: 
     umls (MMSYS-2009AA-20090325)
 
+
 ERROR: Input argument (hand) must be a CUI (C\d\d\d\d\d\d\d\d).

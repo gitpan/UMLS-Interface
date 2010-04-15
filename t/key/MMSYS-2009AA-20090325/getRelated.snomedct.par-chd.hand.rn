@@ -9,6 +9,7 @@ UMLS-Interface Configuration Information
   Database: 
     umls (MMSYS-2009AA-20090325)
 
+
 No CUIs are associated with hand (C0018563) given the relation (rn).
 The related (rn) CUIs to hand (C1281583):
   finger structure (C0016129)
