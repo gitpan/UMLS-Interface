@@ -119,10 +119,19 @@ input concept
 This option will bypass any command prompts such as asking 
 if you would like to continue with the index creation. 
 
+=head3 --debugpath FILE
+
+This option prints out the path information for debugging 
+purposes. This option is only really available with the 
+--reatime option because otherwise the path information is 
+stored in the database. You can get this information in a 
+file if you use the --verbose option while creating the index. 
+
+
 =head3 --verbose
 
 This option will print out the table information to the 
-config file that you specified.
+config directory that you specified.
 
 =head3 --cuilist FILE
 
@@ -201,7 +210,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui", "infile=s", "forcerun", "verbose", "cuilist=s", "realtime", "debug", "propagation=s", "length", "info" );
+GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui", "infile=s", "forcerun", "verbose", "debugpath=s", "cuilist=s", "realtime", "debug", "propagation=s", "length", "info" );
 
 
 #  if help is defined, print out help
@@ -269,6 +278,9 @@ if(defined $opt_config) {
 }
 if(defined $opt_forcerun) {
     $option_hash{"forcerun"} = $opt_forcerun;
+}
+if(defined $opt_debugpath) {
+    $option_hash{"debugpath"} = $opt_debugpath;
 }
 if(defined $opt_verbose) {
     $option_hash{"verbose"} = $opt_verbose;
@@ -486,6 +498,9 @@ sub showHelp() {
     print "                         like to continue with the index \n";
     print "                         creation. \n\n";
 
+    print "--debugpath FILE         This option prints out the path\n";
+    print "                         information for debugging purposes\n\n";
+
     print "--verbose                This option prints out the path information\n";
     print "                         to a file in your config directory.\n\n";    
     print "--cuilist FILE           This option takes in a file containing a \n";
@@ -502,7 +517,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findShortestPath.pl,v 1.13 2010/04/09 20:15:55 btmcinnes Exp $';
+    print '$Id: findShortestPath.pl,v 1.14 2010/04/17 18:39:12 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

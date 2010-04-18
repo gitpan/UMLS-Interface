@@ -121,7 +121,6 @@ t/key/MMSYS-2009AA-20090325/getSts.snomedct.par-chd.C0018787
 t/key/MMSYS-2009AA-20090325/getSts.snomedct.par-chd.hand
 t/mysql.t
 t/options.t
-t/options/convert.pl
 t/options/icpropagation
 t/prgs.t
 t/README

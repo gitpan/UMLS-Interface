@@ -53,11 +53,10 @@ The socket your mysql is using. DEFAULT: /tmp/mysql.sock
 
 Database contain UMLS DEFAULT: umls
 
-=head3 --verbose FILE
+=head3 --debugpath FILE
 
-Stores the path information for each of the concepts 
-in FILE during the DFS
-
+This option prints out the path information for debugging 
+purposes. 
 
 =head3 --depth NUMBER
 
@@ -149,7 +148,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "depth=s", "root=s", "verbose=s", "debug");
+GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "depth=s", "root=s", "debugpath=s", "debug");
 
 
 
@@ -252,9 +251,9 @@ while(<CONFIG>) {
 }
 
 #  if the verbose option is turned on open up the table file
-if($opt_verbose) {
+if($opt_debugpath) {
     
-    open(TABLEFILE, ">$opt_verbose") || die "Could not open $opt_verbose";
+    open(TABLEFILE, ">$opt_debugpath") || die "Could not open $opt_debugpath";
 }
 
 #  get the first set of children and start the 
@@ -281,7 +280,7 @@ else {
 }
 
 #  close the file and set the permissions
-if($opt_verbose) {
+if($opt_debugpath) {
     close TABLEFILE;
     my $temp = chmod 0777, $tableFile;
 }
@@ -357,8 +356,8 @@ sub _depthFirstSearch
     
     my $series = join " ", @path;
     
-    #  print information into the file if verbose option is set
-    if($opt_verbose) { print F "$concept\t$d\t$series\n"; }
+    #  print information into the file if debugpath option is set
+    if($opt_debugpath) { print F "$concept\t$d\t$series\n"; }
     
     #  increment the number of paths
     $paths_to_root++;
@@ -443,7 +442,7 @@ sub showHelp() {
     
     print "--socket STRING          Socket used by mysql (DEFAULT: /tmp.mysql.sock)\n\n";
 
-    print "--verbose FILE           Stores path information in FILE\n\n";
+    print "--debugpath FILE         Stores path information in FILE\n\n";
     
     print "--depth NUMBER           Searches up to the specified depth\n";
     print "                         Default searches the complete taxonomy\n\n";
@@ -460,7 +459,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findDFS.pl,v 1.3 2010/03/11 18:14:04 btmcinnes Exp $';
+    print '$Id: findDFS.pl,v 1.5 2010/04/17 18:39:12 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

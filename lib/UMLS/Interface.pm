@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.48 2010/04/15 13:58:10 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.49 2010/04/17 17:58:12 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -50,7 +50,7 @@ use Digest::SHA1  qw(sha1 sha1_hex sha1_base64);
 use bignum qw/hex oct/;
 
 
-$VERSION = '0.51';
+$VERSION = '0.53';
 
 my $debug = 0;
 
@@ -113,6 +113,7 @@ my $option_realtime    = 0;
 my $option_propagation = 0;
 my $option_t           = 0;
 my $option_frequency   = 0;
+my $option_debugpath   = 0;
 
 my %propagationFreq  = ();
 my %propagationHash  = ();
@@ -133,6 +134,7 @@ my %defsabHash      = ();
 my %defHash         = ();
 my %cycleHash       = ();
 
+local(*DEBUG_FILE);
 
 # UMLS-specific stuff ends ----------
 
@@ -337,14 +339,16 @@ sub _setOptions
     my $debugoption  = $params->{'debug'};
     my $t            = $params->{'t'};
     my $frequency    = $params->{'frequency'};
+    my $debugpath    = $params->{'debugpath'};
 
     if(defined $t) {
 	$option_t = 1;
     }
 
     my $output = "";
-    if(defined $forcerun || defined $verbose || defined $cuilist || 
-       defined $realtime || defined $debugoption || defined $propagation) {
+    if(defined $forcerun || defined $verbose     || defined $cuilist   || 
+       defined $realtime || defined $debugoption || defined $debugpath || 
+       defined $propagation) {
 	$output .= "\nUser Options:\n";
     }
 
@@ -366,6 +370,14 @@ sub _setOptions
 	$option_frequency = 1;
 	$frequencyFile    = $frequency;
 	$output .= "  --frequency $frequency\n";
+    }
+
+    #  check if debugpath option 
+    if(defined $debugpath) {
+	$option_debugpath = 1;
+	$output .= "   --debugpath $debugpath\n";
+	open(DEBUG_FILE, ">$debugpath") || 
+	    die "Could not open depthpath file $debugpath\n";
     }
 
     #  check if the realtime option has been identified
@@ -3613,7 +3625,14 @@ sub _cuiToRoot
 	my @intermediate = @{$path};
 	my $series = join " ", @intermediate;
 	push @intermediate, $concept;
-
+	
+        #  print information into the file if debugpath option is set
+	if($option_debugpath) { 
+	    my $d = $#intermediate+1;
+	    print DEBUG_FILE "$concept\t$d\t@intermediate\n"; 
+	}
+    
+    
 	#  check that the concept is not one of the forbidden concepts
 	if($self->_forbiddenConcept($concept)) { 
 	    pop @stack; pop @paths;
@@ -3756,7 +3775,8 @@ sub _depthFirstSearch
 	    if(exists $CuiList{$concept}) {
 		print F "$concept\t$d\t$series\n"; 
 	    }
-	} else { print F "$concept\t$d\t$series\n"; }
+	} 
+	else { print F "$concept\t$d\t$series\n"; }
     }
     
     #  get all the children

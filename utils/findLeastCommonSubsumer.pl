@@ -113,6 +113,14 @@ input concept
 This option will bypass any command prompts such as asking 
 if you would like to continue with the index creation. 
 
+=head3 --debugpath FILE
+
+This option prints out the path information for debugging 
+purposes. This option is only really available with the 
+--reatime option because otherwise the path information is 
+stored in the database. You can get this information in a 
+file if you use the --verbose option while creating the index. 
+
 =head3 --verbose
 
 This option will print out the table information to the 
@@ -196,7 +204,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui", "forcerun", "verbose", "cuilist=s", "realtime", "infile=s", "depth", "propagation=s");
+GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui", "forcerun", "verbose", "debugpath=s", "cuilist=s", "realtime", "infile=s", "depth", "propagation=s");
 
 
 #  if help is defined, print out help
@@ -269,6 +277,9 @@ if(defined $opt_forcerun) {
 }
 if(defined $opt_verbose) {
     $option_hash{"verbose"} = $opt_verbose;
+}
+if(defined $opt_debugpath) {
+    $option_hash{"debugpath"} = $opt_debugpath;
 }
 if(defined $opt_cuilist) {
     $option_hash{"cuilist"} = $opt_cuilist;
@@ -456,8 +467,11 @@ sub showHelp() {
     print "                         like to continue with the index \n";
     print "                         creation. \n\n";
 
-    print "--verbose                This option prints out the path information\n";
-    print "                         to a file in your config directory.\n\n";
+    print "--debugpath FILE         This option prints out the path\n";
+    print "                         information for debugging purposes\n\n";
+
+    print "--verbose                This option prints out table information\n";
+    print "                         to a directory in your config directory.\n\n";
     print "--cuilist FILE           This option takes in a file containing a \n";
     print "                         list of CUIs (one CUI per line) and stores\n";
     print "                         only the path information for those CUIs\n"; 
@@ -472,7 +486,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findLeastCommonSubsumer.pl,v 1.12 2010/03/31 19:38:01 btmcinnes Exp $';
+    print '$Id: findLeastCommonSubsumer.pl,v 1.13 2010/04/17 18:39:12 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

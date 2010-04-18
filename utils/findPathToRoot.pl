@@ -189,7 +189,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "forcerun", "debug", "infile=s", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui", "verbose", "cuilist=s", "realtime", "propagation=s", "info");
+GetOptions( "version", "help", "forcerun", "debug", "infile=s", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui", "verbose", "debugpath=s", "cuilist=s", "realtime", "propagation=s", "info");
 
 
 #  if help is defined, print out help
@@ -238,6 +238,9 @@ if(defined $opt_config) {
 }
 if(defined $opt_forcerun) {
     $option_hash{"forcerun"} = $opt_forcerun;
+}
+if(defined $opt_debugpath) {
+    $option_hash{"debugpath"} = $opt_debugpath;
 }
 if(defined $opt_verbose) {
     $option_hash{"verbose"} = $opt_verbose;
@@ -409,7 +412,10 @@ sub showHelp() {
     print "                         like to continue with the index \n";
     print "                         creation. \n\n";
 
-    print "--verbose                This option prints out the path information\n";
+    print "--debugpath FILE         This option prints out the path\n";
+    print "                         information for debugging purposes\n\n";
+
+    print "--verbose                This option prints out the table information\n";
     print "                         to a file in your config directory.\n\n";    
 
     print "--cuilist FILE           This option takes in a file containing a \n";
@@ -430,7 +436,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findPathToRoot.pl,v 1.16 2010/03/31 19:38:02 btmcinnes Exp $';
+    print '$Id: findPathToRoot.pl,v 1.17 2010/04/17 18:39:12 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 
