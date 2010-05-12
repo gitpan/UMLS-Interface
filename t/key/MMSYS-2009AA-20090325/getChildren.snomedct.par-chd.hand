@@ -13,11 +13,11 @@ UMLS-Interface Configuration Information
 
 
 The children of hand (C0018563) are: 
-  structure of right hand (body structure)(C0230370)
-  structure of left hand(C0230371)
-  [so]hand nec (body structure)(C0555831)
-  hand part (body structure)(C1268199)
-  entire hand (body structure)(C1281583)
+  structure of right hand (body structure) (C0230370) 
+  structure of left hand (C0230371) 
+  [so]hand nec (body structure) (C0555831) 
+  hand part (body structure) (C1268199) 
+  entire hand (body structure) (C1281583) 
 The children of hand (C1281583) are: 
-  entire right hand(C1288948)
-  left hand(C1288949)
+  entire right hand (C1288948) 
+  left hand (C1288949) 

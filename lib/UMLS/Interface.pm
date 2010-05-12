@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.60 2010/05/11 21:48:35 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.63 2010/05/12 15:28:38 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -57,7 +57,7 @@ my $icfinder   = "";
 
 use vars qw($VERSION);
 
-$VERSION = '0.55';
+$VERSION = '0.57';
 
 my $debug = 0;
 
@@ -827,7 +827,7 @@ and general English terms used in the biomedical domain. The
 UMLS-Interface package is set up to access the Metathesaurus
 and the Semantic Network present in a mysql database.
 
-=head2 DATABASE SETUP
+=head1 DATABASE SETUP
 
 The interface assumes that the UMLS is present as a mysql database. 
 The name of the database can be passed as configuration options at 
@@ -850,7 +850,7 @@ tables missing would raise an error.
 A script explaining how to install the UMLS and the mysql database 
 are in the INSTALL file.
 
-=head2 INITIALIZING THE MODULE
+=head1 INITIALIZING THE MODULE
 
 To create an instance of the interface object, using default values
 for all configuration options:
@@ -902,7 +902,7 @@ instantiating an instance. For example:
 More information is provided in the INSTALL file Stage 5 Step D (search for 
 'Step D' and you will find it).
 
-=head2 PARAMETERS
+=head1 PARAMETERS
 
 You can also pass other parameters which controls the functionality 
 of the Interface.pm module. 
@@ -944,7 +944,7 @@ of the Interface.pm module.
                     created on the fly (in realtime). 
                    
 
-=head2 CONFIGURATION FILE
+=head1 CONFIGURATION FILE
 
 There exist a configuration files to specify which source and what 
 relations are to be used. The default source is the Medical Subject 
@@ -1030,6 +1030,28 @@ I know that TERM and CUI are not 'relations' but we needed a way to
 specify them and this seem to make the most sense at the time.
 
 An example of the configuration file can be seen in the samples/ directory. 
+
+=head1 REFERENCING
+
+    If you write a paper that has used UMLS-Interface in some way, we'd 
+    certainly be grateful if you sent us a copy and referenced UMLS-Interface. 
+    We have a published paper that provides a suitable reference:
+
+    @inproceedings{McInnesPP09,
+       title={{UMLS-Interface and UMLS-Similarity : Open Source 
+               Software for Measuring Paths and Semantic Similarity}}, 
+       author={McInnes, B.T. and Pedersen, T. and Pakhomov, S.V.}, 
+       booktitle={Proceedings of the American Medical Informatics 
+                  Association (AMIA) Symposium},
+       year={2009}, 
+       month={November}, 
+       address={San Fransico, CA}
+    }
+
+    This paper is also found in
+    <http://www-users.cs.umn.edu/~bthomson/publications/pubs.html>
+    or
+    <http://www.d.umn.edu/~tpederse/Pubs/amia09.pdf>
 
 =head1 SEE ALSO
 

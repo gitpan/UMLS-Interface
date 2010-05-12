@@ -1,5 +1,5 @@
 SAB :: include SNOMEDCT
 REL :: include PAR, CHD
 
-DEF :: include PAR, CUI
-SABDEF :: include NCI
+RELDEF :: include PAR, CUI, TERM, CUI
+SABDEF :: exclude NCI

@@ -47,6 +47,10 @@ If you go to the configuration file directory, there will
 be example configuration files for the different runs that 
 you have performed.
 
+=head3 --info
+
+This prints out the relation and source information of the parents
+
 =head3 --debug 
 
 Sets the debug flag for testing
@@ -145,7 +149,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-eval(GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s")) or die ("Please check the above mentioned option(s).\n");
+eval(GetOptions( "version", "help", "debug", "info", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s")) or die ("Please check the above mentioned option(s).\n");
 
 
 #  if help is defined, print out help
@@ -252,7 +256,13 @@ foreach my $cui (@c) {
 	print "The parents of $term ($cui) are: \n";
 	foreach my $parent (@parents) {
 	    my ($t) = $umls->getTermList($parent);
-	    print "  $t($parent)\n";
+	    print "  $t($parent) ";
+	    if(defined $opt_info) {
+		my @relations = $umls->getRelationsBetweenCuis($cui, $parent);
+		&errorCheck($umls);
+		print " => @relations";
+	    }
+	    print "\n";
 	} 
     }
     $printFlag = 1;
@@ -297,6 +307,9 @@ sub showHelp() {
 
     print "--debug                  Set the debug flag for testing\n\n";
 
+    print "--info                   This prints out the relation and source\n";
+    print "                         of the parent\n\n";
+
     print "--username STRING        Username required to access mysql\n\n";
 
     print "--password STRING        Password required to access mysql\n\n";
@@ -318,7 +331,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getParents.pl,v 1.8 2010/05/11 20:04:46 btmcinnes Exp $';
+    print '$Id: getParents.pl,v 1.9 2010/05/12 15:41:47 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

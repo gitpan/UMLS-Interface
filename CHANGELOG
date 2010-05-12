@@ -1,6 +1,14 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.55 to 0.57
+    1. add a more complete configuration file in the samples directory
+
+    2. updated the documentation
+
+    3. Added --info option to getParent.pl and getChild.pl to display the
+    source information (similar to the --info option in findPathtoRoot?)
+
   Changes from version 0.53 to 0.55
     1. There are significant changes in the Interface.pm module but if
     everything went well you should not notice them at all. We split the

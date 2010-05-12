@@ -91,10 +91,8 @@ NAME
     names of these databases can be passed as configuration options at
     initialization. However, if the names of the database is not provided at
     initialization, then default values are used -- the database for the
-    UMLS is called 'umls'.
-
-    The UMLS database must contain six tables: 1. MRREL 2. MRCONSO 3. MRSAB
-    4. MRDOC 5. MRDEF 6. SRDEF 7. MRSTY
+    UMLS is called 'umls'. The UMLS database must contain six tables: 1.
+    MRREL 2. MRCONSO 3. MRSAB 4. MRDOC 5. MRDEF 6. SRDEF 7. MRSTY
 
     All other tables in the databases will be ignored, and any of these
     tables missing would raise an error.
@@ -214,9 +212,9 @@ NAME
 
      my @array = $interface->getAllTerms($cui);             
          Returns the list of terms corresponding to a CUI 
-         for all sources
-                                       
- my @array = $interface->getParents($cui);              
+         for all sources 
+
+     my @array = $interface->getParents($cui);              
          Returns the parent of a given CUI
 
      my @array = $interface->getChildren($cui);             
@@ -230,9 +228,9 @@ NAME
 
      my @array$interface->getRelations($cui);           
          Returns all of the relations associated with a CUI in 
-         the sources specified in the configuration file
-                                       
- my @array = $interface->getCuiDef($cui);               
+         the sources specified in the configuration file 
+
+     my @array = $interface->getCuiDef($cui);               
          Returns the definition(s) of a given CUI
 
      my $array = $interface->getExtendedDefinition($cui);
@@ -261,9 +259,9 @@ NAME
          Returns the shortest path between two CUIs
 
      my @array = $interface->findLeastCommonSubsumer($cui1, $cui2); 
-         Returns the least common subsumer between two CUIs
-                                        
- my $min = $interface->findMinimumDepth($cui);        
+         Returns the least common subsumer between two CUIs 
+
+     my $min = $interface->findMinimumDepth($cui);        
          Returns the minimum depth of a CUI given the sources
          and relations specified in the configuration file
 
@@ -272,17 +270,17 @@ NAME
          and relations specified in the configuration file
 
      my $double = $interface->getIC();                   
-         Returns the information content of a CUI
-     
- my $hash = $interface->returnTableNames();        
+         Returns the information content of a CUI 
+
+     my $hash = $interface->returnTableNames();        
          Returns the mysql database table names in human and hex form 
          created by the package for a given configuration
 
      $interface->dropConfigTable();               
          Drops the temporary table created by the UMLS-Interface 
-         module of path information for a specified set of sources
-     
- $interface->removeConfigFiles();
+         module of path information for a specified set of sources 
+
+     $interface->removeConfigFiles();
          Removes the configuration files created by the 
          verbose option
 
@@ -296,9 +294,11 @@ NAME
         We have a published paper that provides a suitable reference:
 
         @inproceedings{McInnesPP09,
-           title={{UMLS-Interface and UMLS-Similarity : Open Source Software for Measuring Paths and Semantic Similarity}}, 
+           title={{UMLS-Interface and UMLS-Similarity : Open Source 
+                   Software for Measuring Paths and Semantic Similarity}}, 
            author={McInnes, B.T. and Pedersen, T. and Pakhomov, S.V.}, 
-           booktitle={Proceedings of the American Medical Informatics Association (AMIA) Symposium},
+           booktitle={Proceedings of the American Medical Informatics 
+                      Association (AMIA) Symposium},
            year={2009}, 
            month={November}, 
            address={San Fransico, CA}
