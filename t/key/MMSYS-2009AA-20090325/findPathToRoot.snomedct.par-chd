@@ -1,6 +1,4 @@
 
-User Options:
-   --realtime option set
 
 UMLS-Interface Configuration Information
   Sources:
@@ -10,6 +8,11 @@ UMLS-Interface Configuration Information
     PAR
   Database: 
     umls (MMSYS-2009AA-20090325)
+
+
+
+PathFinder User Options:
+   --realtime option set
 
 
 The paths between brain tissue structure (C0459385) and the root:

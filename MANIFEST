@@ -3,7 +3,10 @@ FAQ
 FDL.txt
 GPL.txt
 INSTALL
+lib/UMLS/CuiFinder.pm
+lib/UMLS/ICFinder.pm
 lib/UMLS/Interface.pm
+lib/UMLS/PathFinder.pm
 Makefile.PL
 MANIFEST			This list of files
 META.yml
@@ -109,13 +112,13 @@ t/key/MMSYS-2009AA-20090325/getRelations.mth.rb-rn.hand
 t/key/MMSYS-2009AA-20090325/getRelations.snomedct.par-chd-rb-rn.C1281583
 t/key/MMSYS-2009AA-20090325/getRelations.snomedct.par-chd.C0018563
 t/key/MMSYS-2009AA-20090325/getRelations.snomedct.par-chd.hand
-t/key/MMSYS-2009AA-20090325/getSts.bpoc
+t/key/MMSYS-2009AA-20090325/getStDef.bpoc
+t/key/MMSYS-2009AA-20090325/getStDef.patf
 t/key/MMSYS-2009AA-20090325/getSts.msh.par-chd.C0018563
 t/key/MMSYS-2009AA-20090325/getSts.msh.par-chd.hand
 t/key/MMSYS-2009AA-20090325/getSts.mth.rb-rn.C0021308
 t/key/MMSYS-2009AA-20090325/getSts.mth.rb-rn.C0038454
 t/key/MMSYS-2009AA-20090325/getSts.mth.rb-rn.hand
-t/key/MMSYS-2009AA-20090325/getSts.patf
 t/key/MMSYS-2009AA-20090325/getSts.snomedct.par-chd-rb-rn.C0003811
 t/key/MMSYS-2009AA-20090325/getSts.snomedct.par-chd.C0018787
 t/key/MMSYS-2009AA-20090325/getSts.snomedct.par-chd.hand
@@ -138,6 +141,7 @@ t/tests/findShortestPath.mth.rb-rn
 t/tests/findShortestPath.snomedct.par-chd
 t/tests/findShortestPath.snomedct.par-chd-rb-rn
 TODO
+utils/configuration
 utils/findCuiDepth.pl
 utils/findDFS.pl
 utils/findLeastCommonSubsumer.pl

@@ -57,7 +57,7 @@ $root    = "C0038454";
 $file    = "findDFS.mth.rb-rn.$root";
 $keyfile = File::Spec->catfile($keydir, $file);
 $config  = File::Spec->catfile('t', 'config', 'config.mth.rb-rn');
-$output = `$perl $util_prg --config $config --root $root 2>&1`;
+$output = `$perl $util_prg $config --root $root 2>&1`;
 
 if(-e $keyfile) {
     ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";
@@ -81,7 +81,7 @@ $depth   = 5;
 $file    = "findDFS.icd9cm.par-chd.$depth";
 $keyfile = File::Spec->catfile($keydir, $file);
 $config  = File::Spec->catfile('t', 'config', 'config.icd9cm.par-chd');
-$output = `$perl $util_prg --config $config --depth $depth 2>&1`;
+$output = `$perl $util_prg $config --depth $depth 2>&1`;
 
 if(-e $keyfile) {
     ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";
@@ -106,7 +106,7 @@ $root    = "C0175895";
 $file    = "findDFS.snomedct.par-chd.$root";
 $keyfile = File::Spec->catfile($keydir, $file);
 $config  = File::Spec->catfile('t', 'config', 'config.snomedct.par-chd');
-$output = `$perl $util_prg --config $config --root $root 2>&1`;
+$output = `$perl $util_prg $config --root $root 2>&1`;
 
 if(-e $keyfile) {
     ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";

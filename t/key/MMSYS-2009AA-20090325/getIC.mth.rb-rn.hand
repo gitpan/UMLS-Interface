@@ -1,15 +1,18 @@
 
-User Options:
-  --propagation t/options/icpropagation
 
 UMLS-Interface Configuration Information
   Sources:
     MTH
   Relations:
-    RB
     RN
+    RB
   Database: 
     umls (MMSYS-2009AA-20090325)
 
+
+
+
+ICFinder User Options:
+  --propagation t/options/icpropagation
 
 The information content of hand (C0018563) is 8.5293

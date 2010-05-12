@@ -57,10 +57,10 @@ if($obtained ne $expected) { print "no ok 4\n"; }
 else                       { print "ok 4\n";    }
     
 #  check the depth() function
-$expected = 20;
+$expected = 0;
 $obtained = $umls->depth();
-if($obtained != $expected) { print "no ok 5\n"; }
-else                       { print "ok 5\n";    }
+if($obtained < $expected) { print "no ok 5\n"; }
+else                      { print "ok 5\n";    }
 
 #  check the version() function
 $obtained = "";
@@ -146,20 +146,20 @@ if($lcs=~/$expected/) { print "ok 21\n"; }
 else                  { print "not ok 21\n";    }
 
 
-#  check the checkConceptExists() function
-$expected = 0;
-$obtained = $umls->checkConceptExists("C0000005");
+#  check the exists() function
+$expected = 1;
+$obtained = $umls->exists("C0000005");
 if($obtained ne $expected) { print "no ok 22\n"; }
 else                       { print "ok 22\n";    }
-
 $expected = 1;
-$obtained = $umls->checkConceptExists("C0015385");
+$obtained = $umls->exists("C0015385");
 if($obtained != $expected) { print "no ok 23\n"; }
 else                       { print "ok 23\n";    }
 
 #  check the getSt() function
 $expected = "T023";
-$obtained = $umls->getSt("C0018563");
+my @sts = $umls->getSt("C0018563");
+$obtained = join " ", @sts;
 if($obtained ne $expected) { print "no ok 24\n"; }
 else                       { print "ok 24\n";    }
 

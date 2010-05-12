@@ -44,7 +44,7 @@ if(! (-e $keydir) ) {
 }
 
 my $perl     = $^X;
-my $util_prg = File::Spec->catfile('utils', 'getSts.pl');
+my $util_prg = File::Spec->catfile('utils', 'getStDef.pl');
 
 my ($keyfile, $file, $output, $st);
 
@@ -55,7 +55,7 @@ my ($keyfile, $file, $output, $st);
 #  check mth tests for term
 #######################################################################################
 $st    = "bpoc";
-$file    = "getSts.$st";
+$file    = "getStDef.$st";
 $keyfile = File::Spec->catfile($keydir, $file);
 $output = `$perl $util_prg $st 2>&1`;
 
@@ -75,7 +75,7 @@ else {
 }
 
 $st    = "patf";
-$file    = "getSts.$st";
+$file    = "getStDef.$st";
 $keyfile = File::Spec->catfile($keydir, $file);
 $output = `$perl $util_prg $st 2>&1`;
 

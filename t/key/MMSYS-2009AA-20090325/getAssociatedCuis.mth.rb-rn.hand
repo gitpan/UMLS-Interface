@@ -1,12 +1,15 @@
 
+
 UMLS-Interface Configuration Information
   Sources:
     MTH
   Relations:
-    RB
     RN
+    RB
   Database: 
     umls (MMSYS-2009AA-20090325)
+
+
 
 
 The CUIs associated with hand are:

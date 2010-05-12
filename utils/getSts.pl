@@ -120,7 +120,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s" );
+eval(GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s")) or die ("Please check the above mentioned option(s).\n");
 
 
 #  if help is defined, print out help
@@ -190,7 +190,8 @@ die "$errString\n" if($errCode);
 &errorCheck($umls);
 
 my $input = shift;
-my $term  = shift;
+
+my $term  = $input;
 
 my @c = ();
 if($input=~/C[0-9]/) {
@@ -290,7 +291,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getSts.pl,v 1.5 2010/01/20 16:28:31 btmcinnes Exp $';
+    print '$Id: getSts.pl,v 1.7 2010/05/07 20:28:54 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

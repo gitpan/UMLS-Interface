@@ -126,7 +126,7 @@ $term    = "hand";
 $file    = "getRelated.snomedct.par-chd.$term.$rel";
 $keyfile = File::Spec->catfile($keydir, $file);
 $config  = File::Spec->catfile('t', 'config', 'config.snomedct.par-chd');
-$output = `$perl $util_prg --config $config --realtime $term $rel 2>&1`;
+$output = `$perl $util_prg --config $config $term $rel 2>&1`;
 
 if(-e $keyfile) {
     ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";
@@ -147,7 +147,7 @@ $term    = "hand";
 $file    = "getRelated.snomedct.par-chd.$term.$rel";
 $keyfile = File::Spec->catfile($keydir, $file);
 $config  = File::Spec->catfile('t', 'config', 'config.snomedct.par-chd');
-$output = `$perl $util_prg --config $config --realtime $term $rel 2>&1`;
+$output = `$perl $util_prg --config $config $term $rel 2>&1`;
 
 if(-e $keyfile) {
     ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";
@@ -168,7 +168,7 @@ $term    = "hand";
 $file    = "getRelated.snomedct.par-chd.$term.$rel";
 $keyfile = File::Spec->catfile($keydir, $file);
 $config  = File::Spec->catfile('t', 'config', 'config.snomedct.par-chd');
-$output = `$perl $util_prg --config $config --realtime $term $rel 2>&1`;
+$output = `$perl $util_prg --config $config $term $rel 2>&1`;
 
 if(-e $keyfile) {
     ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";
@@ -193,7 +193,7 @@ $term    = "hand";
 $file    = "getRelated.msh.par-chd.$term.$rel";
 $keyfile = File::Spec->catfile($keydir, $file);
 $config  = File::Spec->catfile('t', 'config', 'config.msh.par-chd');
-$output = `$perl $util_prg --config $config --realtime $term $rel 2>&1`;
+$output = `$perl $util_prg --config $config $term $rel 2>&1`;
 
 if(-e $keyfile) {
     ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";
@@ -215,7 +215,7 @@ $term    = "hand";
 $file    = "getRelated.msh.par-chd.$term.$rel";
 $keyfile = File::Spec->catfile($keydir, $file);
 $config  = File::Spec->catfile('t', 'config', 'config.msh.par-chd');
-$output = `$perl $util_prg --config $config --realtime $term $rel 2>&1`;
+$output = `$perl $util_prg --config $config $term $rel 2>&1`;
 
 if(-e $keyfile) {
     ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";
@@ -265,7 +265,7 @@ $cui     = "C0018563";
 $file    = "getRelated.snomedct.par-chd.$cui.$rel";
 $keyfile = File::Spec->catfile($keydir, $file);
 $config  = File::Spec->catfile('t', 'config', 'config.snomedct.par-chd');
-$output  = `$perl $util_prg --config $config --realtime $cui $rel 2>&1`;
+$output  = `$perl $util_prg --config $config $cui $rel 2>&1`;
 
 if(-e $keyfile) {
     ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";
@@ -289,7 +289,7 @@ $cui     = "C1281583";
 $file    = "getRelated.snomedct.par-chd-rb-rn.$cui.$rel";
 $keyfile = File::Spec->catfile($keydir, $file);
 $config  = File::Spec->catfile('t', 'config', 'config.snomedct.par-chd-rb-rn');
-$output = `$perl $util_prg --config $config --realtime $cui $rel 2>&1`;
+$output = `$perl $util_prg --config $config $cui $rel 2>&1`;
 
 if(-e $keyfile) {
     ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";
@@ -314,7 +314,7 @@ $cui     = "C0018563";
 $file    = "getRelated.msh.par-chd.$cui.$rel";
 $keyfile = File::Spec->catfile($keydir, $file);
 $config  = File::Spec->catfile('t', 'config', 'config.msh.par-chd');
-$output  = `$perl $util_prg --config $config --realtime $cui $rel 2>&1`;
+$output  = `$perl $util_prg --config $config $cui $rel 2>&1`;
 
 if(-e $keyfile) {
     ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";

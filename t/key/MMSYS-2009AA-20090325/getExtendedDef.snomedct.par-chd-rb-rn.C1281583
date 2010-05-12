@@ -1,14 +1,17 @@
 
+
 UMLS-Interface Configuration Information
   Sources:
     SNOMEDCT
   Relations:
-    CHD
-    PAR
-    RB
     RN
+    CHD
+    RB
+    PAR
   Database: 
     umls (MMSYS-2009AA-20090325)
+
+
 
 
 The definition(s) of  (C1281583):

@@ -25,6 +25,28 @@ Configuration file containing the set of sources and
 relations to use. The default uses MSH and the PAR/CHD 
 relations.
 
+The format of the configuration file is as follows:
+
+SAB :: <include|exclude> <source1, source2, ... sourceN>
+
+REL :: <include|exclude> <relation1, relation2, ... relationN>
+
+The SAB and REL are for specifing what sources and relations 
+should be used when traversing the UMLS. For example, if we 
+wanted to use the MSH vocabulary with only the RB/RN relations, 
+the configuration file would be:
+
+SAB :: include MSH
+REL :: include RB, RN
+
+or if we wanted to use MSH and use any relation except for PAR/CHD, 
+the configuration would be:
+
+SAB :: include MSH
+REL :: exclude PAR, CHD
+
+An example of the configuration file can be seen in the samples/ directory. 
+
 =head2 Optional Arguments:
 
 =head3 --debug
@@ -89,6 +111,7 @@ The program returns the following:
     7. number of nodes
     8. root
 
+
 =head1 SYSTEM REQUIREMENTS
 
 =over
@@ -148,7 +171,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "depth=s", "root=s", "debugpath=s", "debug");
+eval(GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "depth=s", "root=s", "debugpath=s", "debug")) or die ("Please check the above mentioned option(s).\n");
 
 
 
@@ -250,13 +273,13 @@ while(<CONFIG>) {
     }
 }
 
-#  if the verbose option is turned on open up the table file
+#  if the debugpath option is turned on open up the table file
 if($opt_debugpath) {
     
     open(TABLEFILE, ">$opt_debugpath") || die "Could not open $opt_debugpath";
 }
 
-#  get the first set of children and start the 
+#  get the first set of children and start the dfs
 my @children= $umls->getChildren($root); 
 &errorCheck($umls);
 
@@ -459,7 +482,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findDFS.pl,v 1.5 2010/04/17 18:39:12 btmcinnes Exp $';
+    print '$Id: findDFS.pl,v 1.9 2010/05/11 21:47:47 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

@@ -10,6 +10,8 @@ This program takes in a CUI and returns all of its associated terms either
 given the sources and relations specified in the config file or in the 
 entire UMLS.
 
+
+
 =head1 USAGE
 
 Usage: getAssociatedTerms.pl [OPTIONS] CUI
@@ -146,7 +148,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s" );
+eval(GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s")) or die ("Please check the above mentioned option(s).\n");
 
 
 #  if help is defined, print out help
@@ -298,7 +300,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getAssociatedTerms.pl,v 1.5 2010/03/31 19:38:02 btmcinnes Exp $';
+    print '$Id: getAssociatedTerms.pl,v 1.7 2010/05/11 20:29:07 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

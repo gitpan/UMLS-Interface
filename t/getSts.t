@@ -81,7 +81,7 @@ $term    = "hand";
 $file    = "getSts.snomedct.par-chd.$term";
 $keyfile = File::Spec->catfile($keydir, $file);
 $config  = File::Spec->catfile('t', 'config', 'config.snomedct.par-chd');
-$output = `$perl $util_prg --config $config --realtime $term 2>&1`;
+$output = `$perl $util_prg --config $config $term 2>&1`;
 
 if(-e $keyfile) {
     ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";
@@ -105,7 +105,7 @@ $term    = "hand";
 $file    = "getSts.msh.par-chd.$term";
 $keyfile = File::Spec->catfile($keydir, $file);
 $config  = File::Spec->catfile('t', 'config', 'config.msh.par-chd');
-$output = `$perl $util_prg --config $config --realtime $term 2>&1`;
+$output = `$perl $util_prg --config $config $term 2>&1`;
 
 if(-e $keyfile) {
     ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";
@@ -174,7 +174,7 @@ $cui    = "C0018787";
 $file    = "getSts.snomedct.par-chd.$cui";
 $keyfile = File::Spec->catfile($keydir, $file);
 $config  = File::Spec->catfile('t', 'config', 'config.snomedct.par-chd');
-$output = `$perl $util_prg --config $config --realtime $cui 2>&1`;
+$output = `$perl $util_prg --config $config $cui 2>&1`;
 
 if(-e $keyfile) {
     ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";
@@ -197,7 +197,7 @@ $cui    = "C0003811";
 $file    = "getSts.snomedct.par-chd-rb-rn.$cui";
 $keyfile = File::Spec->catfile($keydir, $file);
 $config  = File::Spec->catfile('t', 'config', 'config.snomedct.par-chd-rb-rn');
-$output = `$perl $util_prg --config $config --realtime $cui 2>&1`;
+$output = `$perl $util_prg --config $config $cui 2>&1`;
 
 if(-e $keyfile) {
     ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";
@@ -221,7 +221,7 @@ $cui    = "C0018563";
 $file    = "getSts.msh.par-chd.$cui";
 $keyfile = File::Spec->catfile($keydir, $file);
 $config  = File::Spec->catfile('t', 'config', 'config.msh.par-chd');
-$output = `$perl $util_prg --config $config --realtime $cui 2>&1`;
+$output = `$perl $util_prg --config $config $cui 2>&1`;
 
 if(-e $keyfile) {
     ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";

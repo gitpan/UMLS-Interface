@@ -48,6 +48,10 @@ If you go to the configuration file directory, there will
 be example configuration files for the different runs that 
 you have performed.
 
+=head3 --sab
+
+Prints the source in which the definition comes from
+
 =head3 --debug
 
 Sets the debug flag for testing
@@ -145,7 +149,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s" );
+eval(GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "sab")) or die ("Please check the above mentioned option(s).\n");
 
 
 #  if help is defined, print out help
@@ -235,9 +239,16 @@ foreach my $cui (@c) {
     }
 
     #  make certain cui exists in this view
-    if($umls->checkConceptExists($cui) == 0) { next; }	
+    if($umls->exists($cui) == 0) { next; }	
 
-    my @defs = $umls->getCuiDef($cui); 
+    my @defs = ();
+    
+    if(defined $opt_sab) { 
+	@defs = $umls->getCuiDef($cui, $opt_sab); 
+    }
+    else {
+	@defs = $umls->getCuiDef($cui); 
+    }
 
     &errorCheck($umls);
 
@@ -291,6 +302,9 @@ sub showHelp() {
 
     print "Options:\n\n";
 
+    print " --sab                   Prints the source in which the \n";
+    print "                         definition originates\n\n";
+
     print "--debug                  Sets the debug flag for testing\n\n";
 
     print "--username STRING        Username required to access mysql\n\n";
@@ -314,7 +328,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getCuiDef.pl,v 1.6 2010/03/31 19:38:02 btmcinnes Exp $';
+    print '$Id: getCuiDef.pl,v 1.9 2010/05/11 21:27:24 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

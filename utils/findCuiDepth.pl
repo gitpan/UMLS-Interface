@@ -133,6 +133,35 @@ Displays the version information.
 
 The minimum depth of a given CUI or term
 
+=head1 CONFIGURATION FILE
+
+There exist a configuration files to specify which source and what 
+relations are to be used. The default source is the Medical Subject 
+Heading (MSH) vocabulary and the default relations are the PAR/CHD 
+relation. 
+
+The format of the configuration file is as follows:
+
+SAB :: <include|exclude> <source1, source2, ... sourceN>
+
+REL :: <include|exclude> <relation1, relation2, ... relationN>
+
+The SAB and REL are for specifing what sources and relations 
+should be used when traversing the UMLS. For example, if we 
+wanted to use the MSH vocabulary with only the RB/RN relations, 
+the configuration file would be:
+
+SAB :: include MSH
+REL :: include RB, RN
+
+or if we wanted to use MSH and use any relation except for PAR/CHD, 
+the configuration would be:
+
+SAB :: include MSH
+REL :: exclude PAR, CHD
+
+An example of the configuration file can be seen in the samples/ directory. 
+
 =head1 SYSTEM REQUIREMENTS
 
 =over
@@ -315,7 +344,7 @@ foreach my $input (@inputarray) {
 	}
 	
 	#  make certain cui exists in this view
-	if(! ($umls->checkConceptExists($cui)) ) {
+	if(! ($umls->exists($cui)) ) {
 	    next; 
 	}
 	
@@ -417,8 +446,10 @@ sub showHelp() {
     print "--debugpath FILE         This option prints out the path\n";
     print "                         information for debugging purposes\n\n";
   
-    print "--verbose                This option prints out the table information to the specified config directory\n";
-    print "                         to a file in your config directory.\n\n";    
+    print "--verbose                This option prints out the table \n";
+    print "                         information to a file in your\n";
+    print "                         specified config directory\n\n";
+
     print "--cuilist FILE           This option takes in a file containing a \n";
     print "                         list of CUIs (one CUI per line) and stores\n";
     print "                         only the path information for those CUIs\n"; 
@@ -433,7 +464,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findCuiDepth.pl,v 1.7 2010/04/17 18:39:12 btmcinnes Exp $';
+    print '$Id: findCuiDepth.pl,v 1.10 2010/05/11 20:29:07 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

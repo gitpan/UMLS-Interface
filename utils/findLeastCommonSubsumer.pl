@@ -204,7 +204,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui", "forcerun", "verbose", "debugpath=s", "cuilist=s", "realtime", "infile=s", "depth", "propagation=s");
+eval(GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "forcerun", "verbose", "debugpath=s", "cuilist=s", "realtime", "infile=s", "depth", "propagation=s")) or die ("Please check the above mentioned option(s).\n");
 
 
 #  if help is defined, print out help
@@ -316,36 +316,41 @@ die "$errString\n" if($errCode);
 foreach my $element (@fileArray) {
     
     my ($input1, $input2) = split/<>/, $element;
-
-    my $flag1 = "cui";
-    my $flag2 = "cui";
-
+    
     my @c1 = ();
     my @c2 = ();
 
     #  check if the input are CUIs or terms
     if( ($input1=~/C[0-9]+/)) {
-	push @c1, $input1;
+	push @c1, $input1; 
     }
     else {
 	@c1 = $umls->getConceptList($input1); 
 	&errorCheck($umls);
-	$flag1 = "term";
     }
     if( ($input2=~/C[0-9]+/)) {
 	push @c2, $input2; 
-	$flag2 = "term";
     }
     else {
 	@c2 = $umls->getConceptList($input2); 
 	&errorCheck($umls);
-	$flag = "term";
     }
     
     my $printFlag = 0;
     
     foreach $cui1 (@c1) {
 	foreach $cui2 (@c2) {
+
+	    my $t1 = $input1;
+	    my $t2 = $input2;
+	    
+	    if($t1=~/C[0-9]+/) { 
+		($t1) = $umls->getTermList($cui1); 
+	    }
+	    
+	    if($t2=~/C[0-9]+/) { 
+		($t2) = $umls->getTermList($cui2); 
+	    }
 
 	    if($umls->validCui($cui1)) {
 		print STDERR "ERROR: The concept ($cui1) is not valid.\n";
@@ -356,27 +361,35 @@ foreach my $element (@fileArray) {
 		exit;
 	    }
 	    
-	    if(($umls->checkConceptExists($cui1) == 0) or
-	       ($umls->checkConceptExists($cui2) == 0) ) { next; }
+	    if(($umls->exists($cui1) == 0) or
+	       ($umls->exists($cui2) == 0) ) { next; }
+	    
+	    if($cui1 eq $cui2) { 
+		print "\nThe least common subsumer between $t1 ($cui1) and $t2 ($cui2) is $t1 ($cui1) ";
+		if(defined $opt_depth) {
+		    my $min = $umls->findMinimumDepth($cui1);
+		    &errorCheck($umls);
+		    my $max = $umls->findMaximumDepth($cui1);
+		    &errorCheck($umls);
+		    print "with a min and max depth of $min and $max ";
+		}
+		if(defined $opt_propagation) {
+		    my $ic = sprintf $floatformat, $umls->getIC($cui1);
+		    &errorCheck($umls);
+		    print "with an IC of $ic ";
+		}
+		print "\n";
+		
+		$printFlag = 1;
+		next;
+	    }
+	    
 	    
 	    my @lcses = $umls->findLeastCommonSubsumer($cui1, $cui2);
-	    
 	    &errorCheck($umls);
-	    
-	    my $t1 = $input1;
-	    my $t2 = $input2;
-	    
-	    if($flag1 eq "term") {
-		($t1) = $umls->getTermList($cui1); 
-	    }
-	    
-	    if($flag2 eq "term") {
-		($t2) = $umls->getTermList($cui2); 
-	    }
-	  	   
-	    
+	    	    
 	    foreach my $lcs (@lcses) {
-
+		
 		my ($t) = $umls->getTermList($lcs);
 		
 		print "\nThe least common subsumer between $t1 ($cui1) and $t2 ($cui2) is $t ($lcs) ";
@@ -486,7 +499,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findLeastCommonSubsumer.pl,v 1.13 2010/04/17 18:39:12 btmcinnes Exp $';
+    print '$Id: findLeastCommonSubsumer.pl,v 1.17 2010/05/11 20:04:46 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

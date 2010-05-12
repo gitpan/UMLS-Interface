@@ -1,4 +1,4 @@
-Unknown option: realtime
+
 
 UMLS-Interface Configuration Information
   Sources:
@@ -10,5 +10,7 @@ UMLS-Interface Configuration Information
     umls (MMSYS-2009AA-20090325)
 
 
-The semantic types associated with  (C0018563):
+
+
+The semantic types associated with hand (C0018563):
   Body Part, Organ, or Organ Component (bpoc)

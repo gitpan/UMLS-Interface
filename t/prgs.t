@@ -45,7 +45,7 @@ like ($output, qr/No term was specified on the command line\s+Type findCuiDepth.
 
 #  check when invalid CUI is entered
 $output = `$perl $util_prg --maximum C98 2>&1`;
-like ($output, qr/Warning \(UMLS\:\:Interface\-\>getTermList\(\)\) \- Incorrect input value \(C98\)/);
+like ($output, qr/Error \(UMLS\:\:CuiFinder\-\>getTermList\(\)\) \- Incorrect input value \(C98\)/);
 
 #######################################################################################
 #  check the findCuiDepth.pl program with --minimum option
@@ -60,7 +60,7 @@ like ($output, qr/No term was specified on the command line\s+Type findCuiDepth.
 
 #  check when invalid CUI is entered
 $output = `$perl $util_prg --minimum C98 2>&1`;
-like ($output, qr/Warning \(UMLS\:\:Interface\-\>getTermList\(\)\) \- Incorrect input value \(C98\)/);
+like ($output, qr/Error \(UMLS\:\:CuiFinder\-\>getTermList\(\)\) \- Incorrect input value \(C98\)/);
 
 #######################################################################################
 #  check the findPathToRoot.pl program
@@ -72,9 +72,9 @@ ok(-e $util_prg);
 $output = `$perl $util_prg 2>&1`;
 like ($output, qr/No term was specified on the command line\s+Type findPathToRoot.pl --help for help.\s+Usage\: findPathToRoot\.pl \[OPTIONS\] \[CUI\|TERM\]\s*/);
 
-#  check when invalid CUI is entered
+#  check when invalid CUI is entered 
 $output = `$perl $util_prg C98 2>&1`;
-like ($output, qr/Warning \(UMLS\:\:Interface\-\>getTermList\(\)\) \- Incorrect input value \(C98\)/);
+like ($output, qr/Error \(UMLS\:\:CuiFinder\-\>getTermList\(\)\) \- Incorrect input value \(C98\)/);
 
 #######################################################################################
 #  check the findShortestPath.pl program
@@ -106,7 +106,7 @@ like ($output, qr/No term was specified on the command line\s+Type getChildren.p
 
 #  check when invalid CUI is entered
 $output = `$perl $util_prg C98 2>&1`;
-like ($output, qr/Warning \(UMLS\:\:Interface\-\>getTermList\(\)\) \- Incorrect input value \(C98\)/);
+like ($output, qr/Error \(UMLS\:\:CuiFinder\-\>getTermList\(\)\) \- Incorrect input value \(C98\)/);
 
 #######################################################################################
 #  check the getParents.pl program
@@ -120,7 +120,7 @@ like ($output, qr/No term was specified on the command line\s+Type getParents.pl
 
 #  check when invalid CUI is entered
 $output = `$perl $util_prg C98 2>&1`;
-like ($output, qr/Warning \(UMLS\:\:Interface\-\>getTermList\(\)\) \- Incorrect input value \(C98\)/);
+like ($output, qr/Error \(UMLS\:\:CuiFinder\-\>getTermList\(\)\) \- Incorrect input value \(C98\)/);
 
 #######################################################################################
 #  check the getCuiDef.pl program
@@ -152,7 +152,7 @@ like ($output, qr/A term and relation must be specified\s+Type getRelated.pl --h
 
 #  check when invalid CUI is entered
 $output = `$perl $util_prg C98 SIB 2>&1`;
-like ($output, qr/Warning \(UMLS\:\:Interface\-\>getTermList\(\)\) \- Incorrect input value \(C98\)/);
+like ($output, qr/Error \(UMLS\:\:CuiFinder\-\>getTermList\(\)\) \- Incorrect input value \(C98\)/);
 
 #######################################################################################
 #  check the getRelations.pl program
@@ -166,7 +166,7 @@ like ($output, qr/No term was specified on the command line\s+Type getRelations.
 
 #  check when invalid CUI is entered
 $output = `$perl $util_prg C98 2>&1`;
-like ($output, qr/Warning \(UMLS\:\:Interface\-\>getTermList\(\)\) \- Incorrect input value \(C98\)/);
+like ($output, qr/Error \(UMLS\:\:CuiFinder\-\>getTermList\(\)\) \- Incorrect input value \(C98\)/);
 
 #######################################################################################
 #  check the getSts.pl program
@@ -180,7 +180,7 @@ like ($output, qr/No term was specified on the command line\s+Type getSts.pl --h
 
 #  check when invalid CUI is entered
 $output = `$perl $util_prg C98 2>&1`;
-like ($output, qr/Warning \(UMLS\:\:Interface\-\>getTermList\(\)\) \- Incorrect input value \(C98\)/);
+like ($output, qr/Error \(UMLS\:\:CuiFinder\-\>getTermList\(\)\) \- Incorrect input value \(C98\)/);
 
 #######################################################################################
 #  check the getStDef.pl program

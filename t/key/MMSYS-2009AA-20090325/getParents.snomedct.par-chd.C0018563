@@ -1,4 +1,4 @@
-Unknown option: realtime
+
 
 UMLS-Interface Configuration Information
   Sources:
@@ -8,6 +8,8 @@ UMLS-Interface Configuration Information
     PAR
   Database: 
     umls (MMSYS-2009AA-20090325)
+
+
 
 
 The parents of hand structure (C0018563) are: 

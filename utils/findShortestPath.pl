@@ -54,10 +54,10 @@ you have performed.
 This prints out the relation and source information between the 
 CUIs in the path
 
-=head3 --propagation FILE
+=head3 --icpropagation FILE
 
-Takes in a propagation file and then outputs the propagation count 
-and information content of the CUIs in the shortest path
+Takes in a propagation file and then outputs the information 
+content of the CUIs in the shortest path
 
 =head3 --length
 
@@ -210,7 +210,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui", "infile=s", "forcerun", "verbose", "debugpath=s", "cuilist=s", "realtime", "debug", "propagation=s", "length", "info" );
+eval(GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui", "infile=s", "forcerun", "verbose", "debugpath=s", "cuilist=s", "realtime", "debug", "icpropagation=s", "length", "info")) or die ("Please check the above mentioned option(s).\n");
 
 
 #  if help is defined, print out help
@@ -264,8 +264,8 @@ if(defined $opt_socket)   { $socket   = $opt_socket;   }
 my $umls = "";
 my %option_hash = ();
 
-if(defined $opt_propagation) {
-    $option_hash{"propagation"} = $opt_propagation;
+if(defined $opt_icpropagation) {
+    $option_hash{"propagation"} = $opt_icpropagation;
 }
 if(defined $opt_debug) {
     $option_hash{"debug"} = $opt_debug;
@@ -359,26 +359,23 @@ foreach my $element (@fileArray) {
 		print STDERR "ERROR: The concept ($cui2) is not valid.\n";
 		exit;
 	    }	
-	    if(! ($umls->checkConceptExists($cui1)) ) {
-		next; 
-	    }
-	    if(! ($umls->checkConceptExists($cui2)) ) {
-		next; 
-	    }
+	    if(! ($umls->exists($cui1)) ) { next; }
+	    if(! ($umls->exists($cui2)) ) { next; }
 		    
-	    my @shortestpaths = $umls->findShortestPath($cui1, $cui2);
-
-	    &errorCheck($umls);
-	   
 	    my $t1 = $input1;
 	    my $t2 = $input2;
 	    
-	    if($flag1 eq "cui") {
-		($t1) = $umls->getTermList($cui1); 
+	    if($flag1 eq "cui") { ($t1) = $umls->getTermList($cui1); }
+	    if($flag2 eq "cui") { ($t2) = $umls->getTermList($cui2); }
+
+	    my @shortestpaths = ();
+	    if($cui1 eq $cui2) { 
+		my $path = "$cui1 $cui2";
+		push @shortestpaths, $path;
 	    }
-	    
-	    if($flag2 eq "cui") {
-		($t2) = $umls->getTermList($cui2); 
+	    else {
+		@shortestpaths = $umls->findShortestPath($cui1, $cui2);
+		&errorCheck($umls);
 	    }
 
 	    foreach my $path (@shortestpaths) {
@@ -404,14 +401,11 @@ foreach my $element (@fileArray) {
 		    
 		    #  if the propagation option was defined print out 
 		    #  the propagation count and IC count
-		    if(defined $opt_propagation) { 
-			my $v1 = $umls->getPropagationCount($concept);
+		    if(defined $opt_icpropagation) { 
+			my $value = $umls->getIC($concept);          
 			&errorCheck($umls);
-			my $pc = sprintf $floatformat, $v1; 
-			my $v2 = $umls->getIC($concept);          
-			&errorCheck($umls);
-			my $ic = sprintf $floatformat, $v2;
-			print "($pc, $ic) ";
+			my $ic = sprintf $floatformat, $value;
+			print "($ic) ";
 		    }     
 		    
 		    #  if the info option was defined print out 
@@ -471,8 +465,8 @@ sub showHelp() {
     print "--info                   Outputs the source and relation information\n";
     print "                         between the concepts in the path\n\n";
 
-    print "--propagation FILE       Outputs the propagation count and the \n";
-    print "                         IC of the CUIs in the path\n\n";
+    print "--icpropagation FILE     Outputs the information content (IC) of\n";
+    print "                         the CUIs in the path\n\n";
 
     print "--infile FILE            File containing TERM or CUI pairs\n\n";
     
@@ -517,7 +511,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findShortestPath.pl,v 1.14 2010/04/17 18:39:12 btmcinnes Exp $';
+    print '$Id: findShortestPath.pl,v 1.18 2010/05/11 20:04:46 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

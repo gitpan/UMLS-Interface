@@ -114,10 +114,10 @@ sources and relations
 This prints out the relation and source information between the 
 CUIs in the path
 
-=head3 --propagation FILE
+=head3 --icpropagation FILE
 
-Takes in a propagation file and then outputs the propagation count 
-and information content of the CUIs in the shortest path
+Takes in a propagation file and then outputs the information 
+content of the CUIs in the shortest path
 
 =head3 --help
 
@@ -189,7 +189,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "forcerun", "debug", "infile=s", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui", "verbose", "debugpath=s", "cuilist=s", "realtime", "propagation=s", "info");
+eval(GetOptions( "version", "help", "forcerun", "debug", "infile=s", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "verbose", "debugpath=s", "cuilist=s", "realtime", "icpropagation=s", "info")) or die ("Please check the above mentioned option(s).\n");
 
 
 #  if help is defined, print out help
@@ -224,8 +224,8 @@ my $umls = "";
 
 my %option_hash = ();
 
-if(defined $opt_propagation) { 
-    $option_hash{"propagation"} = $opt_propagation;
+if(defined $opt_icpropagation) { 
+    $option_hash{"propagation"} = $opt_icpropagation;
 }
 if(defined $opt_debug) {
     $option_hash{"debug"} = $opt_debug;
@@ -315,7 +315,7 @@ foreach my $input (@inputarray) {
 	}
 	
 	#  make certain cui exists in this view
-	if($umls->checkConceptExists($cui) == 0) { next; }
+	if($umls->exists($cui) == 0) { next; }
 	
 	my $paths = $umls->pathsToRoot($cui);
 	&errorCheck($umls);
@@ -332,12 +332,10 @@ foreach my $input (@inputarray) {
 		my $element = $array[$i];
 		my ($t) = $umls->getTermList($element); 
 		print "$element ($t) ";
-		if(defined $opt_propagation) {
-		    my $v1 = $umls->getPropagationCount($element);
-		    my $pc = sprintf $floatformat, $v1;
-		    my $v2 = $umls->getIC($element);
-		    my $ic = sprintf $floatformat, $v2;
-		    print "($pc, $ic) ";
+		if(defined $opt_icpropagation) {
+		    my $value = $umls->getIC($element);
+		    my $ic = sprintf $floatformat, $value;
+		    print "($ic) ";
 		}
 		if( (defined $opt_info) and ($i < $#array) ) {
 		    my $second = $array[$i+1];
@@ -423,8 +421,11 @@ sub showHelp() {
     print "                         only the path information for those CUIs\n"; 
     print "                         rather than for all of the CUIs\n\n";
 
-    print "--propagation FILE       This option returns the propogation count \n";
-    print "                         of the CUIs in the path based on the coutns\n";
+    print "--info                   This prints out the relation and source \n";
+    print "                         information between the CUIs in the path\n\n";
+
+    print "--icpropagation FILE     This option returns the information content\n";
+    print "                         of the CUIs in the path based on the counts\n";
     print "                         from the propogation file\n\n";
 
     print "--version                Prints the version number\n\n";
@@ -436,7 +437,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findPathToRoot.pl,v 1.17 2010/04/17 18:39:12 btmcinnes Exp $';
+    print '$Id: findPathToRoot.pl,v 1.20 2010/05/11 20:04:46 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

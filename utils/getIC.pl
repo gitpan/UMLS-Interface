@@ -10,7 +10,7 @@ This program takes in a CUI or a term and returns its definitions.
 
 =head1 USAGE
 
-Usage: getIC.pl [OPTIONS] IC|FREQUENCY FILE [CUI|TERM]
+Usage: getIC.pl [OPTION] IC | FREQUENCY FILE [CUI|TERM]
 
 =head1 INPUT
 
@@ -36,6 +36,16 @@ Note: if you are using a frequency file you must specify --icfrequency on
 the command line because the propagation counts are computed on the fly 
 
 =head2 Optional Arguments:
+
+=head3 --icfrequency
+
+Flag to indicate that the FILE specified on the command line 
+is a frequency file.
+
+=head3 --icpropagation
+
+Flag to indicate that the FILE specified on the command line 
+is a propagation file. This is the default.
 
 =head3 --config FILE
 
@@ -158,7 +168,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "debug", "icfrequency", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s" );
+eval(GetOptions( "version", "help", "debug", "icfrequency", "icpropagation", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s")) or die ("Please check the above mentioned option(s).\n");
 
 
 #  if help is defined, print out help
@@ -176,8 +186,8 @@ if( defined $opt_version ) {
 }
 
 # At least 1 CUI should be given on the command line.
-if(scalar(@ARGV) < 1) {
-    print STDERR "No term was specified on the command line\n";
+if(scalar(@ARGV) < 2) {
+    print STDERR "No term or file was specified on the command line\n";
     &minimalUsageNotes();
     exit;
 }
@@ -195,10 +205,10 @@ my $umls = "";
 my %option_hash = ();
 
 if(defined $opt_icfrequency) { 
-    $option_hash{"frequency"} = $inputfile;
+    $option_hash{"icfrequency"} = $inputfile;
 }
 else {
-    $option_hash{"propagation"} = $inputfile;
+    $option_hash{"icpropagation"} = $inputfile;
 }
 if(defined $opt_config) {
     $option_hash{"config"} = $opt_config;
@@ -257,7 +267,7 @@ foreach my $cui (@c) {
     }
 
     #  make certain cui exists in this view
-    if($umls->checkConceptExists($cui) == 0) { next; }	
+    if($umls->exists($cui) == 0) { next; }	
 
     my $ic = $umls->getIC($cui); 
     my $pic = sprintf $floatformat, $ic;
@@ -302,6 +312,9 @@ sub showHelp() {
     print "--icfrequency            Flag specifying that a frequency file\n";
     print "                         was specified on the command line\n\n";
 
+    print "--icpropagation          Flag specifiying that a propagation file\n";
+    print "                         was specified (this is the DEFAULT)\n\n";
+
     print "--config FILE            Configuration file\n\n";
 
     print "--debug                  Sets the debug flag for testing\n\n";
@@ -325,7 +338,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getIC.pl,v 1.6 2010/04/15 13:58:10 btmcinnes Exp $';
+    print '$Id: getIC.pl,v 1.10 2010/05/11 20:29:07 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

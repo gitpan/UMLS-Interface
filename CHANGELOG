@@ -1,6 +1,47 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.53 to 0.55
+    1. There are significant changes in the Interface.pm module but if
+    everything went well you should not notice them at all. We split the
+    functionality of Interface.pm into three module: CuiFinder.pm
+    PathFinder.pm ICFinder.pm
+
+        These modules is where the main code is but the 
+        API is still through the Interface.pm module so 
+        you should not have to access these at all.
+
+    2. modification in the findLeatCommonSubsumer.pl out. The output would
+    be as follows: the least common subsumer between C0007286 (C0007286) and
+    hypertrophic arthritis, nos (C0029408) is other soft tissue disorders
+    (disorder) (C0158370). Fix this to print out the term rather than the
+    CUI twice.
+
+    3. Added an addition to forbidden concepts: unapproved attribute
+    (C1443286)
+
+    4. Removed bignum from UMLS-Interface
+
+    5. Know uses SABDEF and RELDEF for the extended definition and
+    definition configuration options rather than DEF
+
+    6. The getCuiDef.pl displays the source of definitions when using the
+    --sab option
+
+    7. The findShortestPath.pl and FindLeastCommonSubsumer.pl do not go
+    through all their path finding when CUI1 and CUI2 are the same
+
+    9. The exclude option is now working for SAB, REL and RELA
+
+    10. Obtains the source in which a relationship exists between two
+    concepts. We now have a method called: getRelationBetweenTwoCuis($cui1,
+    $cui2);
+
+    11. There are new examples of how to go about specifing the config
+    option in the API code. These are in the Interface.pm module
+    documentation under CONFIGURATION FILE and I think the README does a
+    decent job of it now, as well.
+
   Changes from version 0.51 to 0.53
     Added the --debugpath FILE option to the path util/ programs and the
     UMLS-Interface. This option prints out the path information on the fly

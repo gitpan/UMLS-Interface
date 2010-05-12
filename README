@@ -19,11 +19,17 @@ NAME
 
       SAB :: include FMA, MSH
       REL :: include PAR, CHD, RB, RN
-      DEF :: include TERM, CUI, PAR, CHD, RB, RN, SIB, SYN
+      SABDEF :: include MSH, SNOMEDCT
+      RELDEF :: include TERM, CUI, PAR, CHD, RB, RN, SIB, SYN
 
-    where SAB refers to the sources, REL refers to the relations and DEF for
-    the relations to inlclude in the extended definition. Another example
-    can be found in the configuration file in the samples/ directory.
+    where SAB refers to the sources, REL refers to the relations, SABDEF
+    refers to the sources that should be included in the definition when
+    using getCuiDef or getExtendedCuiDef and RELDEF refers ot the relations
+    to include when using getExtendedCuiDef. Another example can be found in
+    the configuration file in the samples/ directory.
+
+    You can also replace 'include' with 'exclude' to specify which sources
+    or relations to exclude.
 
     You can specify a single source, multiple sources or the entire UMLS
     (using the UMLS_ALL option). Keep in mind that the greater the number of
@@ -104,10 +110,6 @@ NAME
       use UMLS::Interface;
       my $interface = UMLS::Interface->new();
 
-    The database onfiguration options can be included in the MySQL my.cnf
-    file. This is preferable. The directions for this are in the INSTALL
-    file. It is Stage 5 Step D.
-
     The following configuration options are also provided though:
 
         'driver'       -> Default value 'mysql'. This option specifies the 
@@ -148,66 +150,141 @@ NAME
         'verbose'      -> This parameter will print out the table information 
                           to a config file in the UMLSINTERFACECONFIG directory
 
+        'config'       -> This parameter contains the location of the config
+                          file
+
+    These are passed through a hash. For example:
+
+        my %options = ();
+        $options{'config'}   = $config;
+        $options{'realtime'} = 1;
+
+        my $interface = UMLS::Interface->new(\%options);
+
+    Keep in mind that the database configuration options can be included in
+    the MySQL my.cnf file. This is preferable. The directions for this are
+    in the INSTALL file. It is Stage 5 Step D.
+
   USING THE MODULE
     Once the object of module is successfully created after following the
     steps described in the previous section, a number of methods can be
-    called upon this object:
+    called upon this object. The output of methods varies:
 
-          getError()                -- Returns the error code and error string
-                                       rom the last method call on the object.
-          root()                    -- Returns the concept ID of the root of 
-                                       the tree.
-          depth()                   -- Returns the depth of the tree.
-          version()                 -- Return the version of UMLS.
-          exists()                  -- Determines if a CUI exists
-          validCui()                -- Checks if CUI is a valid concept
-          getSab()                  -- Returns the list of sources the concept
-                                       exists in
-          getConceptList()          -- Returns the list of all concept IDs for 
-                                       the term in a specified set of sources.
-          getTermsList()            -- Returns the list of terms and their sources 
-                                       given a particular concept ID 
-          getAllTerms()             -- Returns the list of terms corresponding to 
-                                       a particular concept ID for all sources
-          getParents()              -- Returns the parent of a given CUI
-          getChildren()             -- Returns the children of a given CUI
-          getRelated()              -- Returns the relations of a given CUI and 
-                                       relation
-          getRelations              -- Returns all of the relations associated 
-                                       with a specific CUI in a given source
-          pathsToRoot()             -- Returns a list of concept IDs that denote 
-                                       the path from the input concept ID to the 
-                                       root 
-                                       concept of the taxonomy.
-          findShortestPath()        -- Returns the shortest path between two CUIs
-          findLeastCommonSubsumer() -- Returns the least common subsumer between
-                                       two CUIs
-          getCuiDef()               -- Returns the definition(s) of a given CUI
-          dropTable()               -- Drops the temporary table created by 
-                                       the UMLS-Interface module of path 
-                                       information for a specified set of sources
-          findMinimumDepth()        -- Returns the minimum depth of a given CUI
-                                       in the current view of the UMLS
-          findMaximumDepth()        -- Returns the maximum depth of a given CUI
-                                       in the current view of the UMLS
-          getSts()                  -- Returns the TUI(s) of the semantic type(s)
-                                       associated with a given CUI
-          getStAbr()                -- Returns the abbreviation of a semantic 
-                                       type given its cooresponding TUI
-          getStString()             -- Returns the name of the semantic type 
-                                       given its cooresponding abbreviation      
-          getStDef()                -- Returns the definition of a semantic type
-                                       given its cooresponding abbreviation
-          checkConceptExists()      -- Returns true or false (1 or 0) if a 
-                                       concept exists given the current view of 
-                                       the UMLS
-          returnTableNames()        -- Returns the table names in human and 
-                                       hex form created by the package for a 
-                                       given configuration
+     @array refers to an array
+     $array refers to a reference to an array
+     $hash  refers to a reference to a hash
 
-          getIC()                   -- Returns the information content of a CUI
+    The methods are as follows:
 
-          getFreq()                 -- Returns the propogation count of a CUI
+     my ($errorCode, $errorString) = $interface->getError(); 
+        Returns the error code and error string from 
+        the last method call on the object.
+
+     my $root = $interface->root();                
+         Returns the concept ID of the root of the tree.
+
+     my $depth = $interface->depth();
+         Returns the depth of the tree.
+
+     my $version = $interface->version();
+         Return the version of UMLS.
+
+     my $bool = $interface->exists($cui);
+         Determines if a CUI exists
+
+     my $bool = $interface->validCui($cui);
+         Checks if CUI is a valid concept
+
+     my @array = $interface->getSab($cui);
+         Returns the list of sources the concept exists in
+
+     my @array = $interface->getConceptList($term);    
+         Returns the list of all CUIs of a given term
+         from the sources specified in the config file
+
+     my $hash = $interface->getCuiList();              
+         Returns a list of CUIs from the source(s) specified 
+         in the configuration file
+
+     my $array = $interface->getCuisFromSource($sab);       
+         Returns a list of CUIs from a specific source
+
+     my @array = $interface->getTermsList($cui);            
+         Returns the list of terms and their sources given a CUI
+
+     my @array = $interface->getAllTerms($cui);             
+         Returns the list of terms corresponding to a CUI 
+         for all sources
+                                       
+ my @array = $interface->getParents($cui);              
+         Returns the parent of a given CUI
+
+     my @array = $interface->getChildren($cui);             
+         Returns the children of a given CUI
+
+     my @array = $interface->getRelated($cui, $rel);              
+         Returns the CUI relations of a given CUI and relation
+
+     my @array = $interface->getRelationsBetweenCuis($cui1, $cui2);
+         Returns the relations between two CUIs.
+
+     my @array$interface->getRelations($cui);           
+         Returns all of the relations associated with a CUI in 
+         the sources specified in the configuration file
+                                       
+ my @array = $interface->getCuiDef($cui);               
+         Returns the definition(s) of a given CUI
+
+     my $array = $interface->getExtendedDefinition($cui);
+         Returns the extended definition of a given CUI
+
+     my @array = $interface->getSts($cui);                  
+         Returns the TUI(s) of the semantic type(s) associated 
+         with a CUI
+
+     my $abr = $interface->getStAbr($tui);                
+         Returns the abbreviation of a semantic type of a TUI
+
+     my $string = $interface->getStString($abr);             
+         Returns the name of the semantic type given its 
+
+     my $def = $interface->getStDef($abr);                
+         Returns the definition of a semantic type given its 
+         abbreviation
+
+     my $array = $interface->pathsToRoot($cui);             
+         Returns a list of concept IDs that denote the path from 
+         the input CUI to the root using the source and relation 
+         information in the configuration file
+
+     my @array = $interface->findShortestPath($cui1, $cui2);        
+         Returns the shortest path between two CUIs
+
+     my @array = $interface->findLeastCommonSubsumer($cui1, $cui2); 
+         Returns the least common subsumer between two CUIs
+                                        
+ my $min = $interface->findMinimumDepth($cui);        
+         Returns the minimum depth of a CUI given the sources
+         and relations specified in the configuration file
+
+     my $max = $interface->findMaximumDepth($cui);        
+         Returns the maximum depth of a CUI given the sources
+         and relations specified in the configuration file
+
+     my $double = $interface->getIC();                   
+         Returns the information content of a CUI
+     
+ my $hash = $interface->returnTableNames();        
+         Returns the mysql database table names in human and hex form 
+         created by the package for a given configuration
+
+     $interface->dropConfigTable();               
+         Drops the temporary table created by the UMLS-Interface 
+         module of path information for a specified set of sources
+     
+ $interface->removeConfigFiles();
+         Removes the configuration files created by the 
+         verbose option
 
     These methods essentially expose an interface as required by the
     UMLS::Similarity modules. The UMLS::Similarity modules require that any

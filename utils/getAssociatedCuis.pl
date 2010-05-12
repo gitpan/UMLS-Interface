@@ -146,7 +146,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "sab" );
+eval(GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "sab")) or die ("Please check the above mentioned option(s).\n");
 
 
 #  if help is defined, print out help
@@ -234,8 +234,8 @@ else {
     my $i = 1;
     foreach my $cui (@cuis) {
 	if(defined $opt_sab) {
-	    my $sab = $umls->getSab($cui);
-	    print "$i. $cui ($sab)\n"; $i++;
+	    my @sabs = $umls->getSab($cui);
+	    print "$i. $cui (@sabs)\n"; $i++;
 	}
 	else {
 	    print "$i. $cui\n"; $i++;
@@ -300,7 +300,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getAssociatedCuis.pl,v 1.4 2010/03/31 19:38:02 btmcinnes Exp $';
+    print '$Id: getAssociatedCuis.pl,v 1.6 2010/05/11 18:38:33 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

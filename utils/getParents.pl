@@ -145,7 +145,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s" );
+eval(GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s")) or die ("Please check the above mentioned option(s).\n");
 
 
 #  if help is defined, print out help
@@ -239,7 +239,7 @@ foreach my $cui (@c) {
     }
 
     #  make certain cui exists in this view
-    if($umls->checkConceptExists($cui) == 0) { next; }	
+    if($umls->exists($cui) == 0) { next; }	
 
     my @parents= $umls->getParents($cui); 
 
@@ -318,7 +318,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getParents.pl,v 1.6 2010/03/31 19:38:02 btmcinnes Exp $';
+    print '$Id: getParents.pl,v 1.8 2010/05/11 20:04:46 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 
