@@ -8,11 +8,17 @@
 use strict;
 use warnings;
 
-use Test::More tests => 12;
+use Test::More tests => 9;
 
-BEGIN {use_ok 'UMLS::Interface'}
-BEGIN{ use_ok ('File::Spec') }
-BEGIN{ use_ok ('File::Path') }
+use UMLS::Interface;
+use File::Spec;
+use File::Path;
+
+if(!(-d "t")) {   
+    print STDERR "Error - program must be run from UMLS::Similarity\n";
+    print STDERR "directory as : perl t/findCuiDepth.t \n";
+    exit;  
+}
                       
 #  initialize option hash
 my %option_hash = ();
@@ -20,7 +26,6 @@ my %option_hash = ();
 #  set the option hash
 $option_hash{"realtime"} = 1;
 $option_hash{"t"} = 1;
-
 #  connect to the UMLS-Interface
 my $umls = UMLS::Interface->new(\%option_hash);
 ok($umls);
@@ -38,7 +43,7 @@ ok(!($errCode));
 #  set the key directory (create it if it doesn't exist)
 my $keydir = File::Spec->catfile('t','key', $version);
 if(! (-e $keydir) ) {
-    mkpath($keydir);
+    File::Path->make_path($keydir);
 }
 
 my $perl     = $^X;

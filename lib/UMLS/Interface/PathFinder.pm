@@ -1,5 +1,5 @@
-# UMLS::Interface 
-# (Last Updated $Id: PathFinder.pm,v 1.6 2010/05/11 20:29:07 btmcinnes Exp $)
+# UMLS::Interface::PathFinder
+# (Last Updated $Id: PathFinder.pm,v 1.2 2010/05/20 14:54:43 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -38,14 +38,14 @@
 # 59 Temple Place - Suite 330, 
 # Boston, MA  02111-1307, USA.
 
-package UMLS::PathFinder;
+package UMLS::Interface::PathFinder;
 
 use Fcntl;
 use strict;
 use warnings;
 use bytes;
 
-use UMLS::CuiFinder;
+use UMLS::Interface::CuiFinder;
 
 my $debug = 0;
 
@@ -66,7 +66,7 @@ local(*DEBUG_FILE);
 
 # -------------------- Class methods start here --------------------
 
-#  method to create a new UMLS::PathFinder object
+#  method to create a new UMLS::Interface::PathFinder object
 sub new {
     my $self = {};
     my $className = shift;
@@ -86,7 +86,7 @@ sub new {
     return $self;
 }
 
-# Method to initialize the UMLS::Interface object.
+# Method to initialize the UMLS::Interface::PathFinder object.
 sub _initialize
 {
     my $self      = shift;
@@ -102,21 +102,21 @@ sub _initialize
 
     #  check the cuifinder
     if(!$cuifinder) { 
-	return($self->_error($function, "No UMLS::CuiFinder")); 
+	return($self->_error($function, "No UMLS::Interface::CuiFinder")); 
     } $self->{'cuifinder'} = $cuifinder;
     
     #  get the umlsinterfaceindex database from CuiFinder
-    my $sdb = $cuifinder->getIndexDB();
+    my $sdb = $cuifinder->_getIndexDB();
     if(!$sdb) { 
-	return($self->_error($function, "No db sent from UMLS::CuiFinder")); 
+	return($self->_error($function, "No db sent from UMLS::Interface::CuiFinder")); 
     } $self->{'sdb'} = $sdb;
 
     #  get the root
-    $root = $cuifinder->root();
+    $root = $cuifinder->_root();
 
     #  set up the options
     $self->_setOptions($params);
-    if($self->checkError($function)) { return (); }	
+    if($self->_checkError($function)) { return (); }	
 
 }
 
@@ -215,7 +215,7 @@ sub _error {
 
     return undef if(!defined $self || !ref $self);
         
-    $self->{'errorString'} .= "\nError (UMLS::PathFinder->$function()) - ";
+    $self->{'errorString'} .= "\nError (UMLS::Interface::PathFinder->$function()) - ";
     $self->{'errorString'} .= $string;
     $self->{'errorCode'} = 2;
 
@@ -224,7 +224,7 @@ sub _error {
 #  check error function to determine if an error happened within a function
 #  input : $function <- string containing name of function
 #  output: 0|1 indicating if an error has been thrown 
-sub checkError {
+sub _checkError {
     my $self     = shift;
     my $function = shift;
    
@@ -246,7 +246,7 @@ sub checkError {
 #  input : 
 #  output: $returnCode, $returnString <- strings containing 
 #                                        error information
-sub getError {
+sub _getError {
     my $self      = shift;
 
     my $returnCode = $self->{'errorCode'};
@@ -261,7 +261,7 @@ sub getError {
 #  method to return the maximum depth of a taxonomy.
 #  input :
 #  output: $string <- string containing the max depth
-sub depth
+sub _depth
 {
     my $self = shift;
     
@@ -271,11 +271,11 @@ sub depth
     if($option_realtime) {
 	my @array = ();
       	$self->_getMaxDepth($root, 0, \@array);
-	if($self->checkError("_getMaxDepth")) { return (); }
+	if($self->_checkError("_getMaxDepth")) { return (); }
     }
     else {
-	$self->_setDepth();
-	if($self->checkError("_setDepth")) { return (); }
+	$self->_setIndex();
+	if($self->_checkError("_setIndex")) { return (); }
     }
     
     return $max_depth;
@@ -301,7 +301,7 @@ sub _getMaxDepth
     #  set up the cuifinder
     my $cuifinder = $self->{'cuifinder'};
     if(!$cuifinder) { 
-	return($self->_error($function, "UMLS::CuiFinder not defined.")); 
+	return($self->_error($function, "UMLS::Interface::CuiFinder not defined.")); 
     }
 
     #  check concept was obtained
@@ -310,7 +310,7 @@ sub _getMaxDepth
     }
     
     #  check valid concept
-    if($cuifinder->validCui($concept)) { 
+    if($cuifinder->_validCui($concept)) { 
 	return($self->_error($function, "Incorrect input value ($concept).")); 
     }
     
@@ -329,8 +329,8 @@ sub _getMaxDepth
     my $series = join " ", @path;
     
     #  get all the children
-    my @children = $cuifinder->getChildren($concept);
-    if($cuifinder->checkError("UMLS::CuiFinder::getChildren")) { return (); }
+    my @children = $cuifinder->_getChildren($concept);
+    if($cuifinder->_checkError("UMLS::Interface::CuiFinder::getChildren")) { return (); }
     
     #  search through the children
     foreach my $child (@children) {
@@ -344,7 +344,7 @@ sub _getMaxDepth
 	#  if it isn't continue on with the depth first search
 	if($flag == 0) {
 	    $self->_getMaxDepth($child, $d, \@path);
-	    if($self->checkError("_getMaxDepth")) { return (); }
+	    if($self->_checkError("_getMaxDepth")) { return (); }
 	}
     }
 }
@@ -353,14 +353,14 @@ sub _getMaxDepth
 #  the root node of the is-a taxonomy.
 #  input : $concept <- string containing cui
 #  output: $array   <- array reference containing the paths
-sub pathsToRoot
+sub _pathsToRoot
 {
     my $self = shift;
     my $concept = shift;
 
     return () if(!defined $self || !ref $self);
 
-    my $function = "pathsToRoot";
+    my $function = "_pathsToRoot";
     &_debug($function);
 
     #  check concept was obtained
@@ -371,11 +371,11 @@ sub pathsToRoot
     #  get the cuifinder
     my $cuifinder = $self->{'cuifinder'};
     if(!$cuifinder) { 
-	return($self->_error($function, "UMLS::CuiFinder not defined.")); 
+	return($self->_error($function, "UMLS::Interface::CuiFinder not defined.")); 
     }
     
     #  check valid concept
-    if($cuifinder->validCui($concept)) { 
+    if($cuifinder->_validCui($concept)) { 
 	return($self->_error($function, "Incorrect input value ($concept).")); 
     }
          
@@ -384,11 +384,11 @@ sub pathsToRoot
     my $paths = ""; 
     if($option_realtime) {
 	$paths = $self->_getPathsToRootInRealtime($concept);
-	if($self->checkError("_getPathsToRootInRealtime")) { return(); }
+	if($self->_checkError("_getPathsToRootInRealtime")) { return(); }
     }
     else {
 	$paths = $self->_getPathsToRootFromIndex($concept);
-	if($self->checkError("_getPathsToRootFromIndex")) { return(); }
+	if($self->_checkError("_getPathsToRootFromIndex")) { return(); }
     }
     
     return $paths    
@@ -417,13 +417,13 @@ sub _getPathsToRootFromIndex {
     
     #  create the index if it hasn't been created
     $self->_setIndex();
-    if($self->checkError("_setIndex")) { return (); }
+    if($self->_checkError("_setIndex")) { return (); }
     
-    my $tableName = $cuifinder->getTableName();
+    my $tableName = $cuifinder->_getTableName();
     
     #  get the paths from the database
     my $paths = $sdb->selectcol_arrayref("select PATH from $tableName where CUI=\'$concept\'");
-    if($self->checkError($function)) { return (); }
+    if($self->_checkError($function)) { return (); }
     
     return $paths;
 }
@@ -454,10 +454,10 @@ sub _loadIndexFromFile {
     
     #  create the table in the umls database
     $sdb->do("CREATE TABLE IF NOT EXISTS $tableName (CUI char(8), DEPTH int, PATH varchar(450))");
-    if($self->checkError($function)) { return (); }
+    if($self->_checkError($function)) { return (); }
     
     $sdb->do("INSERT INTO tableindex (TABLENAME, HEX) VALUES ('$tableNameHuman', '$tableName')");
-    if($self->checkError($function)) { return (); }   
+    if($self->_checkError($function)) { return (); }   
     
     #  load the path information into the table
     open(TABLE, $tableFile) || die "Could not open $tableFile\n";
@@ -466,13 +466,13 @@ sub _loadIndexFromFile {
 	if($_=~/^\s*$/) { next; }
 	my ($cui, $depth, $path) = split/\t/;
 	$sdb->do("INSERT INTO $tableName (CUI, DEPTH, PATH) VALUES(\'$cui\', '$depth', \'$path\')");
-	if($self->checkError($function)) { return (); }
+	if($self->_checkError($function)) { return (); }
     }
 
     #  create index on the newly formed table
     my $indexname = "$tableName" . "_CUIINDEX";
     my $index = $sdb->do("create index $indexname on $tableName (CUI)");
-    if($self->checkError($function)) { return (); }
+    if($self->_checkError($function)) { return (); }
 }
 
 #  load the index in realtime
@@ -524,23 +524,23 @@ sub _createIndex {
 	    
     #  create the table in the umls database
     $sdb->do("CREATE TABLE IF NOT EXISTS $tableName (CUI char(8), DEPTH int, PATH varchar(450))");
-    if($self->checkError($function)) { return (); }
+    if($self->_checkError($function)) { return (); }
 	    
     #  insert the name into the index
     $sdb->do("INSERT INTO tableindex (TABLENAME, HEX) VALUES ('$tableNameHuman', '$tableName')");
-    if($self->checkError($function)) { return (); }   
+    if($self->_checkError($function)) { return (); }   
 
 
     #  for each root - this is for when we allow multiple roots
     #  right now though we only have one - the umlsRoot
     $self->_initializeDepthFirstSearch($root, 0, $root);
-    if($self->checkError("_initializeDepthFirstSearch")) { return (); }
+    if($self->_checkError("_initializeDepthFirstSearch")) { return (); }
     
     
     #  create index on the newly formed table
     my $indexname = "$tableName" . "_CUIINDEX";
     my $index = $sdb->do("create index $indexname on $tableName (CUI)");
-    if($self->checkError($function)) { return (); }
+    if($self->_checkError($function)) { return (); }
 }
 
 #  creates the index containing all of the path to root information 
@@ -560,12 +560,12 @@ sub _setIndex {
     #  set the cuifinder 
     my $cuifinder = $self->{'cuifinder'}; 
     if(!$cuifinder) { 
-	return($self->_error($function, "UMLS::CuiFinder not defined.")); 
+	return($self->_error($function, "UMLS::Interface::CuiFinder not defined.")); 
     }
     
-    my $tableName      = $cuifinder->getTableName();
-    my $tableFile      = $cuifinder->getTableFile();
-    my $tableNameHuman = $cuifinder->getTableNameHuman();
+    my $tableName      = $cuifinder->_getTableName();
+    my $tableFile      = $cuifinder->_getTableFile();
+    my $tableNameHuman = $cuifinder->_getTableNameHuman();
 
     #  if the path infomration has not been stored
     if(! ($cuifinder->_checkTableExists($tableName))) {
@@ -575,13 +575,13 @@ sub _setIndex {
 	#  if so load it into the database
 	if(-e $tableFile) {
 	    $self->_loadIndexFromFile($tableFile, $tableName, $tableNameHuman);
-	    if($self->checkError("_loadIndexFromFile")) { return (); }
+	    if($self->_checkError("_loadIndexFromFile")) { return (); }
 	}
 	#  otherwise create the tableFile and put the information in the 
 	#  file and the database
 	else  {
 	    $self->_createIndex($tableFile, $tableName, $tableNameHuman);
-	    if($self->checkError("_createIndex")) { return (); }
+	    if($self->_checkError("_createIndex")) { return (); }
 	}	
     }
 
@@ -600,7 +600,7 @@ sub _setMaximumDepth {
     #  set the cuifinder 
     my $cuifinder = $self->{'cuifinder'};
     if(!$cuifinder) { 
-	return($self->_error($function, "UMLS::CuiFinder not defined.")); 
+	return($self->_error($function, "UMLS::Interface::CuiFinder not defined.")); 
     }
     
     #  set the auxillary database that holds the path information
@@ -608,11 +608,11 @@ sub _setMaximumDepth {
     if(!$sdb) { return($self->_error($function, "A db is required.")); }
 
     #  get the table name
-    my $tableName = $cuifinder->getTableName();
+    my $tableName = $cuifinder->_getTableName();
 
     #  set the maximum depth
     my $d = $sdb->selectcol_arrayref("select max(DEPTH) from $tableName");
-    if($self->checkError($function)) { return (); }
+    if($self->_checkError($function)) { return (); }
     
     $max_depth = shift @{$d}; 
 }
@@ -622,7 +622,7 @@ sub _setMaximumDepth {
 #  output: 
 sub _debug {
     my $function = shift;
-    if($debug) { print STDERR "In UMLS::PathFinder::$function\n"; }
+    if($debug) { print STDERR "In UMLS::Interface::PathFinder::$function\n"; }
 }
 
 #  A Depth First Search (DFS) in order to determine 
@@ -650,15 +650,15 @@ sub _initializeDepthFirstSearch
     #  set the cuifinder 
     my $cuifinder = $self->{'cuifinder'};
     if(!$cuifinder) { 
-	return($self->_error($function, "UMLS::CuiFinder not defined.")); 
+	return($self->_error($function, "UMLS::Interface::CuiFinder not defined.")); 
     }
 
     #  check valid concept
-    if($cuifinder->validCui($concept)) { 
+    if($cuifinder->_validCui($concept)) { 
 	return($self->_error($function, "Incorrect input value ($concept).")); 
     }
     
-    my $tableFile = $cuifinder->getTableFile();
+    my $tableFile = $cuifinder->_getTableFile();
 
     #  check if verbose mode
     if($option_verbose) {
@@ -666,8 +666,8 @@ sub _initializeDepthFirstSearch
     }
     
     #  get the children
-    my @children = $cuifinder->getChildren($concept);
-    if($cuifinder->checkError("UMLS::CuiFinder::getChildren")) { return (); }
+    my @children = $cuifinder->_getChildren($concept);
+    if($cuifinder->_checkError("UMLS::Interface::CuiFinder::getChildren")) { return (); }
 
     #  foreach of the children continue down the taxonomy
     foreach my $child (@children) {
@@ -703,7 +703,7 @@ sub _getPathsToRootInRealtime
     #  get the cuifinder
     my $cuifinder = $self->{'cuifinder'};
     if(!$cuifinder) { 
-	return($self->_error($function, "UMLS::CuiFinder not defined.")); 
+	return($self->_error($function, "UMLS::Interface::CuiFinder not defined.")); 
     }
 
     #  set the  storage
@@ -770,8 +770,8 @@ sub _getPathsToRootInRealtime
 	}
 	
 	#  get all the parents
-	my @parents = $cuifinder->getParents($concept);
-	if($cuifinder->checkError("UMLS::CuiFinder::getParents")) { return (); }
+	my @parents = $cuifinder->_getParents($concept);
+	if($cuifinder->_checkError("UMLS::Interface::CuiFinder::getParents")) { return (); }
 	
 	#  if there are no children we are finished with this concept
 	if($#parents < 0) {
@@ -832,11 +832,11 @@ sub _depthFirstSearch
     #  set the cuifinder 
     my $cuifinder = $self->{'cuifinder'};
     if(!$cuifinder) { 
-	return($self->_error($function, "UMLS::CuiFinder not defined.")); 
+	return($self->_error($function, "UMLS::Interface::CuiFinder not defined.")); 
     }
         
     #  check valid concept
-    if($cuifinder->validCui($concept)) { 
+    if($cuifinder->_validCui($concept)) { 
 	return($self->_error($function, "Incorrect input value ($concept).")); 
     }
 
@@ -848,7 +848,7 @@ sub _depthFirstSearch
     if(!$sdb) { return($self->_error($function, "A db is required.")); }
     
     #  get the table name of the index
-    my $tableName = $cuifinder->getTableName();
+    my $tableName = $cuifinder->_getTableName();
     
     #  increment the depth
     $d++;
@@ -863,21 +863,21 @@ sub _depthFirstSearch
     if($option_cuilist) {
     
 	#  check if it is in the cuilist - and if so insert it the cui
-	if($cuifinder->inCuiList($concept)) { 
+	if($cuifinder->_inCuiList($concept)) { 
 	    my $arrRef = $sdb->do("INSERT INTO $tableName (CUI, DEPTH, PATH) VALUES(\'$concept\', '$d', \'$series\')");
-	    if($self->checkError($function)) { return (); }
+	    if($self->_checkError($function)) { return (); }
 	}
     } 
     #  otherwise we are loading all of it
     else {
 	my $arrRef = $sdb->do("INSERT INTO $tableName (CUI, DEPTH, PATH) VALUES(\'$concept\', '$d', \'$series\')");
-	if($self->checkError($function)) { return (); }
+	if($self->_checkError($function)) { return (); }
     }
     
     #  print information into the file if verbose option is set
     if($option_verbose) { 
 	if($option_cuilist) {
-	    if($cuifinder->inCuiList($concept)) { 
+	    if($cuifinder->_inCuiList($concept)) { 
 		print F "$concept\t$d\t$series\n"; 
 	    }
 	} 
@@ -885,8 +885,8 @@ sub _depthFirstSearch
     }
     
     #  get all the children
-    my @children = $cuifinder->getChildren($concept);
-    if($cuifinder->checkError("UMLS::CuiFinder::getChildren")) { return (); }
+    my @children = $cuifinder->_getChildren($concept);
+    if($cuifinder->_checkError("UMLS::Interface::CuiFinder::getChildren")) { return (); }
 
     #  search through the children
     foreach my $child (@children) {
@@ -900,7 +900,7 @@ sub _depthFirstSearch
 	#  if it isn't continue on with the depth first search
 	if($flag == 0) {
 	    $self->_depthFirstSearch($child, $d, \@path,*F);
-	    if($self->checkError("_depthFirstSearch")) { return (); }
+	    if($self->_checkError("_depthFirstSearch")) { return (); }
 	}
     }
 }
@@ -908,14 +908,14 @@ sub _depthFirstSearch
 #  function returns the minimum depth of a concept
 #  input : $cui   <- string containing the cui
 #  output: $depth <- string containing the depth of the cui
-sub findMinimumDepth
+sub _findMinimumDepth
 {
     my $self = shift;
     my $cui  = shift;
 
     return () if(!defined $self || !ref $self);
 
-    my $function = "findMinimumDepth";
+    my $function = "_findMinimumDepth";
     &_debug($function);
 
     #  check concept was obtained
@@ -926,11 +926,11 @@ sub findMinimumDepth
     #  check that the cuifinder is set
     my $cuifinder = $self->{'cuifinder'};
     if(!$cuifinder) { 
-	return($self->_error($function, "UMLS::CuiFinder not defined.")); 
+	return($self->_error($function, "UMLS::Interface::CuiFinder not defined.")); 
     }
     
     #  check valid concept
-    if($cuifinder->validCui($cui)) { 
+    if($cuifinder->_validCui($cui)) { 
 	return($self->_error($function, "Incorrect input value ($cui).")); 
     }
 
@@ -939,7 +939,7 @@ sub findMinimumDepth
     if(!$sdb) { return($self->_error($function, "A db is required.")); }
     
     #  if it is in the parent taxonomy 
-    if($cuifinder->inParentTaxonomy($cui)) { return 1; }
+    if($cuifinder->_inParentTaxonomy($cui)) { return 1; }
     
     my $min = 9999;
     
@@ -956,14 +956,14 @@ sub findMinimumDepth
 	
 	#  set the depth
 	$self->_setIndex();
-	if($self->checkError("_setIndex")) { return (); }
+	if($self->_checkError("_setIndex")) { return (); }
 
 	#  get the table name
-	my $tableName = $cuifinder->getTableName();
+	my $tableName = $cuifinder->_getTableName();
 
 	#  get the minimum depth from the table
 	my $d = $sdb->selectcol_arrayref("select min(DEPTH) from $tableName where CUI=\'$cui\'");
-	if($self->checkError($function)) { return (); }
+	if($self->_checkError($function)) { return (); }
 	
 	#  return the minimum depth
 	$min = shift @{$d}; $min++;
@@ -975,14 +975,14 @@ sub findMinimumDepth
 #  function returns maximum depth of a concept
 #  input : $cui   <- string containing the cui
 #  output: $depth <- string containing the depth of the cui
-sub findMaximumDepth
+sub _findMaximumDepth
 {
     my $self = shift;
     my $cui  = shift;
 
     return () if(!defined $self || !ref $self);
 
-    my $function = "findMaximumDepth";
+    my $function = "_findMaximumDepth";
     &_debug($function);
         
     #  check concept was obtained
@@ -993,11 +993,11 @@ sub findMaximumDepth
     #  check that the cuifinder is set
     my $cuifinder = $self->{'cuifinder'};
     if(!$cuifinder) { 
-	return($self->_error($function, "UMLS::CuiFinder not defined.")); 
+	return($self->_error($function, "UMLS::Interface::CuiFinder not defined.")); 
     }
     
     #  check valid concept
-    if($cuifinder->validCui($cui)) { 
+    if($cuifinder->_validCui($cui)) { 
 	return($self->_error($function, "Incorrect input value ($cui).")); 
     }
 
@@ -1022,14 +1022,14 @@ sub findMaximumDepth
     else {
 	#  set the depth
 	$self->_setIndex();
-	if($self->checkError("_setIndex")) { return (); }
+	if($self->_checkError("_setIndex")) { return (); }
 	
 	#  get the table name
-	my $tableName = $cuifinder->getTableName();
+	my $tableName = $cuifinder->_getTableName();
 		
 	#  get the depth from the table
 	my $d = $sdb->selectcol_arrayref("select max(DEPTH) from $tableName where CUI=\'$cui\'");
-	if($self->checkError($function)) { return (); }
+	if($self->_checkError($function)) { return (); }
 	$max = shift @{$d}; $max++;
     }
 
@@ -1041,7 +1041,7 @@ sub findMaximumDepth
 #  input : $concept1 <- string containing the first cui
 #          $concept2 <- string containing the second
 #  output: @array    <- array containing the shortest path(s)
-sub findShortestPath
+sub _findShortestPath
 {
     my $self     = shift;
     my $concept1 = shift;
@@ -1049,7 +1049,7 @@ sub findShortestPath
 
     return () if(!defined $self || !ref $self);
 
-    my $function = "findShortestPath";
+    my $function = "_findShortestPath";
     &_debug($function);
           
     # undefined input cannot go unpunished.
@@ -1060,19 +1060,19 @@ sub findShortestPath
     #  set up the cuifinder
     my $cuifinder = $self->{'cuifinder'};
     if(!$cuifinder) { 
-	return($self->_error($function, "UMLS::CuiFinder not defined.")); 
+	return($self->_error($function, "UMLS::Interface::CuiFinder not defined.")); 
     }
 
     #  check that the concepts are valid
-    if($cuifinder->validCui($concept1)) { 
+    if($cuifinder->_validCui($concept1)) { 
 	return($self->_error($function, "Incorrect input value ($concept1).")); 
     }
-    if($cuifinder->validCui($concept2)) {
+    if($cuifinder->_validCui($concept2)) {
 	return($self->_error($function, "Incorrect input value ($concept2).")); 
     } 
     
     #  find the shortest path(s) and lcs - there may be more than one
-    my $hash = $self->_findShortestPath($concept1, $concept2);
+    my $hash = $self->_shortestPath($concept1, $concept2);
     
     #  remove the blanks from the paths
     my @paths = (); my $output = "";
@@ -1090,7 +1090,7 @@ sub findShortestPath
 #  input : $concept1 <- string containing the first cui
 #          $concept2 <- string containing the second
 #  output: @array    <- array containing the lcs(es)
-sub findLeastCommonSubsumer {
+sub _findLeastCommonSubsumer {
 
     my $self = shift;
     my $concept1 = shift;
@@ -1098,7 +1098,7 @@ sub findLeastCommonSubsumer {
     
     return () if(!defined $self || !ref $self);
 
-    my $function = "findLeastCommonSubsumer";
+    my $function = "_findLeastCommonSubsumer";
     &_debug($function);
 
     # undefined input cannot go unpunished.
@@ -1109,19 +1109,19 @@ sub findLeastCommonSubsumer {
     #  set up the cuifinder
     my $cuifinder = $self->{'cuifinder'};
     if(!$cuifinder) { 
-	return($self->_error($function, "UMLS::CuiFinder not defined.")); 
+	return($self->_error($function, "UMLS::Interface::CuiFinder not defined.")); 
     }
 
     #  check that the concepts are valid
-    if($cuifinder->validCui($concept1)) { 
+    if($cuifinder->_validCui($concept1)) { 
 	return($self->_error($function, "Incorrect input value ($concept1).")); 
     }
-    if($cuifinder->validCui($concept2)) {
+    if($cuifinder->_validCui($concept2)) {
 	return($self->_error($function, "Incorrect input value ($concept2).")); 
     } 
 
     #  find the shortest path(s) and lcs - there may be more than one
-    my $hash = $self->_findShortestPath($concept1, $concept2);
+    my $hash = $self->_shortestPath($concept1, $concept2);
     
     
     #  get all of the lcses
@@ -1188,7 +1188,7 @@ sub _getLCSfromTrees
 #  output: $hash     <- reference to a hash containing the 
 #                       lcs as the key and the path as the
 #                       value
-sub _findShortestPath
+sub _shortestPath
 {
     my $self = shift;
     my $concept1 = shift;
@@ -1196,7 +1196,7 @@ sub _findShortestPath
 
     return () if(!defined $self || !ref $self);
 
-    my $function = "_findShortestPath";
+    my $function = "_shortestPath";
     &_debug($function);
       
     # undefined input cannot go unpunished.
@@ -1206,22 +1206,22 @@ sub _findShortestPath
     
     #  set up the cuifinder
     my $cuifinder = $self->{'cuifinder'};
-    if(!$cuifinder) { return($self->_error($function, "UMLS::CuiFinder not defined.")); }
+    if(!$cuifinder) { return($self->_error($function, "UMLS::Interface::CuiFinder not defined.")); }
 
     #  check that the concepts are valid
-    if($cuifinder->validCui($concept1)) { 
+    if($cuifinder->_validCui($concept1)) { 
 	return($self->_error($function, "Incorrect input value ($concept1).")); 
     }
-    if($cuifinder->validCui($concept2)) {
+    if($cuifinder->_validCui($concept2)) {
 	return($self->_error($function, "Incorrect input value ($concept2).")); 
     } 
 
     # Get the paths to root for each ofhte concepts
-    my $lTrees = $self->pathsToRoot($concept1);
-    if($self->checkError("pathsToRoot")) { return (); }
+    my $lTrees = $self->_pathsToRoot($concept1);
+    if($self->_checkError("pathsToRoot")) { return (); }
 
-    my $rTrees = $self->pathsToRoot($concept2);
-    if($self->checkError("pathsToRoot")) { return (); }
+    my $rTrees = $self->_pathsToRoot($concept2);
+    if($self->_checkError("pathsToRoot")) { return (); }
    
     # Find the shortest path in these trees.
     my %lcsLengths = ();
@@ -1300,12 +1300,63 @@ __END__
 
 =head1 NAME
 
-UMLS::CuiFinder - Perl interface to support the UMLS::Interface.pm which 
-is an interface to the Unified Medical Language System (UMLS). 
+UMLS::Interface::PathFinder - Perl interface to support the 
+UMLS::Interface.pm which is an interface to the Unified Medical 
+Language System (UMLS). 
 
 =head1 SYNOPSIS
 
-see UMLS::Interface.pm
+ #!/usr/bin/perl
+
+ use UMLS::Interface::CuiFinder;
+
+ use UMLS::Interface::PathFinder;
+ 
+ %params = ();
+
+ $params{'realtime'} = 1;
+
+ $cuifinder = UMLS::Interface::CuiFinder->new(\%params); 
+
+ die "Unable to create UMLS::Interface::CuiFinder object.\n" if(!$cuifinder);
+
+ ($errCode, $errString) = $cuifinder->_getError();
+
+ die "$errString\n" if($errCode);
+ 
+    
+ $pathfinder = UMLS::Interface::PathFinder->new(\%params, $cuifinder); 
+
+ die "Unable to create UMLS::Interface::PathFinder object.\n" if(!$pathfinder);
+
+ ($errCode, $errString) = $pathfinder->_getError();
+
+ die "$errString\n" if($errCode);
+ 
+ $concept = "C0037303";
+
+ $depth = $pathfinder->_depth();
+
+ $array = $pathfinder->_pathsToRoot($concept);
+
+ $depth = $pathfinder->_findMinimumDepth($concept);
+
+ $depth = $pathfinder->_findMaximumDepth($concept);
+
+ $concept1 = "C0037303"; $concept2 = "C0018563";
+
+ @array = $pathfinder->_findShortestPath($concept1, $concept2);
+
+ @array = $pathfinder->_findLeastCommonSubsumer($concept1, $concept2);
+
+ if(!( $pathfinder->_checkError())) {
+     print "No errors: All is good\n";
+ }
+ else {
+     my ($returnCode, $returnString) = $pathfinder->_getError();
+     print STDERR "$returnString\n";
+ }
+
 
 =head1 ABSTRACT
 

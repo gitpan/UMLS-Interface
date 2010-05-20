@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                UMLS-Interface
-version:             0.57
+version:             0.59
 abstract:            Perl interface to the Unified Medical Language System (UMLS)
 license:             ~
 author:              
@@ -8,10 +8,11 @@ author:
 generated_by:        ExtUtils::MakeMaker version 6.42
 distribution_type:   module
 requires:     
-    bignum:                        0
     DBD::mysql:                    0
     DBI:                           0
     Digest::SHA1:                  0
+    File::Path:                    2.08
+    File::Spec:                    3.31
 meta-spec:
     url:     http://module-build.sourceforge.net/META-spec-v1.3.html
     version: 1.3

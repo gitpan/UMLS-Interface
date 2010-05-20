@@ -1,5 +1,5 @@
-# UMLS::Interface 
-# (Last Updated $Id: CuiFinder.pm,v 1.8 2010/05/11 21:47:47 btmcinnes Exp $)
+# UMLS::Interface::CuiFinder
+# (Last Updated $Id: CuiFinder.pm,v 1.2 2010/05/20 14:54:43 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -38,7 +38,7 @@
 # 59 Temple Place - Suite 330, 
 # Boston, MA  02111-1307, USA.
 
-package UMLS::CuiFinder;
+package UMLS::Interface::CuiFinder;
 
 use Fcntl;
 use strict;
@@ -152,58 +152,58 @@ sub _initialize {
     
     #  to store the database object
     my $db = $self->_setDatabase($params);
-    if($self->checkError($function)) { return (); }	
+    if($self->_checkError($function)) { return (); }	
 
     #  set up the options
     $self->_setOptions($params);
-    if($self->checkError($function)) { return (); }	
+    if($self->_checkError($function)) { return (); }	
 
     #  check that all of the tables required exist in the db
     $self->_checkTablesExist();
-    if($self->checkError($function)) { return (); }	
+    if($self->_checkError($function)) { return (); }	
 
     #  set the version information
     $self->_setVersion();
-    if($self->checkError($function)) { return (); }	
+    if($self->_checkError($function)) { return (); }	
 
     #  set the configuration
     $self->_config($config); 
-    if($self->checkError("_config")) { return (); } 
+    if($self->_checkError("_config")) { return (); } 
         
     #  set the umls interface configuration variable
     $self->_setEnvironmentVariable();
-    if($self->checkError("_setEnvironmentVariable")) { return (); }	
+    if($self->_checkError("_setEnvironmentVariable")) { return (); }	
 
     #  set the table and file names for indexing
     $self->_setConfigurationFile();
-    if($self->checkError("_setConfigurationFile")) { return (); }	
+    if($self->_checkError("_setConfigurationFile")) { return (); }	
     
     #  set the configfile
     $self->_setConfigFile();
-    if($self->checkError("_setConfigFile")) { return (); }	
+    if($self->_checkError("_setConfigFile")) { return (); }	
     
     #  load the cuilist if it has been defined
     $self->_loadCuiList($cuilist);
-    if($self->checkError("_loadCuiList")) { return (); }	
+    if($self->_checkError("_loadCuiList")) { return (); }	
 
     #  create the index database
     $self->_createIndexDB();
-    if($self->checkError("_createIndexDB")) { return (); }	
+    if($self->_checkError("_createIndexDB")) { return (); }	
     
     #  connect to the index database
     $self->_connectIndexDB();
-    if($self->checkError("_connectIndexDB")) { return (); }	
+    if($self->_checkError("_connectIndexDB")) { return (); }	
 
     #  set the upper level taxonomy
     $self->_setUpperLevelTaxonomy();
-    if($self->checkError("_setUpperLevelTaxonomy")) { return (); }
+    if($self->_checkError("_setUpperLevelTaxonomy")) { return (); }
 
 }
 
 #  this function returns the umls root
 #  input : 
 #  output: $string <- string containing the root
-sub root {
+sub _root {
     
     return $umlsRoot;
 }
@@ -233,12 +233,12 @@ sub _setUpperLevelTaxonomy  {
     #  check if the parent and child tables exist and if they do just return otherwise create them
     if($self->_checkTableExists($childTable) and $self->_checkTableExists($parentTable)) {
 	$self->_loadTaxonomyArrays();
-	if($self->checkError("_loadTaxonomyArrays")) { return (); }   
+	if($self->_checkError("_loadTaxonomyArrays")) { return (); }   
 	return;
     }
     else {
 	$self->_createTaxonomyTables();
-	if($self->checkError("_createTaxonomyTables")) { return (); }   
+	if($self->_checkError("_createTaxonomyTables")) { return (); }   
     }
     
     
@@ -246,13 +246,13 @@ sub _setUpperLevelTaxonomy  {
     if( (-e $childFile) and (-e $parentFile) ) {
 
 	$self->_loadTaxonomyTables();
-	if($self->checkError("_loadTaxonomyTables")) { return (); }   
+	if($self->_checkError("_loadTaxonomyTables")) { return (); }   
     }
     #  otherwise we need to create them
     else {
        
 	$self->_createUpperLevelTaxonomy();
-	if($self->checkError("_createUpperLevelTaxonomy")) { return (); }   
+	if($self->_checkError("_createUpperLevelTaxonomy")) { return (); }   
     }
 }
 
@@ -297,7 +297,7 @@ sub _createUpperLevelTaxonomy {
 	#  select all the CUI1s from MRREL that have a parent link
 	if($debug) { print STDERR "selecting CUIs from MRREL that have parent link for $sab\n"; }
 	my $parCuis = $db->selectcol_arrayref("select CUI1 from MRREL where ($parentRelations) and (SAB=\'$sab\')");
-        if($self->checkError($function)) { return undef; }
+        if($self->_checkError($function)) { return undef; }
 	
 	#  load the cuis that have a parent into a temporary hash
 	my %parCuisHash = ();
@@ -320,10 +320,10 @@ sub _createUpperLevelTaxonomy {
 	    push @{$childTaxonomyArray{$sab_cui}}, $cui;
 
 	    $sdb->do("INSERT INTO $parentTable (CUI1, CUI2) VALUES ('$cui', '$sab_cui')");	    
-	    if($self->checkError($function)) { return (); }   		
+	    if($self->_checkError($function)) { return (); }   		
 	    
 	    $sdb->do("INSERT INTO $childTable (CUI1, CUI2) VALUES ('$sab_cui', '$cui')");	    
-	    if($self->checkError($function)) { return (); } 
+	    if($self->_checkError($function)) { return (); } 
 	    
 	    #  print this information to the parent and child 
 	    #  file is the verbose option has been set
@@ -345,10 +345,10 @@ sub _createUpperLevelTaxonomy {
 	
 	#  store this information in the database
 	$sdb->do("INSERT INTO $parentTable (CUI1, CUI2) VALUES ('$sab_cui', '$umlsRoot')");	    
-	if($self->checkError($function)) { return (); }   		
+	if($self->_checkError($function)) { return (); }   		
 	
 	$sdb->do("INSERT INTO $childTable (CUI1, CUI2) VALUES ('$umlsRoot', '$sab_cui')"); 
-	if($self->checkError($function)) { return (); }   		
+	if($self->_checkError($function)) { return (); }   		
     }
     
     #  close the parent and child tables if opened
@@ -385,21 +385,21 @@ sub _createTaxonomyTables {
 
     #  create parent table
     $sdb->do("CREATE TABLE IF NOT EXISTS $parentTable (CUI1 char(8), CUI2 char(8))");
-    if($self->checkError($function)) { return (); }
+    if($self->_checkError($function)) { return (); }
     
     #  create child table
     $sdb->do("CREATE TABLE IF NOT EXISTS $childTable (CUI1 char(8), CUI2 char(8))");
-    if($self->checkError($function)) { return (); }
+    if($self->_checkError($function)) { return (); }
     
     #  create the index table if it doesn't already exist
     $sdb->do("CREATE TABLE IF NOT EXISTS tableindex (TABLENAME blob(1000000), HEX char(41))");
-    if($self->checkError($function)) { return (); }
+    if($self->_checkError($function)) { return (); }
     
     #  add them to the index table
     $sdb->do("INSERT INTO tableindex (TABLENAME, HEX) VALUES ('$parentTableHuman', '$parentTable')");
-    if($self->checkError($function)) { return (); }   
+    if($self->_checkError($function)) { return (); }   
     $sdb->do("INSERT INTO tableindex (TABLENAME, HEX) VALUES ('$childTableHuman', '$childTable')");
-    if($self->checkError($function)) { return (); }   
+    if($self->_checkError($function)) { return (); }   
 }    
 
 #  this function loads the taxonomy tables if the
@@ -430,7 +430,7 @@ sub _loadTaxonomyTables {
 	my ($cui1, $cui2) = split/\s+/;
 	
 	my $arrRef = $sdb->do("INSERT INTO $parentTable (CUI1, CUI2) VALUES ('$cui1', '$cui2')");	    
-	if($self->checkError($function)) { return (); }   
+	if($self->_checkError($function)) { return (); }   
     }
     
     #  load child table
@@ -439,7 +439,7 @@ sub _loadTaxonomyTables {
 	if($_=~/^\s*$/) { next; }
 	my ($cui1, $cui2) = split/\s+/;
 	my $arrRef = $sdb->do("INSERT INTO $childTable (CUI1, CUI2) VALUES ('$cui1', '$cui2')");	    
-	if($self->checkError($function)) { return (); }
+	if($self->_checkError($function)) { return (); }
     }
     close PAR; close CHD; 
 }
@@ -548,10 +548,10 @@ sub _connectIndexDB {
 }
 
 #  return the database connection to the umlsinterfaceindex
-sub getIndexDB {
+sub _getIndexDB {
     my $self = shift;
     
-    my $function = "getIndexDB";
+    my $function = "_getIndexDB";
     &_debug($function);
 
     my $sdb = $self->{'sdb'};
@@ -598,7 +598,7 @@ sub _createIndexDB {
     #  if the database doesn't exist create it
     if(! (exists $databases{$indexDB})) {
 	$db->do("create database $indexDB");
-	if($self->checkError($function)) { return (); }   		
+	if($self->_checkError($function)) { return (); }   		
     }
 }
 
@@ -630,7 +630,7 @@ sub _loadCuiList {
 	while(<CUILIST>) {
 	    chomp;
 	    
-	    if($self->validCui($_)) {
+	    if($self->_validCui($_)) {
 		return($self->_error($function, "Incorrect input value ($_) in cuilist."));
 	    }
 	    
@@ -876,7 +876,7 @@ sub _setRelations {
     else {
 	
 	my $arrRef = $db->selectcol_arrayref("select distinct REL from MRREL");
-	if($self->checkError($function)) { return (); }
+	if($self->_checkError($function)) { return (); }
 	@array = @{$arrRef};
     }
     
@@ -953,7 +953,7 @@ sub _setSabDef {
     }
     else {
 	my $arrRef = $db->selectcol_arrayref("select distinct SAB from MRREL");
-	if($self->checkError($function)) { return (); }
+	if($self->_checkError($function)) { return (); }
 	@array = @{$arrRef};
     }
 	
@@ -1015,7 +1015,7 @@ sub _setRelDef {
     else {
 	
 	my $arrRef = $db->selectcol_arrayref("select distinct REL from MRREL");
-	if($self->checkError($function)) { return (); }
+	if($self->_checkError($function)) { return (); }
 	@array = @{$arrRef};
     }
     
@@ -1066,12 +1066,12 @@ sub _setUMLS_ALL {
     if(!$db) { return ($self->_error($function, "A db is required")); }
 	       
     my $arrRef = $db->selectcol_arrayref("select distinct SAB from MRREL where $relations");
-    if($self->checkError($function)) { return (); }
+    if($self->_checkError($function)) { return (); }
     
     foreach my $sab (@{$arrRef}) {
 
 	my $cui = $self->_getSabCui($sab);
-	if($self->checkError($function)) { return (); }
+	if($self->_checkError($function)) { return (); }
 	
 	if(! (defined $cui) ) {
 	    return($self->_error($function, "SAB ($sab) is not valid."));
@@ -1120,7 +1120,7 @@ sub _setSabs {
     }
     else {
 	my $arrRef = $db->selectcol_arrayref("select distinct SAB from MRREL where $relations");
-	if($self->checkError($function)) { return (); }
+	if($self->_checkError($function)) { return (); }
 	@array = @{$arrRef};
     }
 	
@@ -1146,7 +1146,7 @@ sub _setSabs {
 	
 	#  get the sabs cui
 	my $cui = $self->_getSabCui($sab);
-	if($self->checkError($function)) { return (); }
+	if($self->_checkError($function)) { return (); }
 	    
 	if(! (defined $cui) ) {
 	    return($self->_error($function, "SAB ($sab) is not valid."));
@@ -1264,7 +1264,7 @@ sub _setRelas {
     else {
 	
 	my $arrRef = $db->selectcol_arrayref("select distinct RELA from MRREL where ($sources) and $relations");
-	if($self->checkError($function)) { return (); }
+	if($self->_checkError($function)) { return (); }
 	@array = @{$arrRef};
 	shift @array;
     }
@@ -1394,23 +1394,23 @@ sub _config {
 
 	#  set the relations
 	$self->_setRelations($includerelkeys, $excluderelkeys, \%includerel, \%excluderel);
-	if($self->checkError("_setRelations")) { return (); }
+	if($self->_checkError("_setRelations")) { return (); }
 
 	#  set the sabs
 	$self->_setSabs($includesabkeys, $excludesabkeys, \%includesab, \%excludesab);
-	if($self->checkError("_setSabs")) { return (); }
+	if($self->_checkError("_setSabs")) { return (); }
 
 	#  set the relas
 	$self->_setRelas($includerelakeys, $excluderelakeys, \%includerela, \%excluderela);
-	if($self->checkError("_setRelas")) { return (); }
+	if($self->_checkError("_setRelas")) { return (); }
 	
 	#  set the sabs for the CUI and extended definitions
 	$self->_setSabDef($includesabdefkeys, $excludesabdefkeys, \%includesabdef, \%excludesabdef);
-	if($self->checkError("_setSabDef")) { return (); }
+	if($self->_checkError("_setSabDef")) { return (); }
 
 	#  set the rels for the extended definition
 	$self->_setRelDef($includereldefkeys, $excludereldefkeys, \%includereldef, \%excludereldef);
-	if($self->checkError("_setRelDef")) { return (); }
+	if($self->_checkError("_setRelDef")) { return (); }
     }
 
     #  there is no configuration file so set the default
@@ -1418,7 +1418,7 @@ sub _config {
 
 	#  get the CUIs of the default sources
 	my $mshcui = $self->_getSabCui('MSH');
-	if($self->checkError($function)) { return (); }
+	if($self->_checkError($function)) { return (); }
 
 	if(! (defined $mshcui) ) {
 	    return($self->_error($function, "SAB (MSH) is not valid."));
@@ -1644,15 +1644,20 @@ sub _getCuis {
     my $function = "_getCuis";
     &_debug($function);
 
+    #  check input variables
+    if(!$sab) {
+	return($self->_error($function, "Undefined input values."));
+    }
+
     #  set up the database
     my $db = $self->{'db'};
     if(!$db) { return ($self->_error($function, "A db is required")); }
     
     my $allCui1 = $db->selectcol_arrayref("select CUI1 from MRREL where ($relations) and (SAB=\'$sab\')\;");
-    if($self->checkError($function)) { return undef; }
+    if($self->_checkError($function)) { return undef; }
     
     my $allCui2 = $db->selectcol_arrayref("select CUI2 from MRREL where ($relations) and (SAB=\'$sab\')");
-    if($self->checkError($function)) { return undef; }
+    if($self->_checkError($function)) { return undef; }
     
     my @allCuis = (@{$allCui1}, @{$allCui2});
     
@@ -1672,11 +1677,13 @@ sub _getSabCui {
     return undef if(!defined $self || !ref $self);
 
     my $function = "_getSabCui";   
-        
+
+    #  check input variables
     if(!$sab) {
 	return($self->_error($function, "Undefined input values."));
     }
 
+    #  set up db
     my $db = $self->{'db'};
     if(!$db) { return ($self->_error($function, "A db is required")); }
 
@@ -1685,7 +1692,7 @@ sub _getSabCui {
     }
         
     my $arrRef = $db->selectcol_arrayref("select distinct RCUI from MRSAB where RSAB='$sab'");
-    if($self->checkError($function)) { return (); }
+    if($self->_checkError($function)) { return (); }
     
     if(scalar(@{$arrRef}) < 1) {
 	return($self->_error($function, "No CUI info in table MRSAB for $sab."));
@@ -1702,7 +1709,7 @@ sub _getSabCui {
 #  method to destroy the created object.
 #  input : 
 #  output: 
-sub disconnect {
+sub _disconnect {
     my $self = shift;
 
     if($self) {
@@ -1714,7 +1721,7 @@ sub disconnect {
 #  returns the version of the UMLS currently being used
 #  input : 
 #  output: $version <- string containing version
-sub version {
+sub _version {
 
     my $self = shift;
 
@@ -1736,16 +1743,15 @@ sub _error {
 
     return undef if(!defined $self || !ref $self);
         
-    $self->{'errorString'} .= "\nError (UMLS::CuiFinder->$function()) - ";
+    $self->{'errorString'} .= "\nError (UMLS::Interface::CuiFinder->$function()) - ";
     $self->{'errorString'} .= $string;
     $self->{'errorCode'} = 2;
-
 }
 
 #  method that returns the error string and error code from the last method call on the object.
 #  input : 
 #  output: $returnCode, $returnString <- strining containing error information
-sub getError {
+sub _getError {
 
     my $self      = shift;
 
@@ -1763,7 +1769,7 @@ sub getError {
 #  check error function to determine if an error happened within a function
 #  input : $function <- string containing name of function
 #  output: 0|1 indicating if an error has been thrown 
-sub checkError {
+sub _checkError {
     my $self     = shift;
     my $function = shift;
    
@@ -1786,7 +1792,7 @@ sub checkError {
 #  output: 
 sub _debug {
     my $function = shift;
-    if($debug) { print STDERR "In UMLS::CuiFinder::$function\n"; }
+    if($debug) { print STDERR "In UMLS::Interface::CuiFinder::$function\n"; }
 }
 
 ######################################################################
@@ -1796,12 +1802,12 @@ sub _debug {
 #  Method to check if a concept ID exists in the database.
 #  input : $concept <- string containing a cui
 #  output: 1 | 0    <- integers indicating if the cui exists
-sub exists {    
+sub _exists {    
 
     my $self = shift;
     my $concept = shift;
 
-    my $function = "exists";
+    my $function = "_exists";
 
     return undef if(!defined $self || !ref $self);
 
@@ -1809,7 +1815,7 @@ sub exists {
     if(!$concept) { return($self->_error($function, "Undefined input values.")); }
     
     #  check if valid concept
-    if($self->validCui($concept)) { return($self->_error($function, "Incorrect input value ($concept).")); }
+    if($self->_validCui($concept)) { return($self->_error($function, "Incorrect input value ($concept).")); }
     
     #  set up database
     my $db = $self->{'db'};
@@ -1822,7 +1828,7 @@ sub exists {
     else {
 	$arrRef = $db->selectcol_arrayref("select distinct CUI from MRCONSO where CUI='$concept' and $sources");
     }
-    if($self->checkError($function)) { return (); }
+    if($self->_checkError($function)) { return (); }
     
     my $count = scalar(@{$arrRef});
     if($count > $count) {
@@ -1837,7 +1843,7 @@ sub exists {
 #  input : $concept <- string containing cui
 #          $rel     <- string containing a relation
 #  output: @array   <- array of cuis
-sub getRelated {
+sub _getRelated {
 
     my $self    = shift;
     my $concept = shift;
@@ -1846,14 +1852,14 @@ sub getRelated {
     
     return undef if(!defined $self || !ref $self);
 
-    my $function = "getRelated";
+    my $function = "_getRelated";
     #&_debug($function);
 
     #  verify the input
     if(!$concept || !$rel) {
 	return($self->_error($function,"Undefined input values."));
     }
-    if($self->validCui($concept)) {
+    if($self->_validCui($concept)) {
 	return($self->_error($function, "Incorrect input value ($concept)."));
     } 
 
@@ -1871,7 +1877,7 @@ sub getRelated {
     }
     
     #  check for errors
-    if($self->checkError($function)) { return(); }
+    if($self->_checkError($function)) { return(); }
     
     return @{$arrRef};
 }
@@ -1880,17 +1886,17 @@ sub getRelated {
 #  in the configuration file by the user
 #  input : $concept <- string containing cui
 #  output: @array   <- array of terms (strings)
-sub getTermList {
+sub _getTermList {
     my $self = shift;
     my $concept = shift;
 
     return undef if(!defined $self || !ref $self);
     
-    my $function = "getTermList";
+    my $function = "_getTermList";
     
     #  verify the input
     if(!$concept) { return($self->_error($function,"Undefined input values.")); }    
-    if($self->validCui($concept)) {
+    if($self->_validCui($concept)) {
 	return($self->_error($function, "Incorrect input value ($concept)."));
     } 
 
@@ -1915,7 +1921,7 @@ sub getTermList {
     else {
 	$arrRef = $db->selectcol_arrayref("select distinct STR from MRCONSO where CUI='$concept' and ($sources or SAB='SRC')");
     }
-    if($self->checkError($function)) { return(); }
+    if($self->_checkError($function)) { return(); }
 
     #  clean up the strings a bit and lower case them
     foreach my $tr (@{$arrRef}) {
@@ -1932,20 +1938,20 @@ sub getTermList {
 #  method to map terms to any concept in the umls
 #  input : $concept <- string containing cui
 #  output: @array   <- array containing terms (strings)
-sub getAllTerms {
+sub _getAllTerms {
     my $self = shift;
     my $concept = shift;
 
     return undef if(!defined $self || !ref $self);
     
-    my $function = "getAllTerms";
+    my $function = "_getAllTerms";
     &_debug($function);
 
     #  verify the input
     if(!$concept) {
 	return($self->_error($function,"Undefined input values.")); 
     }    
-    if($self->validCui($concept)) {
+    if($self->_validCui($concept)) {
 	return($self->_error($function, "Incorrect input value ($concept)."));
     } 
 
@@ -1991,14 +1997,14 @@ sub getAllTerms {
 #  specified in the configuration file
 #  input : $term  <- string containing a term
 #  output: @array <- array containing cuis
-sub getConceptList {
+sub _getConceptList {
 
     my $self = shift;
     my $term = shift;
 
     return undef if(!defined $self || !ref $self);
 
-    my $function = "getConceptList";
+    my $function = "_getConceptList";
     &_debug($function);
     
     #  verify the input
@@ -2016,7 +2022,7 @@ sub getConceptList {
     else {
 	$arrRef = $db->selectcol_arrayref("select distinct CUI from MRCONSO where STR='$term' and ($sources)");
     }
-    if($self->checkError($function)) { return (); }
+    if($self->_checkError($function)) { return (); }
     
     return @{$arrRef};
 }
@@ -2025,7 +2031,7 @@ sub getConceptList {
 #  specified in the configuration file
 #  input : 
 #  output: $hash <- reference to a hash containing cuis
-sub getCuiList {
+sub _getCuiList {
 
     my $self = shift;
     
@@ -2078,12 +2084,12 @@ sub getCuiList {
 #  returns the cuis from a specified source
 #  input : $sab   <- string contain the sources abbreviation
 #  output: $array <- reference to an array containing cuis
-sub getCuisFromSource {
+sub _getCuisFromSource {
     
     my $self = shift;
     my $sab = shift;
     
-    my $function = "getCuisFromSource";
+    my $function = "_getCuisFromSource";
 
     &_debug($function);
 
@@ -2096,20 +2102,20 @@ sub getCuisFromSource {
 #  returns all of the sources specified that contain the given cui
 #  input : $concept <- string containing the cui 
 #  output: @array   <- array contain the sources (abbreviations)
-sub getSab {
+sub _getSab {
 
     my $self = shift;
     my $concept = shift;
 
     return undef if(!defined $self || !ref $self);
  
-    my $function = "getSab";
+    my $function = "_getSab";
     
     #  verify the input arguments
     if(!$concept) {
 	return($self->_error($function,"Undefined input values.")); 
     } 
-    if($self->validCui($concept)) {
+    if($self->_validCui($concept)) {
 	return($self->_error($function, "Incorrect input value ($concept)."));
     } 
     
@@ -2119,7 +2125,7 @@ sub getSab {
 
     #  select all the sources from the mrconso table
     my $arrRef = $db->selectcol_arrayref("select distinct SAB from MRCONSO where CUI='$concept'");    
-    if($self->checkError($function)) { return (); }
+    if($self->_checkError($function)) { return (); }
     
     return @{$arrRef};
 }
@@ -2129,20 +2135,20 @@ sub getSab {
 #  the default are the RN and CHD relations
 #  input : $concept <- string containing a cui
 #  output: @array   <- array containing a list of cuis
-sub getChildren {
+sub _getChildren {
 
     my $self    = shift;
     my $concept = shift;
 
     return undef if(!defined $self || !ref $self);
     
-    my $function = "getChildren";
+    my $function = "_getChildren";
     
     #  verify the input parameters
     if(!$concept) {
 	return($self->_error($function,"Undefined input values.")); 
     }
-    if($self->validCui($concept)) {
+    if($self->_validCui($concept)) {
 	return($self->_error($function, "Incorrect input value ($concept)."));
     } 
 
@@ -2165,7 +2171,7 @@ sub getChildren {
 	else {
 	    $arrRef = $db->selectcol_arrayref("select distinct CUI2 from MRREL where CUI1='$concept' and ($childRelations) and ($sources) and CUI2!='$concept'");
 	}
-	if($self->checkError($function)) { return (); }
+	if($self->_checkError($function)) { return (); }
 	
 	#  add the children in the upper taxonomy
 	my @array = ();
@@ -2185,20 +2191,20 @@ sub getChildren {
 #  the default are the PAR and RB relations.
 #  input : $concept <- string containing cui
 #  outupt: @array   <- array containing a list of cuis
-sub getParents {
+sub _getParents {
 
     my $self    = shift;
     my $concept = shift;
 
     return undef if(!defined $self || !ref $self);
     
-    my $function = "getParents";
+    my $function = "_getParents";
 
     #  verify the input
     if(!$concept) {
 	return($self->_error($function,"Undefined input values.")); 
     }
-    if($self->validCui($concept)) {
+    if($self->_validCui($concept)) {
 	return($self->_error($function, "Incorrect input value ($concept)."));
     } 
 
@@ -2224,7 +2230,7 @@ sub getParents {
 	else {
 	    $arrRef = $db->selectcol_arrayref("select distinct CUI2 from MRREL where CUI1='$concept' and ($parentRelations) and ($sources) and CUI2!='$concept'");
 	}
-	if($self->checkError($function)) { return (); }
+	if($self->_checkError($function)) { return (); }
 
 	#  add the parents in the upper taxonomy
 	my @array = ();
@@ -2241,21 +2247,21 @@ sub getParents {
 #  returns the relations of a concept given a specified source
 #  input : $concept <- string containing a cui
 #  output: @array   <- array containing strings of relations
-sub getRelations {
+sub _getRelations {
 
     my $self    = shift;
     my $concept = shift;
 
     return undef if(!defined $self || !ref $self);
     
-    my $function = "getRelations";
+    my $function = "_getRelations";
     &_debug($function);
 
     #  verify the input
     if(!$concept) {
 	return($self->_error($function,"Undefined input values.")); 
     }
-    if($self->validCui($concept)) {
+    if($self->_validCui($concept)) {
 	return($self->_error($function, "Incorrect input value ($concept)."));
     }
     
@@ -2271,7 +2277,7 @@ sub getRelations {
     else {
 	$arrRef = $db->selectcol_arrayref("select distinct REL from MRREL where (CUI1='$concept' or CUI2='$concept') and ($sources) and CUI1!=CUI2");
     }
-    if($self->checkError($function)) { return (); }
+    if($self->_checkError($function)) { return (); }
 
     return @{$arrRef};
 }
@@ -2280,22 +2286,22 @@ sub getRelations {
 #  input : $concept1 <- string containing a cui
 #        : $concept2 <- string containing a cui
 #  output: @array    <- array containing the relations
-sub getRelationsBetweenCuis
-{
+sub _getRelationsBetweenCuis {
+
     my $self     = shift;
     my $concept1 = shift;
     my $concept2 = shift;
 
     return undef if(!defined $self || !ref $self);
     
-    my $function = "getRelationBetweenCuis";
+    my $function = "_getRelationBetweenCuis";
     &_debug($function);
 
     #  verify input
     if( (!$concept1) or (!$concept2) ) {
 	return($self->_error($function,"Undefined input values.")); 
     }
-    if( ($self->validCui($concept1)) or ($self->validCui($concept2)) ) {
+    if( ($self->_validCui($concept1)) or ($self->_validCui($concept2)) ) {
 	return($self->_error($function, "Incorrect input value."));
     } 
     
@@ -2333,8 +2339,8 @@ sub getRelationsBetweenCuis
 #  checks to see a concept is forbidden
 #  input : $concept <- string containing a cui
 #  output: 0 | 1    <- integer indicating true or false
-sub _forbiddenConcept 
-{
+sub _forbiddenConcept  {
+
     my $self = shift;
     my $concept = shift;
     
@@ -2361,11 +2367,12 @@ sub _forbiddenConcept
 # input : $cui   <- string containing a concept
 # output: @array <- array containing the semantic type's TUIs
 #                   associated with the concept
-sub getSt {
+sub _getSt {
+
     my $self = shift;
     my $cui   = shift;
 
-    my $function = "getSt";
+    my $function = "_getSt";
     &_debug($function);
     
     my $db = $self->{'db'};
@@ -2374,7 +2381,7 @@ sub getSt {
     if(!$cui) { return($self->_error($function,"Undefined input values.")); }
 
     my $arrRef = $db->selectcol_arrayref("select TUI from MRSTY where CUI=\'$cui\'");
-    if($self->checkError($function)) { return (); }
+    if($self->_checkError($function)) { return (); }
     
     return (@{$arrRef});
 }
@@ -2382,12 +2389,12 @@ sub getSt {
 #  subroutine to get the name of a semantic type given its abbreviation
 #  input : $st     <- string containing the abbreviation of the semantic type
 #  output: $string <- string containing the full name of the semantic type
-sub getStString
-{
+sub _getStString {
+
     my $self = shift;
     my $st   = shift;
 
-    my $function = "getStString";
+    my $function = "_getStString";
     &_debug($function);
 
     my $db = $self->{'db'};
@@ -2396,7 +2403,7 @@ sub getStString
     if(!$st) { return($self->_error($function,"Undefined input values.")); }
 
     my $arrRef = $db->selectcol_arrayref("select STY_RL from SRDEF where ABR=\'$st\'");
-    if($self->checkError($function)) { return (); }
+    if($self->_checkError($function)) { return (); }
     
     return (shift @{$arrRef});
 } 
@@ -2405,12 +2412,12 @@ sub getStString
 # subroutine to get the name of a semantic type given its TUI (UI)
 #  input : $tui    <- string containing the semantic type's TUI
 #  output: $string <- string containing the semantic type's abbreviation
-sub getStAbr
-{
+sub _getStAbr {
+
     my $self = shift;
     my $tui   = shift;
 
-    my $function = "getStString";
+    my $function = "_getStString";
     &_debug($function);
     
     my $db = $self->{'db'};
@@ -2419,7 +2426,7 @@ sub getStAbr
     if(!$tui) {	return($self->_error($function,"Undefined input values.")); }
 
     my $arrRef = $db->selectcol_arrayref("select ABR from SRDEF where UI=\'$tui\'");
-    if($self->checkError($function)) { return (); }
+    if($self->_checkError($function)) { return (); }
     
     return (shift @{$arrRef});
 } 
@@ -2428,12 +2435,12 @@ sub getStAbr
 #  subroutine to get the definition of a given TUI
 #  input : $st     <- string containing the semantic type's abbreviation
 #  output: $string <- string containing the semantic type's definition
-sub getStDef
-{
+sub _getStDef {
+
     my $self = shift;
     my $st   = shift;
 
-    my $function = "getStDef";
+    my $function = "_getStDef";
     &_debug($function);
   
     my $db = $self->{'db'};
@@ -2442,7 +2449,7 @@ sub getStDef
     if(!$st)  {	return($self->_error($function,"Undefined input values.")); }
 
     my $arrRef = $db->selectcol_arrayref("select DEF from SRDEF where ABR=\'$st\'");
-    if($self->checkError($function)) { return (); }
+    if($self->_checkError($function)) { return (); }
     
     return (shift @{$arrRef});
 } 
@@ -2452,12 +2459,12 @@ sub getStDef
 #  the configuration file.
 #  input : $concept <- string containing a cui
 #  output: $array   <- reference to an array containing the definitions
-sub getExtendedDefinition
-{
+sub _getExtendedDefinition {
+
     my $self    = shift;
     my $concept = shift;
     
-    my $function = "getExtendedDefinition";
+    my $function = "_getExtendedDefinition";
     #&_debug($function);
 
     return undef if(!defined $self || !ref $self);
@@ -2468,7 +2475,7 @@ sub getExtendedDefinition
     }
     
     #  check if valid concept
-    if($self->validCui($concept)) {
+    if($self->_validCui($concept)) {
 	return($self->_error($function, "Incorrect input value ($concept)."));
     } 
    
@@ -2483,9 +2490,9 @@ sub getExtendedDefinition
     my $dkeys = keys %relDefHash;
     
     if( ($dkeys <= 0) or (exists $relDefHash{"PAR"}) ) {
-	my @parents   = $self->getRelated($concept, "PAR");
+	my @parents   = $self->_getRelated($concept, "PAR");
 	foreach my $parent (@parents) {
-	    my @odefs = $self->getCuiDef($parent, $sabflag);
+	    my @odefs = $self->_getCuiDef($parent, $sabflag);
 	    foreach my $d (@odefs) {
 		my @darray = split/\s+/, $d;
 		my $sab = shift @darray;
@@ -2495,9 +2502,9 @@ sub getExtendedDefinition
 	}
     }
     if( ($dkeys <= 0) or (exists $relDefHash{"CHD"}) ) {
-	my @children   = $self->getRelated($concept, "CHD");
+	my @children   = $self->_getRelated($concept, "CHD");
 	foreach my $child (@children) { 
-	    my @odefs = $self->getCuiDef($child, $sabflag);
+	    my @odefs = $self->_getCuiDef($child, $sabflag);
 	    foreach my $d (@odefs) {
 		my @darray = split/\s+/, $d;
 		my $sab = shift @darray;
@@ -2507,9 +2514,9 @@ sub getExtendedDefinition
 	}
     }
     if( ($dkeys <= 0) or (exists $relDefHash{"SIB"}) ) {
-	my @siblings   = $self->getRelated($concept, "SIB");
+	my @siblings   = $self->_getRelated($concept, "SIB");
 	foreach my $sib (@siblings) {
-	    my @odefs = $self->getCuiDef($sib, $sabflag);
+	    my @odefs = $self->_getCuiDef($sib, $sabflag);
 	    foreach my $d (@odefs) {
 		my @darray = split/\s+/, $d;
 		my $sab = shift @darray;
@@ -2519,9 +2526,9 @@ sub getExtendedDefinition
 	}
     }
     if( ($dkeys <= 0) or (exists $relDefHash{"SYN"}) ) {
-	my @syns   = $self->getRelated($concept, "SYN");
+	my @syns   = $self->_getRelated($concept, "SYN");
 	foreach my $syn (@syns) {
-	    my @odefs = $self->getCuiDef($syn, $sabflag);
+	    my @odefs = $self->_getCuiDef($syn, $sabflag);
 	    foreach my $d (@odefs) {
 		my @darray = split/\s+/, $d;
 		my $sab = shift @darray;
@@ -2531,9 +2538,9 @@ sub getExtendedDefinition
 	}
     }
     if( ($dkeys <= 0) or (exists $relDefHash{"RB"}) ) {
-	my @rbs    = $self->getRelated($concept, "RB");
+	my @rbs    = $self->_getRelated($concept, "RB");
 	foreach my $rb (@rbs) {
-	    my @odefs = $self->getCuiDef($rb, $sabflag);
+	    my @odefs = $self->_getCuiDef($rb, $sabflag);
 	    foreach my $d (@odefs) {
 		my @darray = split/\s+/, $d;
 		my $sab = shift @darray;
@@ -2543,9 +2550,9 @@ sub getExtendedDefinition
 	}
     }
     if( ($dkeys <= 0) or (exists $relDefHash{"RN"}) ) {
-	my @rns    = $self->getRelated($concept, "RN");
+	my @rns    = $self->_getRelated($concept, "RN");
 	foreach my $rn (@rns) {
-	    my @odefs = $self->getCuiDef($rn, $sabflag);
+	    my @odefs = $self->_getCuiDef($rn, $sabflag);
 	    foreach my $d (@odefs) {
 		my @darray = split/\s+/, $d;
 		my $sab = shift @darray;
@@ -2555,9 +2562,9 @@ sub getExtendedDefinition
 	}
     }
     if( ($dkeys <= 0) or (exists $relDefHash{"RO"}) ) {
-	my @ros    = $self->getRelated($concept, "RO");
+	my @ros    = $self->_getRelated($concept, "RO");
 	foreach my $ro (@ros) {
-	    my @odefs = $self->getCuiDef($ro, $sabflag);
+	    my @odefs = $self->_getCuiDef($ro, $sabflag);
 	    foreach my $d (@odefs) {
 		my @darray = split/\s+/, $d;
 		my $sab = shift @darray;
@@ -2567,7 +2574,7 @@ sub getExtendedDefinition
 	}
     }
     if( ($dkeys <= 0) or (exists $relDefHash{"CUI"}) ) {
-	my @odefs   = $self->getCuiDef($concept, $sabflag);
+	my @odefs   = $self->_getCuiDef($concept, $sabflag);
 	foreach my $d (@odefs) {
 	    my @darray = split/\s+/, $d;
 	    my $sab = shift @darray;
@@ -2576,7 +2583,7 @@ sub getExtendedDefinition
 	}
     }
     if( ($dkeys <= 0) or (exists $relDefHash{"TERM"}) ) {
-	my @odefs = $self->getTermList($concept);
+	my @odefs = $self->_getTermList($concept);
 	my $def = "$concept TERM $concept nosab : " . (join " ", @odefs);
 	push @defs, $def;
     }
@@ -2587,13 +2594,13 @@ sub getExtendedDefinition
 #  subroutine to get a CUIs definition
 #  input : $concept <- string containing a cui
 #  output: @array   <- array of definitions (strings)
-sub getCuiDef {
+sub _getCuiDef {
 
     my $self    = shift;
     my $concept = shift;
     my $sabflag = shift;
 
-    my $function = "getCuiDef";
+    my $function = "_getCuiDef";
     #&_debug($function);
 
     return undef if(!defined $self || !ref $self);
@@ -2604,7 +2611,7 @@ sub getCuiDef {
     }
     
     #  check if valid concept
-    if($self->validCui($concept)) {
+    if($self->_validCui($concept)) {
 	return($self->_error($function, "Incorrect input value ($concept)."));
     } 
    
@@ -2637,14 +2644,14 @@ sub getCuiDef {
 #  subroutine to check if CUI is valid
 #  input : $concept <- string containing a cui
 #  output: 0 | 1    <- integer indicating if the cui is valide
-sub validCui
-{
+sub _validCui {
+
     my $self = shift;
     my $concept = shift;
     
     return undef if(!defined $self || !ref $self);
     
-    my $function = "validCui";
+    my $function = "_validCui";
     
     if(!$concept) {
 	return($self->_error($function,"Undefined input values."));
@@ -2662,7 +2669,7 @@ sub validCui
 #  input : 
 #  output: $hash <- reference to a hash containin the table names 
 #          in human readable and hex form
-sub returnTableNames {
+sub _returnTableNames {
     my $self = shift;
     
     my %hash = ();
@@ -2676,13 +2683,13 @@ sub returnTableNames {
 #  removes the configuration tables
 #  input :
 #  output: 
-sub dropConfigTable {
+sub _dropConfigTable {
     
     my $self    = shift;
 
     return undef if(!defined $self || !ref $self);
 
-    my $function = "dropConfigTable";
+    my $function = "_dropConfigTable";
     &_debug($function);
 
     #  connect to the database
@@ -2693,7 +2700,7 @@ sub dropConfigTable {
     my $sth = $sdb->prepare("show tables");
     $sth->execute();
     if($sth->err()) {
-	$self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
+	$self->{'errorString'} .= "\nError (UMLS::Interface::Interface->$function()) - ";
 	$self->{'errorString'} .= "Unable run query: ".($sth->errstr());
 	$self->{'errorCode'} = 2;
 	return ();
@@ -2710,45 +2717,45 @@ sub dropConfigTable {
 
     if(exists $tables{$parentTable}) {	
 	$sdb->do("drop table $parentTable");
-	if($self->checkError($function)) { return (); }
+	if($self->_checkError($function)) { return (); }
     }
     if(exists $tables{$childTable}) {	
 	$sdb->do("drop table $childTable");
-	if($self->checkError($function)) { return (); }
+	if($self->_checkError($function)) { return (); }
     }
     if(exists $tables{$tableName}) {	
 	$sdb->do("drop table $tableName");
-	if($self->checkError($function)) { return (); }
+	if($self->_checkError($function)) { return (); }
     }
     if(exists $tables{$propTable}) {
 	$sdb->do("drop table $propTable");
-	if($self->checkError($function)) { return (); }
+	if($self->_checkError($function)) { return (); }
     }
     if(exists $tables{"tableindex"}) {	
 
 	$sdb->do("delete from tableindex where HEX='$parentTable'");
-	if($self->checkError($function)) { return (); }
+	if($self->_checkError($function)) { return (); }
 	
 	$sdb->do("delete from tableindex where HEX='$childTable'");
-	if($self->checkError($function)) { return (); }
+	if($self->_checkError($function)) { return (); }
 	
 	$sdb->do("delete from tableindex where HEX='$tableName'");
-	if($self->checkError($function)) { return (); }
+	if($self->_checkError($function)) { return (); }
 	
 	$sdb->do("delete from tableindex where HEX='$propTable'");
-	if($self->checkError($function)) { return (); }
+	if($self->_checkError($function)) { return (); }
     }
 }
 
 #  removes the configuration files
 #  input : 
 #  output: 
-sub removeConfigFiles
-{
+sub _removeConfigFiles {
+
     my $self = shift;
     return undef if(!defined $self || !ref $self);
     
-    my $function = "removeConfigFiles";
+    my $function = "_removeConfigFiles";
     &_debug($function);
     
     if(-e $tableFile) {
@@ -2770,14 +2777,14 @@ sub removeConfigFiles
 #  input : $concept <- string containing a cui
 #  output: 1|0      <- indicating if the cui exists in 
 #                      the upper level taxonamy
-sub inParentTaxonomy {
+sub _inParentTaxonomy {
 
     my $self = shift;
     my $concept = shift;
 
    return undef if(!defined $self || !ref $self);
     
-    my $function = "inParentTaxonomy";
+    my $function = "_inParentTaxonomy";
     &_debug($function);
  
     #  check if concept was obtained
@@ -2786,7 +2793,7 @@ sub inParentTaxonomy {
     }
     
     #  check if valid concept
-    if($self->validCui($concept)) {
+    if($self->_validCui($concept)) {
 	return($self->_error($function, "Incorrect input value ($concept)."));
     } 
 
@@ -2798,14 +2805,14 @@ sub inParentTaxonomy {
 #  input : $concept <- string containing a cui
 #  output: 1|0      <- indicating if the cui exists in 
 #                      the upper level taxonamy
-sub inChildTaxonomy {
+sub _inChildTaxonomy {
 
     my $self = shift;
     my $concept = shift;
 
    return undef if(!defined $self || !ref $self);
     
-    my $function = "inChildTaxonomy";
+    my $function = "_inChildTaxonomy";
     &_debug($function);
  
     #  check if concept was obtained
@@ -2814,7 +2821,7 @@ sub inChildTaxonomy {
     }
     
     #  check if valid concept
-    if($self->validCui($concept)) {
+    if($self->_validCui($concept)) {
 	return($self->_error($function, "Incorrect input value ($concept)."));
     } 
 
@@ -2857,20 +2864,20 @@ sub _printTime {
 }
 
 #  return the file name containing the index table
-sub getTableFile {
+sub _getTableFile {
     
     return $tableFile;
 }
 
 
 #  return the table name in the index - this is the hex
-sub getTableName {
+sub _getTableName {
     
     return $tableName;
 }
 
 #  return the table name in the index in human form
-sub getTableNameHuman {
+sub _getTableNameHuman {
     
     return $tableNameHuman;
 }
@@ -2879,12 +2886,93 @@ __END__
 
 =head1 NAME
 
-UMLS::CuiFinder - Perl interface to support the UMLS::Interface.pm which 
-is an interface to the Unified Medical Language System (UMLS). 
+UMLS::Interface::CuiFinder - Perl interface to support the 
+UMLS::Interface.pm which is an interface to the Unified 
+Medical Language System (UMLS). 
 
 =head1 SYNOPSIS
 
-see UMLS::Interface.pm
+ #!/usr/bin/perl
+
+ use UMLS::Interface::CuiFinder;
+ 
+ %params = ();
+
+ $cuifinder = UMLS::Interface::CuiFinder->new(\%params); 
+
+ die "Unable to create UMLS::Interface::CuiFinder object.\n" if(!$cuifinder);
+
+ ($errCode, $errString) = $cuifinder->_getError();
+
+ die "$errString\n" if($errCode);
+    
+ $root = $cuifinder->_root();
+
+ $version = $cuifinder->_version();
+
+ $concept = "C0018563"; $rel = "PAR";
+
+ @array = $cuifinder->_getRelated($concept, $rel);
+
+ @array = $cuifinder->_getTermList($concept);
+
+ @array = $cuifinder->_getAllTerms($concept);
+
+ $term = shift @array;
+
+ @array = $cuifinder->_getConceptList($term);
+
+ $hash = $cuifinder->_getCuiList();
+
+ $sab = "MSH";
+
+ $array = $cuifinder->_getCuisFromSource($sab);
+
+ @array = $cuifinder->_getSab($concept);
+
+ @array = $cuifinder->_getChildren($concept);
+
+ @array = $cuifinder->_getParents($concept);
+
+ @array = $cuifinder->_getRelations($concept);
+
+ $concept1 = "C0018563"; $concept2 = "C0037303";
+
+ @array = $cuifinder->_getRelationsBetweenCuis($concept1, $concept2);
+
+ @array = $cuifinder->_getSt($concept);
+
+ $abr = "bpoc";
+
+ $string = $cuifinder->_getStString($abr);
+
+ $tui = "T12";
+
+ $string = $cuifinder->_getStAbr($tui);
+
+ $definition = $cuifinder->_getStDef($abr);
+
+ $array = $cuifinder->_getExtendedDefinition($concept);
+
+ @array = $cuifinder->_getCuiDef($concept, $sabflag);
+
+ $bool = $cuifinder->_validCui($concept);
+
+ $bool = $cuifinder->_exists($concept);
+
+ $hash = $cuifinder->_returnTableNames();
+
+ $cuifinder->_dropConfigTable();
+
+ $cuifinder->_removeConfigFiles();
+
+ if(!( $cuifinder->_checkError())) {
+     print "No errors: All is good\n";
+ }
+ else {
+     my ($returnCode, $returnString) = $cuifinder->_getError();
+     print STDERR "$returnString\n";
+ }
 
 =head1 ABSTRACT
 
@@ -2895,6 +2983,7 @@ with the UMLS::Similarity package for measuring the semantic relatedness
 of concepts.
 
 =head1 INSTALL
+
 
 To install the module, run the following magic commands:
 

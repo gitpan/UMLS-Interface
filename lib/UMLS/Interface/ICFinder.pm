@@ -1,5 +1,5 @@
-# UMLS::Interface 
-# (Last Updated $Id: ICFinder.pm,v 1.4 2010/05/11 20:29:07 btmcinnes Exp $)
+# UMLS::Interface::ICFinder
+# (Last Updated $Id: ICFinder.pm,v 1.2 2010/05/20 14:54:43 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -38,7 +38,7 @@
 # 59 Temple Place - Suite 330, 
 # Boston, MA  02111-1307, USA.
 
-package UMLS::ICFinder;
+package UMLS::Interface::ICFinder;
 
 use Fcntl;
 use strict;
@@ -46,7 +46,7 @@ use warnings;
 use DBI;
 use bytes;
 
-use UMLS::CuiFinder;
+use UMLS::Interface::CuiFinder;
 
 my $root = "";
 
@@ -58,8 +58,10 @@ my %propagationHash  = ();
 my $propagationFile  = "";
 my $frequencyFile    = "";
 
-my $option_propagation = 0;
-my $option_frequency   = 0;
+my %frequencyHash = ();
+
+my $option_icpropagation = 0;
+my $option_icfrequency   = 0;
 my $option_t           = 0;
 
 my $smooth             = 1;
@@ -68,7 +70,7 @@ my $smooth             = 1;
 
 # -------------------- Class methods start here --------------------
 
-#  method to create a new UMLS::PathFinder object
+#  method to create a new UMLS::Interface::PathFinder object
 sub new {
     my $self = {};
     my $className = shift;
@@ -88,7 +90,7 @@ sub new {
     return $self;
 }
 
-# Method to initialize the UMLS::Interface object.
+# Method to initialize the UMLS::Interface::ICFinder object.
 sub _initialize
 {
     my $self      = shift;
@@ -104,27 +106,31 @@ sub _initialize
 
     #  check the cuifinder
     if(!$cuifinder) { 
-	return($self->_error($function, "No UMLS::CuiFinder")); 
+	return($self->_error($function, "No UMLS::Interface::CuiFinder")); 
     } $self->{'cuifinder'} = $cuifinder;
     
     #  get the umlsinterfaceindex database from CuiFinder
-    my $sdb = $cuifinder->getIndexDB();
+    my $sdb = $cuifinder->_getIndexDB();
     if(!$sdb) { 
-	return($self->_error($function, "No db sent from UMLS::CuiFinder")); 
+	return($self->_error($function, "No db sent from UMLS::Interface::CuiFinder")); 
     } $self->{'sdb'} = $sdb;
 
     #  get the root
-    $root = $cuifinder->root();
+    $root = $cuifinder->_root();
 
     #  set up the options
     $self->_setOptions($params);
-    if($self->checkError($function)) { return (); }	
+    if($self->_checkError($function)) { return (); }	
 
     #  load the propagation hash if the option is specified
-    if($option_propagation) { 
+    if($option_icpropagation) { 
 	$self->_loadPropagationHash();
     }
 
+    #  load hte frequency hash if hte option is specified
+    if($option_icfrequency) { 
+	$self->_loadFrequencyHash();
+    }
 }
 
 
@@ -133,7 +139,7 @@ sub _initialize
 #  output: 
 sub _debug {
     my $function = shift;
-    if($debug) { print STDERR "In UMLS::ICFinder::$function\n"; }
+    if($debug) { print STDERR "In UMLS::Interface::ICFinder::$function\n"; }
 }
 
 #  method to set the global parameter options
@@ -149,16 +155,17 @@ sub _setOptions
     my $function = "_setOptions";
 
     #  get all the parameters
-    my $debugoption  = $params->{'debug'};
-    my $t            = $params->{'t'};
-    my $propagation  = $params->{'icpropagation'};
-    my $frequency    = $params->{'icfrequency'};
-
+    my $debugoption   = $params->{'debug'};
+    my $t             = $params->{'t'};
+    my $icpropagation = $params->{'icpropagation'};
+    my $icfrequency   = $params->{'icfrequency'};
+    my $icsmooth      = $params->{'smooth'};
+  
     my $output = "";
 
     #  check if options have been defined
-    if(defined $propagation || defined $frequency || 
-       defined $debugoption) { 
+    if(defined $icpropagation || defined $icfrequency || 
+       defined $debugoption   || defined $icsmooth) { 
 	$output .= "\nICFinder User Options:\n";
     }
 
@@ -168,18 +175,23 @@ sub _setOptions
 	$output .= "   --debug option set\n";
     }
     
+    if(defined $icsmooth) {
+	$smooth = $icsmooth;
+	$output .= "   --smooth $smooth\n";
+    }
+
     #  check if the propagation option has been identified
-    if(defined $propagation) {
-	$option_propagation = 1;
-	$propagationFile    = $propagation;
-	$output .= "  --propagation $propagation\n";
+    if(defined $icpropagation) {
+	$option_icpropagation = 1;
+	$propagationFile    = $icpropagation;
+	$output .= "  --icpropagation $icpropagation\n";
     }
 
     #  check if the frequency option has been identified
-    if(defined $frequency) { 
-	$option_frequency = 1;
-	$frequencyFile    = $frequency;
-	$output .= "  --frequency $frequency\n";
+    if(defined $icfrequency) { 
+	$option_icfrequency = 1;
+	$frequencyFile    = $icfrequency;
+	$output .= "  --icfrequency $icfrequency\n";
     }
 
     &_debug($function);
@@ -204,7 +216,7 @@ sub _error {
 
     return undef if(!defined $self || !ref $self);
         
-    $self->{'errorString'} .= "\nError (UMLS::PathFinder->$function()) - ";
+    $self->{'errorString'} .= "\nError (UMLS::Interface::PathFinder->$function()) - ";
     $self->{'errorString'} .= $string;
     $self->{'errorCode'} = 2;
 
@@ -213,7 +225,7 @@ sub _error {
 #  check error function to determine if an error happened within a function
 #  input : $function <- string containing name of function
 #  output: 0|1 indicating if an error has been thrown 
-sub checkError {
+sub _checkError {
     my $self     = shift;
     my $function = shift;
    
@@ -235,7 +247,7 @@ sub checkError {
 #  input : 
 #  output: $returnCode, $returnString <- strings containing 
 #                                        error information
-sub getError {
+sub _getError {
     my $self      = shift;
 
     my $returnCode = $self->{'errorCode'};
@@ -251,16 +263,16 @@ sub getError {
 #  that erro back through the program
 #  input : $handler
 #  output: 
-sub setError {
+sub _setError {
     my $self = shift;
     my $handler = shift;
 
-    my $function = "setError";
+    my $function = "_setError";
     &_debug($function);
     
     #  set the cuifinder 
     
-    my ($returnCode, $returnString) = $handler->getError();
+    my ($returnCode, $returnString) = $handler->_getError();
     
     $self->{'returnCode'}   = $returnCode;
     $self->{'returnString'} = $returnString;
@@ -270,14 +282,14 @@ sub setError {
 #  returns the information content (IC) of a cui
 #  input : $concept <- string containing a cui
 #  output: $double  <- double containing its IC
-sub getIC
+sub _getIC
 {
     my $self     = shift;
     my $concept  = shift;
 
     return undef if(!defined $self || !ref $self);
     
-    my $function = "getIC";
+    my $function = "_getIC";
     &_debug($function);
 
     #  check concept was obtained
@@ -288,11 +300,11 @@ sub getIC
     #  set the cuifinder 
     my $cuifinder = $self->{'cuifinder'};
     if(!$cuifinder) { 
-	return($self->_error($function, "UMLS::CuiFinder not defined.")); 
+	return($self->_error($function, "UMLS::Interface::CuiFinder not defined.")); 
     }
     
     #  check valid concept
-    if($cuifinder->validCui($concept)) { 
+    if($cuifinder->_validCui($concept)) { 
 	return($self->_error($function, "Incorrect input value ($concept).")); 
     }
     
@@ -301,13 +313,13 @@ sub getIC
     #  hash has not been loaded and we should determine
     #  the information content of the concept using the
     #  frequency information in the file in realtime
-    if($option_frequency) { 
+    if($option_icfrequency) { 
 	
-	#  initialize the propagation hash
+  	#  initialize the propagation hash
 	$self->_initializePropagationHash();
 	
 	#  load the propagation frequency hash
-	$self->_loadPropagationFreq();
+	$self->_loadPropagationFreq(\%frequencyHash);
 	
 	#  propogate the counts
 	&_debug("_propagation");
@@ -329,27 +341,54 @@ sub getIC
 #  are going to be propagated
 #  input :
 #  output: $hash <- reference to hash containing the cuis
-sub getPropagationCuis
-{
+sub _loadFrequencyHash {
+
+    my $self = shift;
+    
+    open(FILE, $frequencyFile) || die "Could not open file: $frequencyFile\n";
+    
+    while(<FILE>) { 
+	chomp;
+	my($cui, $freq) = split/<>/;
+	
+	if( ($cui=~/C[0-9]/) && ($freq=~/[0-9]+/) ) { 
+	    if(exists $frequencyHash{$cui}) { 
+		$frequencyHash{$cui} += $freq;
+	    }
+	    else {
+		$frequencyHash{$cui} = $freq;
+	    }
+	}
+    }
+    
+    close(FILE);
+}
+
+#  this method obtains the CUIs in the sources which 
+#  are going to be propagated
+#  input :
+#  output: $hash <- reference to hash containing the cuis
+sub _getPropagationCuis {
+
     my $self = shift;
     
     return undef if(!defined $self || !ref $self);
     
-    my $function = "getPropagationCuis";
+    my $function = "_getPropagationCuis";
     &_debug($function);
     
     #  set the cuifinder 
     my $cuifinder = $self->{'cuifinder'};
     if(!$cuifinder) { 
-	return($self->_error($function, "UMLS::CuiFinder not defined.")); 
+	return($self->_error($function, "UMLS::Interface::CuiFinder not defined.")); 
     }
     
     #  get the hash
-    my $hash = $cuifinder->getCuiList();
+    my $hash = $cuifinder->_getCuiList();
 
     #  make certain there weren't any problems
-    if($self->checkError($cuifinder)) { 
-	$self->setError($cuifinder);
+    if($self->_checkError($cuifinder)) { 
+	$self->_setError($cuifinder);
 	return; 
     }
     
@@ -359,8 +398,8 @@ sub getPropagationCuis
 #  initialize the propgation hash
 #  input :
 #  output:
-sub _initializePropagationHash
-{
+sub _initializePropagationHash {
+
     my $self = shift;
 
     return undef if(!defined $self || !ref $self);
@@ -369,7 +408,7 @@ sub _initializePropagationHash
     &_debug($function);
     
     #  clear out the hash just in case
-    my $hash = $self->getPropagationCuis();
+    my $hash = $self->_getPropagationCuis();
         
     if($debug) { print STDERR "SMOOTH: $smooth\n"; }
 
@@ -383,8 +422,8 @@ sub _initializePropagationHash
 #  load the propagation frequency has with the frequency counts
 #  input : $hash <- reference to hash containing frequency counts
 #  output:
-sub _loadPropagationFreq
-{
+sub _loadPropagationFreq {
+
     my $self = shift;
     my $fhash = shift;
     
@@ -419,8 +458,8 @@ sub _loadPropagationFreq
 #  load the propagation hash
 #  input :
 #  output: 
-sub _loadPropagationHash
-{
+sub _loadPropagationHash {
+
     my $self = shift;
     
     return undef if(!defined $self || !ref $self);
@@ -444,12 +483,12 @@ sub _loadPropagationHash
 #  input : $concept   <- string containing the cui
 #  output: $double|-1 <- the propagation count otherwise
 #                        a -1 if none existed for that cui
-sub getPropagationCount
-{
+sub _getPropagationCount {
+
     my $self = shift;
     my $concept = shift;
 
-    my $function = "getPropagationCount";
+    my $function = "_getPropagationCount";
     &_debug($function);
 
     $self->_propagateCounts();
@@ -462,11 +501,11 @@ sub getPropagationCount
     #  set the cuifinder 
     my $cuifinder = $self->{'cuifinder'};
     if(!$cuifinder) { 
-	return($self->_error($function, "UMLS::CuiFinder not defined.")); 
+	return($self->_error($function, "UMLS::Interface::CuiFinder not defined.")); 
     }
     
     #  check valid concept
-    if($cuifinder->validCui($concept)) { 
+    if($cuifinder->_validCui($concept)) { 
 	return($self->_error($function, "Incorrect input value ($concept).")); 
     }
 
@@ -485,15 +524,14 @@ sub getPropagationCount
 #  input : $hash <- reference to the hash containing 
 #                   the frequency counts
 #  output: 
-sub propagateCounts
-{
+sub _propagateCounts {
 
     my $self = shift;    
     my $fhash = shift;
     
     return undef if(!defined $self || !ref $self);
     
-    my $function = "propagateCounts";
+    my $function = "_propagateCounts";
     &_debug($function);
     
     #  initialize the propagation hash
@@ -510,7 +548,6 @@ sub propagateCounts
     $self->_tallyCounts();
 
     my $k = keys %propagationHash;
-    print STDERR "key: $k\n";
     
     #  return the propagation counts
     return \%propagationHash;
@@ -520,8 +557,7 @@ sub propagateCounts
 #  cui and its decendants and then calculates the ic
 #  input :
 #  output: 
-sub _tallyCounts
-{
+sub _tallyCounts {
 
     my $self = shift;
     
@@ -554,8 +590,8 @@ sub _tallyCounts
 #  output: $concept <- string containing the cui
 #          $array   <- reference to the array containing
 #                      the cui's decendants
-sub _propagation
-{
+sub _propagation {
+
     my $self    = shift;
     my $concept = shift;
     my $array   = shift;
@@ -570,11 +606,11 @@ sub _propagation
     #  set the cuifinder 
     my $cuifinder = $self->{'cuifinder'};
     if(!$cuifinder) { 
-	return($self->_error($function, "UMLS::CuiFinder not defined.")); 
+	return($self->_error($function, "UMLS::Interface::CuiFinder not defined.")); 
     }
     
     #  check valid concept
-    if($cuifinder->validCui($concept)) { 
+    if($cuifinder->_validCui($concept)) { 
 	return($self->_error($function, "Incorrect input value ($concept).")); 
     }
  
@@ -600,8 +636,8 @@ sub _propagation
     }
 
     #  get all the children
-    my @children = $cuifinder->getChildren($concept);
-    if($cuifinder->checkError("UMLS::CuiFinder::getChildren")) { return (); }
+    my @children = $cuifinder->_getChildren($concept);
+    if($cuifinder->_checkError("UMLS::Interface::CuiFinder::getChildren")) { return (); }
     
     #  search through the children   
     foreach my $child (@children) {
@@ -638,7 +674,6 @@ sub _propagation
 
 sub _breduce {
     
-   
     local($_)= @_;
     my (@words)= split;
     my (%newwords);
@@ -653,12 +688,49 @@ __END__
 
 =head1 NAME
 
-UMLS::CuiFinder - Perl interface to support the UMLS::Interface.pm which 
+UMLS::Interface::ICFinder - Perl interface to support the UMLS::Interface.pm which 
 is an interface to the Unified Medical Language System (UMLS). 
 
 =head1 SYNOPSIS
 
-see UMLS::Interface.pm
+ #!/usr/bin/perl
+
+ use UMLS::Interface::CuiFinder;
+
+ use UMLS::Interface::ICFinder;
+ 
+ %params = ();
+
+ $cuifinder = UMLS::Interface::CuiFinder->new(\%params); 
+
+ die "Unable to create UMLS::Interface::CuiFinder object.\n" if(!$cuifinder);
+
+ ($errCode, $errString) = $cuifinder->_getError();
+
+ die "$errString\n" if($errCode);
+ 
+    
+ $icfinder = UMLS::Interface::ICFinder->new(\%params, $cuifinder); 
+
+ die "Unable to create UMLS::Interface::ICFinder object.\n" if(!$icfinder);
+
+ ($errCode, $errString) = $icfinder->_getError();
+
+ die "$errString\n" if($errCode);
+ 
+ $concept = "C0037303";
+
+ $ic = $icfinder->_getIC($concept);
+
+ $hash = $icfinder->_getPropagationCuis();
+ 
+ if(!( $icfinder->_checkError())) {
+     print "No errors: All is good\n";
+ }
+ else {
+     my ($returnCode, $returnString) = $icfinder->_getError();
+     print STDERR "$returnString\n";
+ }
 
 =head1 ABSTRACT
 

@@ -3,10 +3,10 @@ FAQ
 FDL.txt
 GPL.txt
 INSTALL
-lib/UMLS/CuiFinder.pm
-lib/UMLS/ICFinder.pm
 lib/UMLS/Interface.pm
-lib/UMLS/PathFinder.pm
+lib/UMLS/Interface/CuiFinder.pm
+lib/UMLS/Interface/ICFinder.pm
+lib/UMLS/Interface/PathFinder.pm
 Makefile.PL
 MANIFEST			This list of files
 META.yml
@@ -141,7 +141,6 @@ t/tests/findShortestPath.mth.rb-rn
 t/tests/findShortestPath.snomedct.par-chd
 t/tests/findShortestPath.snomedct.par-chd-rb-rn
 TODO
-utils/configuration
 utils/findCuiDepth.pl
 utils/findDFS.pl
 utils/findLeastCommonSubsumer.pl
@@ -161,3 +160,4 @@ utils/getStDef.pl
 utils/getSts.pl
 utils/getTableNames.pl
 utils/removeConfigData.pl
+

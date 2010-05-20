@@ -23,10 +23,14 @@ REQUIREMENTS
 
   Programming Languages
      Perl (version 5.8.0 or better)
-     Java SE Development Kit (JDK)
 
   CPAN Modules
      DBI
+     DBD::mysql
+     Text::NSP
+     Digest::SHA1
+     File::Spec
+     File::Path
 
   Database
     MySQL (version 5 or better)
@@ -133,10 +137,23 @@ CPAN MODULES
     pakcage is freely available at
     <http://search.cpan.org/~gaas/Digest-SHA1/>
 
-  bignum
-    UMLS-Interface uses these packages for the propogation counts because
-    the counts can get rather large. This package is freely available at
-    <http://search.cpan.org/~tels/bignum-0.23/>
+  File::Spec
+    UMLS-Interface uses this package for testing purposes. This package is
+    freely available at:
+
+    <http://search.cpan.org/~smueller/PathTools-3.31/lib/File/Spec.pm>
+
+  File::Path
+    UMLS-Interface uses this package for testing purposes. This package is
+    freely available at:
+
+    <http://search.cpan.org/~dland/File-Path-2.08/>
+
+  Text::NSP
+    UMLS-Interface uses this package to obtain the frequency counts for
+    propagation. This package is freely available at:
+
+    <http://search.cpan.org/dist/Text-NSP/>
 
 Stage 3 - Install MySQL, if already installed go to Stage 4
     Requires MySQL (version 5 or better)

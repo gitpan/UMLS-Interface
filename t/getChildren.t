@@ -8,11 +8,17 @@
 use strict;
 use warnings;
 
-use Test::More tests => 20;
+use Test::More tests => 17;
 
-BEGIN {use_ok 'UMLS::Interface'}
-BEGIN{ use_ok ('File::Spec') }
-BEGIN{ use_ok ('File::Path') }
+use UMLS::Interface;
+use File::Spec;
+use File::Path;
+
+if(!(-d "t")) {   
+    print STDERR "Error - program must be run from UMLS::Similarity\n";
+    print STDERR "directory as : perl t/getChildren.t \n";
+    exit;  
+}
                                                               
 
 #  initialize option hash
@@ -40,7 +46,7 @@ ok(!($errCode));
 #  set the key directory (create it if it doesn't exist)
 my $keydir = File::Spec->catfile('t','key', $version);
 if(! (-e $keydir) ) {
-    mkpath($keydir);
+    File::Path->make_path($keydir);
 }
 
 my $perl     = $^X;

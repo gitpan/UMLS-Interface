@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.63 2010/05/12 15:28:38 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.66 2010/05/19 17:30:40 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -46,9 +46,9 @@ use warnings;
 use DBI;
 use bytes;
 
-use UMLS::CuiFinder;
-use UMLS::PathFinder;
-use UMLS::ICFinder;
+use UMLS::Interface::CuiFinder;
+use UMLS::Interface::PathFinder;
+use UMLS::Interface::ICFinder;
 
 
 my $cuifinder  = "";
@@ -57,7 +57,7 @@ my $icfinder   = "";
 
 use vars qw($VERSION);
 
-$VERSION = '0.57';
+$VERSION = '0.59';
 
 my $debug = 0;
 
@@ -96,15 +96,15 @@ sub _initialize {
     $params = {} if(!defined $params);
     
     #  set the cuifinder
-    $cuifinder = UMLS::CuiFinder->new($params);
+    $cuifinder = UMLS::Interface::CuiFinder->new($params);
     if($self->_checkError($cuifinder)) { return; }
 
     #  set the pathfinder
-    $pathfinder = UMLS::PathFinder->new($params, $cuifinder);
+    $pathfinder = UMLS::Interface::PathFinder->new($params, $cuifinder);
     if($self->_checkError($pathfinder)) { return; }
 
     #  set the icfinder
-    $icfinder = UMLS::ICFinder->new($params, $cuifinder);
+    $icfinder = UMLS::Interface::ICFinder->new($params, $cuifinder);
     if($self->_checkError($icfinder)) { return; }
 }
 
@@ -136,7 +136,7 @@ sub _checkError {
     
     return undef if(!defined $self || !ref $self);
 
-    my ($returnCode, $returnString) = $handler->getError();
+    my ($returnCode, $returnString) = $handler->_getError();
     
     $self->{'errorCode'} = $returnCode;
     $self->{'errorString'} = $returnString;
@@ -157,7 +157,7 @@ sub root {
 
     my $self = shift;
 
-    my $root = $cuifinder->root();
+    my $root = $cuifinder->_root();
     if($self->_checkError($cuifinder)) { return; }
     return $root;
 }
@@ -170,7 +170,7 @@ sub version {
 
     my $self = shift;
 
-    my $version = $cuifinder->version();
+    my $version = $cuifinder->_version();
     if($self->_checkError($cuifinder)) { return; }
     return $version;
 }
@@ -186,7 +186,7 @@ sub getRelated {
     my $concept = shift;
     my $rel     = shift;
 
-    my @array = $cuifinder->getRelated($concept, $rel);
+    my @array = $cuifinder->_getRelated($concept, $rel);
     if($self->_checkError($cuifinder)) { return; }
     return @array;
 }
@@ -200,7 +200,7 @@ sub getTermList {
     my $self = shift;
     my $concept = shift;
     
-    my @array = $cuifinder->getTermList($concept);
+    my @array = $cuifinder->_getTermList($concept);
     if($self->_checkError($cuifinder)) { return; }    
     return @array;
 }
@@ -213,7 +213,7 @@ sub getAllTerms {
     my $self = shift;
     my $concept = shift;
 
-    my @array = $cuifinder->getAllTerms($concept);
+    my @array = $cuifinder->_getAllTerms($concept);
     if($self->_checkError($cuifinder)) { return; }
     return @array;
 }
@@ -227,7 +227,7 @@ sub getConceptList {
     my $self = shift;
     my $term = shift;
 
-    my @array = $cuifinder->getConceptList($term);
+    my @array = $cuifinder->_getConceptList($term);
     if($self->_checkError($cuifinder)) { return; }
     return @array;
 }
@@ -240,7 +240,7 @@ sub getCuiList {
 
     my $self = shift;
 
-    my $hash = $cuifinder->getCuiList();
+    my $hash = $cuifinder->_getCuiList();
     if($self->_checkError($cuifinder)) { return; }
     return $hash;
 }
@@ -253,7 +253,7 @@ sub getCuisFromSource {
     my $self = shift;
     my $sab = shift;
     
-    my $array = $cuifinder->getCuisFromSource($sab);
+    my $array = $cuifinder->_getCuisFromSource($sab);
     if($self->_checkError($cuifinder)) { return; }
     return $array;
 }
@@ -267,7 +267,7 @@ sub getSab {
     my $self = shift;
     my $concept = shift;
 
-    my @array = $cuifinder->getSab($concept);
+    my @array = $cuifinder->_getSab($concept);
     if($self->_checkError($cuifinder)) { return; }
     return @array;
 }
@@ -282,7 +282,7 @@ sub getChildren {
     my $self    = shift;
     my $concept = shift;
 
-    my @array = $cuifinder->getChildren($concept);
+    my @array = $cuifinder->_getChildren($concept);
     if($self->_checkError($cuifinder)) { return; }
     return @array;
 }
@@ -298,7 +298,7 @@ sub getParents {
     my $self    = shift;
     my $concept = shift;
 
-    my @array = $cuifinder->getParents($concept);
+    my @array = $cuifinder->_getParents($concept);
     if($self->_checkError($cuifinder)) { return; }
     return @array;
     
@@ -313,7 +313,7 @@ sub getRelations {
     my $self    = shift;
     my $concept = shift;
     
-    my @array = $cuifinder->getRelations($concept);
+    my @array = $cuifinder->_getRelations($concept);
     if($self->_checkError($cuifinder)) { return; }
     return @array;
 }
@@ -328,7 +328,7 @@ sub getRelationsBetweenCuis {
     my $concept1 = shift;
     my $concept2 = shift;
 
-    my @array = $cuifinder->getRelationsBetweenCuis($concept1, $concept2);
+    my @array = $cuifinder->_getRelationsBetweenCuis($concept1, $concept2);
     if($self->_checkError($cuifinder)) { return; }
     return @array;
 }
@@ -342,7 +342,7 @@ sub getSt {
     my $self = shift;
     my $cui   = shift;
 
-    my @array = $cuifinder->getSt($cui);
+    my @array = $cuifinder->_getSt($cui);
     if($self->_checkError($cuifinder)) { return; }
     
     return @array;
@@ -357,7 +357,7 @@ sub getStString {
     my $self = shift;
     my $st   = shift;
 
-    my $string = $cuifinder->getStString($st);
+    my $string = $cuifinder->_getStString($st);
     if($self->_checkError($cuifinder)) { return; }
     return $string;
 } 
@@ -371,7 +371,7 @@ sub getStAbr {
     my $self = shift;
     my $tui   = shift;
 
-    my $abr = $cuifinder->getStAbr($tui);
+    my $abr = $cuifinder->_getStAbr($tui);
     if($self->_checkError($cuifinder)) { return; }
     return $abr;
 } 
@@ -385,7 +385,7 @@ sub getStDef {
     my $self = shift;
     my $st   = shift;
 
-    my $definition = $cuifinder->getStDef($st);
+    my $definition = $cuifinder->_getStDef($st);
     if($self->_checkError($cuifinder)) { return; }
     return $definition;
 } 
@@ -399,7 +399,7 @@ sub getExtendedDefinition {
     my $self    = shift;
     my $concept = shift;
 
-    my $array = $cuifinder->getExtendedDefinition($concept);
+    my $array = $cuifinder->_getExtendedDefinition($concept);
     if($self->_checkError($cuifinder)) { return; }
     return $array;
 }
@@ -415,7 +415,7 @@ sub getCuiDef {
     my $concept = shift;
     my $sabflag = shift;
 
-    my @array = $cuifinder->getCuiDef($concept, $sabflag);
+    my @array = $cuifinder->_getCuiDef($concept, $sabflag);
     if($self->_checkError($cuifinder)) { return; }
     return @array;
 }
@@ -428,7 +428,7 @@ sub validCui {
     my $self = shift;
     my $concept = shift;
     
-    my $bool = $cuifinder->validCui($concept);
+    my $bool = $cuifinder->_validCui($concept);
     if($self->_checkError($cuifinder)) { return; }
     return $bool;
     
@@ -442,7 +442,7 @@ sub exists() {
     my $self = shift;
     my $concept = shift;
     
-    my $bool = $cuifinder->exists($concept);
+    my $bool = $cuifinder->_exists($concept);
     if($self->_checkError($cuifinder)) { return; }
     return $bool;
 }   
@@ -455,7 +455,7 @@ sub returnTableNames {
 
     my $self = shift;
     
-    my $hash = $cuifinder->returnTableNames();
+    my $hash = $cuifinder->_returnTableNames();
     if($self->_checkError($cuifinder)) { return; }
     return $hash;
 
@@ -468,7 +468,7 @@ sub dropConfigTable {
     
     my $self    = shift;
 
-    $cuifinder->dropConfigTable();
+    $cuifinder->_dropConfigTable();
     $self->_checkError($cuifinder);
     return;
     
@@ -481,7 +481,7 @@ sub removeConfigFiles {
 
     my $self = shift;
 
-    $cuifinder->removeConfigFiles();
+    $cuifinder->_removeConfigFiles();
     $self->_checkError($cuifinder);
     return; 
 }
@@ -496,7 +496,7 @@ sub removeConfigFiles {
 sub depth {
     my $self = shift;
 
-    my $depth = $pathfinder->depth();
+    my $depth = $pathfinder->_depth();
     if($self->_checkError($pathfinder)) { return; }
     return $depth;
 }
@@ -510,7 +510,7 @@ sub pathsToRoot
     my $self = shift;
     my $concept = shift;
 
-    my $array = $pathfinder->pathsToRoot($concept);
+    my $array = $pathfinder->_pathsToRoot($concept);
     if($self->_checkError($pathfinder)) { return; }    
     return $array;
 }
@@ -524,7 +524,7 @@ sub findMinimumDepth {
     my $self = shift;
     my $cui  = shift;
     
-    my $depth = $pathfinder->findMinimumDepth($cui);
+    my $depth = $pathfinder->_findMinimumDepth($cui);
     if($self->_checkError($pathfinder)) { return; }
     return $depth;
 }
@@ -539,7 +539,7 @@ sub findMaximumDepth {
     my $self = shift;
     my $cui  = shift;
     
-    my $depth = $pathfinder->findMaximumDepth($cui);
+    my $depth = $pathfinder->_findMaximumDepth($cui);
     if($self->_checkError($pathfinder)) { return; }  
     return $depth;
 }    
@@ -555,7 +555,7 @@ sub findShortestPath {
     my $concept1 = shift;
     my $concept2 = shift;
 
-    my @array = $pathfinder->findShortestPath($concept1, $concept2);
+    my @array = $pathfinder->_findShortestPath($concept1, $concept2);
     if($self->_checkError($pathfinder)) { return; }    
     return @array;
 }
@@ -571,7 +571,7 @@ sub findLeastCommonSubsumer {
     my $concept1 = shift;
     my $concept2 = shift;
     
-    my @array = $pathfinder->findLeastCommonSubsumer($concept1, $concept2);
+    my @array = $pathfinder->_findLeastCommonSubsumer($concept1, $concept2);
     if($self->_checkError($pathfinder)) { return; }    
     return @array;
 }    
@@ -587,7 +587,7 @@ sub getIC {
     my $self     = shift;
     my $concept  = shift;
     
-    my $ic = $icfinder->getIC($concept);
+    my $ic = $icfinder->_getIC($concept);
     if($self->_checkError($icfinder)) { return; }    
     return $ic;    
 }
@@ -600,7 +600,7 @@ sub getPropagationCuis
 {
     my $self = shift;
     
-    my $hash = $icfinder->getPropagationCuis();
+    my $hash = $icfinder->_getPropagationCuis();
     if($self->_checkError($icfinder)) { return; }    
     return $hash;
     
@@ -618,7 +618,7 @@ sub propagateCounts
     my $self = shift;
     my $fhash = shift;
     
-    my $hash = $icfinder->propagateCounts($fhash);
+    my $hash = $icfinder->_propagateCounts($fhash);
     if($self->_checkError($icfinder)) { return; }
     return $hash;
 }

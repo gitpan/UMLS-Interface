@@ -1,6 +1,20 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.57 to 0.59
+    1. fixed an error that happened when trying to obtain the depth of a
+    taxonomy when not in --realtime
+
+    2. cleaned up documentation and STDERR output a bit
+
+    3. add check to make certain that that the .t programs can only be
+    called in the main directory
+
+    4. change mkpath and rmtree to make_path() and remove_tree() in the .t
+    files
+
+    5. reorganized the Finder modules
+
   Changes from version 0.55 to 0.57
     1. add a more complete configuration file in the samples directory
 
