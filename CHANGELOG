@@ -1,6 +1,40 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.59 to 0.61
+    1. add validOptions() check in the Interface.pm module -> I actually
+    called it checkOptions since this is consistent with other functions
+    that do this
+
+    2. change the synopsis of the Finder modules so that are unique and
+    describe what they do better (priority)
+
+    3. add a check in the table file of the index to make certain that the
+    program completed
+
+    4. Get --icfrequency option up and running
+
+    5. write the SAB and REL info on the top lines of the icpropagation
+    file, and then check those relative to the config file being used
+
+    6. perldoc should give a quick intro to what propagation is, and how we
+    are doing the actual calculations of info content values
+
+    7. Add --smooth option
+
+    8. document how the smoothing is done in the perldoc
+
+    9. document the --icfrequency option
+
+    10. add check to RELA requiring REL if specified
+
+    11. move error checking into separate module
+
+    12. add RELA to the documentation
+
+    13. create getExtendedRelation function using SABDEF and use that
+    instead of getRelated in the getExtendedDefinition function
+
   Changes from version 0.57 to 0.59
     1. fixed an error that happened when trying to obtain the depth of a
     taxonomy when not in --realtime
@@ -148,8 +182,8 @@ NAME
     1. Added the ability to propogation counts given a propogation file.
     Currently the format of that file is: Frequency|CUI|String
 
-        So for example: 
-        
+        So for example:
+
         1|C0018563|hand
 
         The concept C0018563 has a frequency count of one and is associated 
@@ -192,10 +226,10 @@ NAME
     propogation counts of the CUIs in the path.
 
   Changes from version 0.31 to 0.33
-1. fixed the error in the make tests - they would not work properly
-   unless you had the UMLS-Interface environment variable set 
-   for the location of the configuration files even though we weren't 
-   using them.
+    1. fixed the error in the make tests - they would not work properly
+    unless you had the UMLS-Interface environment variable set for the
+    location of the configuration files even though we weren't using them.
+
   Changes from version 0.29 to 0.31
     1. Changed all of the table names into hex form!! This is important
     because it now means the versions aren't back compatible. Why did I do
@@ -354,8 +388,8 @@ NAME
        A file containing pairs of concepts or terms in the following format:
 
         term1<>term2 
-        
-    or 
+
+        or 
 
         cui1<>cui2
 
@@ -378,7 +412,7 @@ NAME
 
     2. Added a program to the utils/ directory:
 
-          getSt.pl    which returns the semantic type of a given CUI
+           getSt.pl    which returns the semantic type of a given CUI
                       or TERM in the UMLS. This program uses the three 
                       above functions.
 

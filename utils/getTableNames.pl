@@ -189,14 +189,9 @@ if(defined $opt_socket) {
 
 $umls = UMLS::Interface->new(\%option_hash);             
 die "Unable to create UMLS::Interface object.\n" if(!$umls);                    
-($errCode, $errString) = $umls->getError();              
-die "$errString\n" if($errCode);               
-
-&errorCheck($umls);
 
 if(defined $opt_config) {
     my $hashRef = $umls->returnTableNames();
-    &errorCheck($umls);
     
     my $hashkeys = keys %{$hashRef};
     if($hashkeys > 0) {
@@ -232,15 +227,6 @@ else {
 	print "$hex\t$name\n";              
     } $sth->finish();
 }
-
-sub errorCheck
-{
-    my $obj = shift;
-    ($errCode, $errString) = $obj->getError();
-    print STDERR "$errString\n" if($errCode);
-    exit if($errCode > 1);
-}
-
 
 ##############################################################################
 #  function to output minimal usage notes
@@ -288,7 +274,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getTableNames.pl,v 1.5 2010/04/19 16:24:12 btmcinnes Exp $';
+    print '$Id: getTableNames.pl,v 1.6 2010/05/24 17:57:16 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

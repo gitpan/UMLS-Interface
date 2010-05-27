@@ -31,13 +31,16 @@ SAB :: <include|exclude> <source1, source2, ... sourceN>
 
 REL :: <include|exclude> <relation1, relation2, ... relationN>
 
-The SAB and REL are for specifing what sources and relations 
+RELA :: <include|exclude> <rela1, rela2, ... relaN>  (optional)
+
+The SAB, REL and RELA are for specifing what sources and relations 
 should be used when traversing the UMLS. For example, if we 
 wanted to use the MSH vocabulary with only the RB/RN relations, 
 the configuration file would be:
 
 SAB :: include MSH
 REL :: include RB, RN
+RELA :: include isa, inverse_isa
 
 or if we wanted to use MSH and use any relation except for PAR/CHD, 
 the configuration would be:
@@ -237,10 +240,6 @@ if(defined $opt_socket) {
 
 $umls = UMLS::Interface->new(\%option_hash); 
 die "Unable to create UMLS::Interface object.\n" if(!$umls);
-($errCode, $errString) = $umls->getError();
-die "$errString\n" if($errCode);
-
-&errorCheck($umls);
 
 #  set the root
 my $root = "C0085567";
@@ -281,7 +280,6 @@ if($opt_debugpath) {
 
 #  get the first set of children and start the dfs
 my @children= $umls->getChildren($root); 
-&errorCheck($umls);
 
 #  update the branching variables
 $max_branch = $#children + 1;
@@ -419,17 +417,6 @@ sub _depthFirstSearch
 }
 
 ##############################################################################
-#  error check
-##############################################################################
-sub errorCheck
-{
-    my $obj = shift;
-    ($errCode, $errString) = $obj->getError();
-    print STDERR "$errString\n" if($errCode);
-    exit if($errCode > 1);
-}
-
-##############################################################################
 #  function to output minimal usage notes
 ##############################################################################
 sub minimalUsageNotes {
@@ -482,7 +469,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findDFS.pl,v 1.9 2010/05/11 21:47:47 btmcinnes Exp $';
+    print '$Id: findDFS.pl,v 1.10 2010/05/24 17:57:16 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

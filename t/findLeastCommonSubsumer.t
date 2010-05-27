@@ -8,7 +8,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 7;
+use Test::More tests => 5;
 
 use UMLS::Interface;
 use File::Spec;
@@ -32,15 +32,8 @@ $option_hash{"t"} = 1;
 my $umls = UMLS::Interface->new(\%option_hash);
 ok($umls);
 
-my ($errCode, $errString) = $umls->getError();
-ok(!($errCode));
-
 #  get the version of umls that is being used
 my $version = $umls->version();
-
-#  check that no errors occured while obtaining the version
-($errCode, $errString) = $umls->getError();
-ok(!($errCode));
 
 #  set the key directory (create it if it doesn't exist)
 my $keydir = File::Spec->catfile('t','key', $version);

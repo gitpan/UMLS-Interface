@@ -184,10 +184,6 @@ if(defined $opt_socket) {
 
 $umls = UMLS::Interface->new(\%option_hash); 
 die "Unable to create UMLS::Interface object.\n" if(!$umls);
-($errCode, $errString) = $umls->getError();
-die "$errString\n" if($errCode);
-
-&errorCheck($umls);
 
 my $input = shift;
 
@@ -202,19 +198,11 @@ else {
     @c = $umls->getConceptList($input);
 }
 
-&errorCheck($umls);
-
 my $printFlag = 0;
 
 foreach my $cui (@c) {
     
-    if($umls->validCui($cui)) {
-	print STDERR "ERROR: The concept ($cui) is not valid.\n";
-	exit;
-    }
-    
     my @sts = $umls->getSt($cui);
-    &errorCheck($umls);
     
     if($#sts < 0) {
 	print "There are no semantic types associated with $term ($cui)\n";
@@ -223,9 +211,7 @@ foreach my $cui (@c) {
 	print "The semantic types associated with $term ($cui):\n";
 	foreach my $st (@sts) {
 	    my $abr = $umls->getStAbr($st);
-	    &errorCheck($umls);
 	    my $string = $umls->getStString($abr);
-	    &errorCheck($umls);
 	    print "  $string ($abr)\n";
 	}
     }
@@ -235,15 +221,6 @@ foreach my $cui (@c) {
 if(! ($printFlag) ) {
     print "There are no semantic types associated with $input\n";
 }
-
-sub errorCheck
-{
-    my $obj = shift;
-    ($errCode, $errString) = $obj->getError();
-    print STDERR "$errString\n" if($errCode);
-    exit if($errCode > 1);
-}
-
 
 ##############################################################################
 #  function to output minimal usage notes
@@ -291,7 +268,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getSts.pl,v 1.7 2010/05/07 20:28:54 btmcinnes Exp $';
+    print '$Id: getSts.pl,v 1.8 2010/05/24 23:05:10 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

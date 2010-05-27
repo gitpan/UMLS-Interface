@@ -34,11 +34,14 @@ SAB :: <include|exclude> <source1, source2, ... sourceN>
 
 REL :: <include|exclude> <relation1, relation2, ... relationN>
 
+RELA :: <include|exclude> <rela1, rela2, ... relaN>  (optional)
+
 For example, if we wanted to use the MSH vocabulary with only 
 the RB/RN relations, the configuration file would be:
 
 SAB :: include MSH
 REL :: include RB, RN
+RELA :: include inverse_isa, isa
 
 or 
 
@@ -306,12 +309,6 @@ if(defined $opt_socket) {
 
 $umls = UMLS::Interface->new(\%option_hash); 
 die "Unable to create UMLS::Interface object.\n" if(!$umls);
-($errCode, $errString) = $umls->getError();
-die "$errString\n" if($errCode);
-
-
-&errorCheck($umls);
-
 
 foreach my $element (@fileArray) {
     
@@ -326,14 +323,12 @@ foreach my $element (@fileArray) {
     }
     else {
 	@c1 = $umls->getConceptList($input1); 
-	&errorCheck($umls);
     }
     if( ($input2=~/C[0-9]+/)) {
 	push @c2, $input2; 
     }
     else {
 	@c2 = $umls->getConceptList($input2); 
-	&errorCheck($umls);
     }
     
     my $printFlag = 0;
@@ -352,15 +347,6 @@ foreach my $element (@fileArray) {
 		($t2) = $umls->getTermList($cui2); 
 	    }
 
-	    if($umls->validCui($cui1)) {
-		print STDERR "ERROR: The concept ($cui1) is not valid.\n";
-		exit;
-	    }
-	    if($umls->validCui($cui2)) {
-		print STDERR "ERROR: The concept ($cui2) is not valid.\n";
-		exit;
-	    }
-	    
 	    if(($umls->exists($cui1) == 0) or
 	       ($umls->exists($cui2) == 0) ) { next; }
 	    
@@ -368,14 +354,11 @@ foreach my $element (@fileArray) {
 		print "\nThe least common subsumer between $t1 ($cui1) and $t2 ($cui2) is $t1 ($cui1) ";
 		if(defined $opt_depth) {
 		    my $min = $umls->findMinimumDepth($cui1);
-		    &errorCheck($umls);
 		    my $max = $umls->findMaximumDepth($cui1);
-		    &errorCheck($umls);
 		    print "with a min and max depth of $min and $max ";
 		}
 		if(defined $opt_propagation) {
 		    my $ic = sprintf $floatformat, $umls->getIC($cui1);
-		    &errorCheck($umls);
 		    print "with an IC of $ic ";
 		}
 		print "\n";
@@ -386,7 +369,6 @@ foreach my $element (@fileArray) {
 	    
 	    
 	    my @lcses = $umls->findLeastCommonSubsumer($cui1, $cui2);
-	    &errorCheck($umls);
 	    	    
 	    foreach my $lcs (@lcses) {
 		
@@ -395,14 +377,11 @@ foreach my $element (@fileArray) {
 		print "\nThe least common subsumer between $t1 ($cui1) and $t2 ($cui2) is $t ($lcs) ";
 		if(defined $opt_depth) {
 		    my $min = $umls->findMinimumDepth($lcs);
-		    &errorCheck($umls);
 		    my $max = $umls->findMaximumDepth($lcs);
-		    &errorCheck($umls);
 		    print "with a min and max depth of $min and $max ";
 		}
 		if(defined $opt_propagation) {
 		    my $ic = sprintf $floatformat, $umls->getIC($lcs);
-		    &errorCheck($umls);
 		    print "with an IC of $ic ";
 		}
 		print "\n";
@@ -416,15 +395,6 @@ foreach my $element (@fileArray) {
 	print "There is not a least common subsumer between $input1 and $input2 given the current view of the UMLS.\n\n";
     }
 }
-
-sub errorCheck
-{
-    my $obj = shift;
-    ($errCode, $errString) = $obj->getError();
-    print STDERR "$errString\n" if($errCode);
-    exit if($errCode > 1);
-}
-
 
 ##############################################################################
 #  function to output minimal usage notes
@@ -499,7 +469,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findLeastCommonSubsumer.pl,v 1.17 2010/05/11 20:04:46 btmcinnes Exp $';
+    print '$Id: findLeastCommonSubsumer.pl,v 1.18 2010/05/24 17:57:16 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

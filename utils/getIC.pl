@@ -56,11 +56,14 @@ SAB :: <include|exclude> <source1, source2, ... sourceN>
 
 REL :: <include|exclude> <relation1, relation2, ... relationN>
 
+RELA :: <include|exclude> <rela1, rela2, ... relaN>  (optional)
+
 For example, if we wanted to use the MSH vocabulary with only 
 the RB/RN relations, the configuration file would be:
 
 SAB :: include MSH
 REL :: include RB, RN
+RELA :: include inverse_isa, isa
 
 or 
 
@@ -70,6 +73,15 @@ REL :: exclude PAR, CHD
 If you go to the configuration file directory, there will 
 be example configuration files for the different runs that 
 you have performed.
+
+
+=head3 --smooth 
+
+Incorporate Laplace smoothing, where the frequency count of each of the 
+concepts in the taxonomy is incremented by one. The advantage of 
+doing this is that it avoides having a concept that has a probability 
+of zero. The disadvantage is that it can shift the overall probability 
+mass of the concepts from what is actually seen in the corpus. 
 
 =head3 --debug
 
@@ -168,7 +180,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-eval(GetOptions( "version", "help", "debug", "icfrequency", "icpropagation", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s")) or die ("Please check the above mentioned option(s).\n");
+eval(GetOptions( "version", "help", "debug", "icfrequency", "icpropagation", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "smooth")) or die ("Please check the above mentioned option(s).\n");
 
 
 #  if help is defined, print out help
@@ -213,6 +225,9 @@ else {
 if(defined $opt_config) {
     $option_hash{"config"} = $opt_config;
 }
+if(defined $opt_smooth) {
+    $option_hash{"smooth"} = $opt_smooth;
+}
 if(defined $opt_verbose) {
     $option_hash{"verbose"} = $opt_verbose;
 }
@@ -240,10 +255,6 @@ if(defined $opt_socket) {
 
 $umls = UMLS::Interface->new(\%option_hash); 
 die "Unable to create UMLS::Interface object.\n" if(!$umls);
-($errCode, $errString) = $umls->getError();
-die "$errString\n" if($errCode);
-
-&errorCheck($umls);
 
 my $input = shift;
 my $term  = $input;
@@ -261,30 +272,14 @@ my $printFlag = 0;
 my $precision = 4;
 my $floatformat = join '', '%', '.', $precision, 'f';
 foreach my $cui (@c) {
-    if($umls->validCui($cui)) {
-	print STDERR "ERROR: The concept ($cui) is not valid.\n";
-	exit;
-    }
-
     #  make certain cui exists in this view
     if($umls->exists($cui) == 0) { next; }	
 
     my $ic = $umls->getIC($cui); 
     my $pic = sprintf $floatformat, $ic;
-    
-    &errorCheck($umls);
 
     print "The information content of $term ($cui) is $pic\n";
 }
-
-sub errorCheck
-{
-    my $obj = shift;
-    ($errCode, $errString) = $obj->getError();
-    print STDERR "$errString\n" if($errCode);
-    exit if($errCode > 1);
-}
-
 
 ##############################################################################
 #  function to output minimal usage notes
@@ -317,6 +312,8 @@ sub showHelp() {
 
     print "--config FILE            Configuration file\n\n";
 
+    print "--smooth                 Incorporate Laplace smoothing, when \n";
+    print "                         calculating the probability of a concept\n\n";
     print "--debug                  Sets the debug flag for testing\n\n";
 
     print "--username STRING        Username required to access mysql\n\n";
@@ -338,7 +335,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getIC.pl,v 1.10 2010/05/11 20:29:07 btmcinnes Exp $';
+    print '$Id: getIC.pl,v 1.12 2010/05/24 23:05:10 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

@@ -1,5 +1,5 @@
 # UMLS::Interface::ICFinder
-# (Last Updated $Id: ICFinder.pm,v 1.2 2010/05/20 14:54:43 btmcinnes Exp $)
+# (Last Updated $Id: ICFinder.pm,v 1.7 2010/05/26 22:17:58 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -47,6 +47,9 @@ use DBI;
 use bytes;
 
 use UMLS::Interface::CuiFinder;
+use UMLS::Interface::ErrorHandler;
+
+my $pkg = "UMLS::Interface::ICFinder";
 
 my $root = "";
 
@@ -64,7 +67,10 @@ my $option_icpropagation = 0;
 my $option_icfrequency   = 0;
 my $option_t           = 0;
 
-my $smooth             = 1;
+my $smooth             = 0;
+
+my $errorhandler = "";
+my $cuifinder    = "";
 
 # UMLS-specific stuff ends ----------
 
@@ -74,18 +80,30 @@ my $smooth             = 1;
 sub new {
     my $self = {};
     my $className = shift;
-    my $paramHash = shift;
-    my $cuifinder = shift;
+    my $params    = shift;
+    my $handler   = shift;
     
-    # Initialize Error String and Error Code.
-    $self->{'errorString'} = "";
-    $self->{'errorCode'} = 0;
+    # initialize error handler
+    $errorhandler = UMLS::Interface::ErrorHandler->new();
+        if(! defined $errorhandler) {
+	print STDERR "The error handler did not get passed properly.\n";
+	exit;
+    }
 
-    # Bless the object.
+    #  initialize the cuifinder
+    $cuifinder = $handler;
+    if(! (defined $handler)) { 
+	$errorhandler->_error($pkg, 
+			      "new", 
+			      "The CuiFinder handler did not get passed properly", 
+			      8);
+    }
+
+    # bless the object.
     bless($self, $className);
 
-    # Initialize the object.
-    $self->_initialize($paramHash, $cuifinder);
+    # initialize the object.
+    $self->_initialize($params);
 
     return $self;
 }
@@ -95,32 +113,25 @@ sub _initialize
 {
     my $self      = shift;
     my $params    = shift;
-    my $cuifinder = shift;
-
-    return undef if(!defined $self || !ref $self);
-    
-    $params = {} if(!defined $params);
 
     #  set function name
     my $function = "_initialize";
-
-    #  check the cuifinder
-    if(!$cuifinder) { 
-	return($self->_error($function, "No UMLS::Interface::CuiFinder")); 
-    } $self->{'cuifinder'} = $cuifinder;
-    
+  
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+        
     #  get the umlsinterfaceindex database from CuiFinder
     my $sdb = $cuifinder->_getIndexDB();
-    if(!$sdb) { 
-	return($self->_error($function, "No db sent from UMLS::Interface::CuiFinder")); 
-    } $self->{'sdb'} = $sdb;
-
+    if(!$sdb) { $errorhandler->_error($pkg, $function, "Error with sdb.", 3); }
+    $self->{'sdb'} = $sdb;
+    
     #  get the root
     $root = $cuifinder->_root();
 
     #  set up the options
     $self->_setOptions($params);
-    if($self->_checkError($function)) { return (); }	
 
     #  load the propagation hash if the option is specified
     if($option_icpropagation) { 
@@ -149,11 +160,14 @@ sub _setOptions
 {
     my $self = shift;
     my $params = shift;
-    
-    return undef if(!defined $self || !ref $self);
-
+ 
     my $function = "_setOptions";
-
+    
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+ 
     #  get all the parameters
     my $debugoption   = $params->{'debug'};
     my $t             = $params->{'t'};
@@ -177,7 +191,7 @@ sub _setOptions
     
     if(defined $icsmooth) {
 	$smooth = $icsmooth;
-	$output .= "   --smooth $smooth\n";
+	$output .= "   --smooth\n";
     }
 
     #  check if the propagation option has been identified
@@ -204,80 +218,6 @@ sub _setOptions
     }    
 }
 
-#  set the error string
-#  input : $function <- the function the error is coming from
-#          $string   <- the error string
-#  output: 
-sub _error {
-
-    my $self     = shift;
-    my $function = shift;
-    my $string   = shift;
-
-    return undef if(!defined $self || !ref $self);
-        
-    $self->{'errorString'} .= "\nError (UMLS::Interface::PathFinder->$function()) - ";
-    $self->{'errorString'} .= $string;
-    $self->{'errorCode'} = 2;
-
-}
-
-#  check error function to determine if an error happened within a function
-#  input : $function <- string containing name of function
-#  output: 0|1 indicating if an error has been thrown 
-sub _checkError {
-    my $self     = shift;
-    my $function = shift;
-   
-    my $code = $self->{'errorCode'}; 
-    
-    my $sdb = $self->{'sdb'};
-    if($sdb->err()) { 
-	$self->_error($function, 
-		      "Error executing database query: ($sdb->errstr())");
-	return 1;
-    }
-    
-    if($code == 2) { return 1; }
-    else           { return 0; }
-}
-
-#  method that returns the error string and error code from the 
-#  last method call on the object.
-#  input : 
-#  output: $returnCode, $returnString <- strings containing 
-#                                        error information
-sub _getError {
-    my $self      = shift;
-
-    my $returnCode = $self->{'errorCode'};
-    my $returnString = $self->{'errorString'};
-
-    $returnString =~ s/^\n+//;
-
-    return ($returnCode, $returnString);
-}
-
-#  method sets the error - this is for when we call
-#  something in another pm module we can propagate
-#  that erro back through the program
-#  input : $handler
-#  output: 
-sub _setError {
-    my $self = shift;
-    my $handler = shift;
-
-    my $function = "_setError";
-    &_debug($function);
-    
-    #  set the cuifinder 
-    
-    my ($returnCode, $returnString) = $handler->_getError();
-    
-    $self->{'returnCode'}   = $returnCode;
-    $self->{'returnString'} = $returnString;
-}
-
  
 #  returns the information content (IC) of a cui
 #  input : $concept <- string containing a cui
@@ -287,27 +227,23 @@ sub _getIC
     my $self     = shift;
     my $concept  = shift;
 
-    return undef if(!defined $self || !ref $self);
-    
     my $function = "_getIC";
     &_debug($function);
 
+     #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+     
     #  check concept was obtained
     if(!$concept) { 
-	return($self->_error($function, "Undefined input values.")); 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept.", 4);
     }
     
-    #  set the cuifinder 
-    my $cuifinder = $self->{'cuifinder'};
-    if(!$cuifinder) { 
-	return($self->_error($function, "UMLS::Interface::CuiFinder not defined.")); 
-    }
-    
-    #  check valid concept
-    if($cuifinder->_validCui($concept)) { 
-	return($self->_error($function, "Incorrect input value ($concept).")); 
-    }
-    
+    #  check if valid concept
+    if(! ($errorhandler->_validCui($concept)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($concept) in not valid.", 6);
+    }    
        
     #  if option frequency then the propagation hash 
     #  hash has not been loaded and we should determine
@@ -331,7 +267,7 @@ sub _getIC
     }
     
     my $prob = $propagationHash{$concept};
-    
+
     if(!defined $prob) { return 0; }
 
     return ($prob > 0 and $prob < 1) ? -log($prob) : 0;
@@ -345,12 +281,40 @@ sub _loadFrequencyHash {
 
     my $self = shift;
     
-    open(FILE, $frequencyFile) || die "Could not open file: $frequencyFile\n";
-    
+    my $function = "_loadFrequencyHash";
+
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    #  open the frequency file
+    open(FILE, $frequencyFile) || die "Could not open file $frequencyFile\n";
+
+    #  the source  associated with the frequencyfile
+    my $sab = <FILE>; chomp $sab;
+
+    #  get the source in the config file (or the default)
+    my $configsab = $cuifinder->_getSabString();
+
+    #  check the source information is correct
+    if($sab ne $configsab)  {
+	my $str = "SAB information ($sab) does not match the config file ($configsab).";
+	$errorhandler->_error($pkg, $function, $str, 5);
+    }
+        
+    #  obtain the frequency counts storing them in the frequency hash table
     while(<FILE>) { 
 	chomp;
+	
+	#  if blank line more on
+	if($_=~/^\s*$/) { next; }
+
+	#  get the cui and its frequency count
 	my($cui, $freq) = split/<>/;
 	
+	#  make certain that it is a cui and a frequency
+	#  and if it is load it into the frequency hash
 	if( ($cui=~/C[0-9]/) && ($freq=~/[0-9]+/) ) { 
 	    if(exists $frequencyHash{$cui}) { 
 		$frequencyHash{$cui} += $freq;
@@ -372,27 +336,16 @@ sub _getPropagationCuis {
 
     my $self = shift;
     
-    return undef if(!defined $self || !ref $self);
-    
     my $function = "_getPropagationCuis";
     &_debug($function);
-    
-    #  set the cuifinder 
-    my $cuifinder = $self->{'cuifinder'};
-    if(!$cuifinder) { 
-	return($self->_error($function, "UMLS::Interface::CuiFinder not defined.")); 
-    }
-    
-    #  get the hash
-    my $hash = $cuifinder->_getCuiList();
 
-    #  make certain there weren't any problems
-    if($self->_checkError($cuifinder)) { 
-	$self->_setError($cuifinder);
-	return; 
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
     }
-    
-    return $hash;
+
+    #  return the reference to a hash
+    return $cuifinder->_getCuiList();
 }
 
 #  initialize the propgation hash
@@ -402,10 +355,13 @@ sub _initializePropagationHash {
 
     my $self = shift;
 
-    return undef if(!defined $self || !ref $self);
-    
     my $function = "_initializePropagationHash";
     &_debug($function);
+
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
     
     #  clear out the hash just in case
     my $hash = $self->_getPropagationCuis();
@@ -427,10 +383,13 @@ sub _loadPropagationFreq {
     my $self = shift;
     my $fhash = shift;
     
-    return undef if(!defined $self || !ref $self);
-    
     my $function = "_loadPropagationFreq";
     &_debug($function);
+
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
 
     #  loop through and set the frequency count
     my $N = 0;    
@@ -461,20 +420,61 @@ sub _loadPropagationFreq {
 sub _loadPropagationHash {
 
     my $self = shift;
-    
-    return undef if(!defined $self || !ref $self);
-    
+        
     my $function = "_loadPropagationHash";
     &_debug($function);
 
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    #  open the propagation file
     open(FILE, $propagationFile) || die "Could not open file $propagationFile\n";
+    #  check if smoothing was set
+    my $psmooth = <FILE>;
+    
+    #  the source and relations associated with the propagation file
+    my $sab = <FILE>; chomp $sab;
+    my $rel = <FILE>; chomp $rel;
+
+    #  get the source and relations from config file or the defaults
+    my $configsab = $cuifinder->_getSabString();
+    my $configrel = $cuifinder->_getRelString();
+
+    #  check the source information is correct
+    if($sab ne $configsab )  {
+	my $str = "SAB information ($sab) does not match the config file ($configsab).";
+	$errorhandler->_error($pkg, $function, $str, 5);
+    }
+    
+    #  check that that the relation information is correct
+    if($rel ne $configrel)  {
+	my $str = "REL information ($rel) does not match the config file ($configrel).";
+	$errorhandler->_error($pkg, $function, $str, 5);
+    }
+
     while(<FILE>) {
 	chomp;
+
+	#  if blank line move on
+	if($_=~/^\s*$/) { next; }
+
+	#  check if rela information was used
+	if($_=~/RELA/) {
+	    if($_ ne $cuifinder->_getRelaString()) {
+		my $str = "RELA information does not match the config file ($_).";
+		$errorhandler->_error($pkg, $function, $str, 5);
+	    }
+	}
+	
+	#  get the cui and its frequency count
 	my ($cui, $freq) = split/<>/;
+
+	#  load it into the propagation hash
 	if(! (exists $propagationHash{$cui})) { 
 	    $propagationHash{$cui} = 0;
 	}
-
 	$propagationHash{$cui} += $freq;
     }
 }
@@ -491,23 +491,23 @@ sub _getPropagationCount {
     my $function = "_getPropagationCount";
     &_debug($function);
 
-    $self->_propagateCounts();
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
 
     #  check concept was obtained
     if(!$concept) { 
-	return($self->_error($function, "Undefined input values.")); 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept.", 4);
     }
     
-    #  set the cuifinder 
-    my $cuifinder = $self->{'cuifinder'};
-    if(!$cuifinder) { 
-	return($self->_error($function, "UMLS::Interface::CuiFinder not defined.")); 
+    #  check if valid concept
+    if(! ($errorhandler->_validCui($concept)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($concept) in not valid.", 6);
     }
-    
-    #  check valid concept
-    if($cuifinder->_validCui($concept)) { 
-	return($self->_error($function, "Incorrect input value ($concept).")); 
-    }
+
+    #  propagate teh counts
+    $self->_propagateCounts();
 
     #  if the concept exists in the propagation hash 
     #  return the probability otherwise return a -1
@@ -529,11 +529,19 @@ sub _propagateCounts {
     my $self = shift;    
     my $fhash = shift;
     
-    return undef if(!defined $self || !ref $self);
-    
     my $function = "_propagateCounts";
     &_debug($function);
-    
+
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    #  check the parameters
+    if(!defined $fhash) { 
+	$errorhandler->_error($pkg, $function, "Input variable \%fhash  not defined.", 4);
+    }
+
     #  initialize the propagation hash
     $self->_initializePropagationHash();
     
@@ -561,10 +569,13 @@ sub _tallyCounts {
 
     my $self = shift;
     
-    return undef if(!defined $self || !ref $self);
-    
     my $function = "_tallyCounts";
     &_debug($function);
+
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
     
     foreach my $cui (sort keys %propagationHash) {
 	my $set    = $propagationHash{$cui};
@@ -597,26 +608,25 @@ sub _propagation {
     my $array   = shift;
 
     my $function = "_propagation";
+
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
     
-   #  check concept was obtained
+    #  check concept was obtained
     if(!$concept) { 
-	return($self->_error($function, "Undefined input values.")); 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept.", 4);
     }
     
-    #  set the cuifinder 
-    my $cuifinder = $self->{'cuifinder'};
-    if(!$cuifinder) { 
-	return($self->_error($function, "UMLS::Interface::CuiFinder not defined.")); 
+    #  check if valid concept
+    if(! ($errorhandler->_validCui($concept)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($concept) in not valid.", 6);
     }
     
-    #  check valid concept
-    if($cuifinder->_validCui($concept)) { 
-	return($self->_error($function, "Incorrect input value ($concept).")); 
-    }
- 
     #  if the concept is inactive
     if($cuifinder->_forbiddenConcept($concept)) { return; }
-       
+    
     #  set up the new path
     my @intermediate = @{$array};
     push @intermediate, $concept;
@@ -637,7 +647,6 @@ sub _propagation {
 
     #  get all the children
     my @children = $cuifinder->_getChildren($concept);
-    if($cuifinder->_checkError("UMLS::Interface::CuiFinder::getChildren")) { return (); }
     
     #  search through the children   
     foreach my $child (@children) {
@@ -672,6 +681,9 @@ sub _propagation {
     return $rset;
 }
 
+#  removes duplicates in an array
+#  input : $array <- reference to an array
+#  output: 
 sub _breduce {
     
     local($_)= @_;
@@ -688,8 +700,17 @@ __END__
 
 =head1 NAME
 
-UMLS::Interface::ICFinder - Perl interface to support the UMLS::Interface.pm which 
-is an interface to the Unified Medical Language System (UMLS). 
+UMLS::Interface::ICFinder  - provides the information content 
+of the CUIs in the UMLS for the modules in the 
+UMLS::Interface package.
+
+=head1 DESCRIPTION
+
+This package provides the information content of the CUIs in the 
+UMLS for the modules in the UMLS::Interface package.
+
+For more information please see the UMLS::Interface.pm 
+documentation. 
 
 =head1 SYNOPSIS
 
@@ -698,47 +719,22 @@ is an interface to the Unified Medical Language System (UMLS).
  use UMLS::Interface::CuiFinder;
 
  use UMLS::Interface::ICFinder;
- 
+
  %params = ();
 
  $cuifinder = UMLS::Interface::CuiFinder->new(\%params); 
 
  die "Unable to create UMLS::Interface::CuiFinder object.\n" if(!$cuifinder);
 
- ($errCode, $errString) = $cuifinder->_getError();
-
- die "$errString\n" if($errCode);
- 
-    
  $icfinder = UMLS::Interface::ICFinder->new(\%params, $cuifinder); 
 
  die "Unable to create UMLS::Interface::ICFinder object.\n" if(!$icfinder);
 
- ($errCode, $errString) = $icfinder->_getError();
-
- die "$errString\n" if($errCode);
- 
- $concept = "C0037303";
+  $concept = "C0037303";
 
  $ic = $icfinder->_getIC($concept);
 
  $hash = $icfinder->_getPropagationCuis();
- 
- if(!( $icfinder->_checkError())) {
-     print "No errors: All is good\n";
- }
- else {
-     my ($returnCode, $returnString) = $icfinder->_getError();
-     print STDERR "$returnString\n";
- }
-
-=head1 ABSTRACT
-
-This package provides a Perl interface to the Unified Medical Language 
-System. The package is set up to access pre-specified sources of the UMLS
-present in a mysql database.  The package was essentially created for use 
-with the UMLS::Similarity package for measuring the semantic relatedness 
-of concepts.
 
 =head1 INSTALL
 
@@ -761,21 +757,50 @@ details of these can be found in the ExtUtils::MakeMaker
 documentation. However, it is highly recommended not messing around
 with other parameters, unless you know what you're doing.
 
-=head1 DESCRIPTION
+=head2 PROPAGATION
 
-This package provides a Perl interface to the Unified Medical 
-Language System (UMLS). The UMLS is a knowledge representation 
-framework encoded designed to support broad scope biomedical 
-research queries. There exists three major sources in the UMLS. 
-The Metathesaurus which is a taxonomy of medical concepts, the 
-Semantic Network which categorizes concepts in the Metathesaurus, 
-and the SPECIALIST Lexicon which contains a list of biomedical 
-and general English terms used in the biomedical domain. The 
-UMLS-Interface package is set up to access the Metathesaurus
-and the Semantic Network present in a mysql database.
+The Information Content (IC) is  defined as the negative log 
+of the probability of a concept. The probability of a concept, 
+c, is determine by summing the probability of the concept 
+(P(c)) ocurring in some text plus the probability its decendants 
+(P(d)) occuring in some text:
 
-For more information please see the UMLS::Interface.pm 
-documentation. 
+P(c*) = P(c) + \sum_{d\exists decendant(c)} P(d)
+
+The initial probability of a concept (P(c)) and its decendants 
+(P(d)) is obtained by dividing the number of times a concept is 
+seen in the corpus (freq(d)) by the total number of concepts (N):
+
+P(d) = freq(d) / N
+
+Not all of the concepts in the taxonomy will be seen in the corpus. 
+We have the option to use Laplace smoothing, where the frequency 
+count of each of the concepts in the taxonomy is incremented by one. 
+The advantage of doing this is that it avoides having a concept that 
+has a probability of zero. The disadvantage is that it can shift the 
+overall probability mass of the concepts from what is actually seen 
+in the corpus. 
+
+=head2 PROPAGATION IN REALTIME
+
+The algorithm to determine the information content of a CUI in real 
+time is as follows:
+
+        1. get all of its decendants using the DFS
+
+        2. looping through the frequency file computing the 
+           probability of the decendants and storing this 
+           information
+
+        3. sum the probability of the decedants and the CUI 
+
+        4. calculate the IC which is defined as the negative log of 
+           the probabilty of the concept (which is the sum from
+           step 3)
+
+
+In order to run the propagation in real time, we require the frequency 
+counts of a list of CUIs to be given to us. 
 
 =head1 SEE ALSO
 
@@ -799,7 +824,7 @@ Ted Pedersen <tpederse@d.umn.edu>
 
  Siddharth Patwardhan, University of Utah, Salt Lake City
  sidd at cs.utah.edu
- 
+
  Serguei Pakhomov, University of Minnesota Twin Cities
  pakh0002 at umn.edu
 

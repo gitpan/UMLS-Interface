@@ -1,24 +1,24 @@
 # UMLS::Interface::CuiFinder
-# (Last Updated $Id: CuiFinder.pm,v 1.2 2010/05/20 14:54:43 btmcinnes Exp $)
+# (Last Updated $Id: CuiFinder.pm,v 1.10 2010/05/26 22:17:58 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
 #
 # Copyright (c) 2004-2010,
 #
-# Bridget T. McInnes, University of Minnesota Twin Cities
+# Bridget T. McInnes, University of Minnesota, Twin Cities
 # bthomson at cs.umn.edu
 #
 # Siddharth Patwardhan, University of Utah, Salt Lake City
 # sidd at cs.utah.edu
 # 
-# Serguei Pakhomov, University of Minnesota Twin Cities
+# Serguei Pakhomov, University of Minnesota, Twin Cities
 # pakh0002 at umn.edu
 #
 # Ted Pedersen, University of Minnesota, Duluth
 # tpederse at d.umn.edu
 #
-# Ying Liu, University of Minnesota
+# Ying Liu, University of Minnesota, Twin Cities
 # liux0935 at umn.edu
 #
 # This program is free software; you can redistribute it and/or
@@ -46,25 +46,35 @@ use warnings;
 use DBI;
 use bytes;
 
+use UMLS::Interface::ErrorHandler;
+
 use Digest::SHA1  qw(sha1 sha1_hex sha1_base64);
 
-my $debug = 0;
+#  error handling variables
+my $errorhandler = "";
+my $pkg = "UMLS::Interface::CuiFinder";
 
-my $umlsRoot = "C0085567";
+#  debug variables
+local(*DEBUG_FILE);
 
-my $version = "";
- 
+#  global variables
+my $debug     = 0;
+my $umlsRoot  = "C0085567";
+my $version   = "";
 my $max_depth = 0;
 
 #  list of allowable sources 
 my $sources      = "";
 my %sabHash      = ();
 my %sabnamesHash = ();
+my $sabstring    = "";
 
 #  list of allowable relations
 my $relations       = "";
 my $childRelations  = "";
 my $parentRelations = "";
+my $relstring       = "";
+my $relastring      = "";
 
 #  upper level taxonomy
 my %parentTaxonomyArray = ();
@@ -79,6 +89,7 @@ my %cuiListHash    = ();
 my $indexDB        = "umlsinterfaceindex";
 my $umlsinterface   = $ENV{UMLSINTERFACE_CONFIGFILE_DIR};
 
+#  table names
 my $tableName       = "";
 my $parentTable     = "";
 my $childTable      = "";
@@ -92,17 +103,19 @@ my $parentFile      = "";
 my $propTable       = "";
 my $propTableHuman  = "";
 
-my $umlsall    = 0;
-
+#  flags and options
+my $umlsall            = 0;
 my $option_verbose     = 0;
 my $option_cuilist     = 0;
 my $option_t           = 0;
 
-my $sabDefString       = "";
+#  definition containers
+my $sabdefsources       = "";
 my %relDefHash         = ();
 my %sabDefHash         = ();
-
-local(*DEBUG_FILE);
+my $reldefstring       = "";
+my $sabdefstring       = "";
+my %parameters         = ();
 
 ######################################################################
 #  functions to initialize the package
@@ -115,17 +128,20 @@ sub new {
 
     my $self = {};
     my $className = shift;
-    my $paramHash = shift;
+    my $params = shift;
 
-    # Initialize Error String and Error Code.
-    $self->{'errorString'} = "";
-    $self->{'errorCode'} = 0;
-
-    # Bless the object.
+    # initialize error handler
+    $errorhandler = UMLS::Interface::ErrorHandler->new();
+    if(! defined $errorhandler) {
+	print STDERR "The error handler did not get passed properly.\n";
+	exit;
+    }
+	
+    # bless the object.
     bless($self, $className);
 
-    # Initialize the object.
-    $self->_initialize($paramHash);
+    # initialize the object.
+    $self->_initialize($params);
 
     return $self;
 }
@@ -138,12 +154,16 @@ sub _initialize {
 
     my $self = shift;
     my $params = shift;
-
-    return undef if(!defined $self || !ref $self);
-    $params = {} if(!defined $params);
-
+    
     my $function = "_initialize";
     &_debug($function);
+
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    $params = {} if(!defined $params);
 
     #  get some of the parameters
     my $config       = $params->{'config'};
@@ -151,53 +171,40 @@ sub _initialize {
     my $database     = $params->{'database'};
     
     #  to store the database object
-    my $db = $self->_setDatabase($params);
-    if($self->_checkError($function)) { return (); }	
+    my $db = $self->_setDatabase($params);	
 
     #  set up the options
     $self->_setOptions($params);
-    if($self->_checkError($function)) { return (); }	
 
     #  check that all of the tables required exist in the db
     $self->_checkTablesExist();
-    if($self->_checkError($function)) { return (); }	
 
     #  set the version information
     $self->_setVersion();
-    if($self->_checkError($function)) { return (); }	
 
     #  set the configuration
     $self->_config($config); 
-    if($self->_checkError("_config")) { return (); } 
         
     #  set the umls interface configuration variable
     $self->_setEnvironmentVariable();
-    if($self->_checkError("_setEnvironmentVariable")) { return (); }	
 
     #  set the table and file names for indexing
     $self->_setConfigurationFile();
-    if($self->_checkError("_setConfigurationFile")) { return (); }	
     
     #  set the configfile
     $self->_setConfigFile();
-    if($self->_checkError("_setConfigFile")) { return (); }	
     
     #  load the cuilist if it has been defined
     $self->_loadCuiList($cuilist);
-    if($self->_checkError("_loadCuiList")) { return (); }	
 
     #  create the index database
     $self->_createIndexDB();
-    if($self->_checkError("_createIndexDB")) { return (); }	
     
     #  connect to the index database
     $self->_connectIndexDB();
-    if($self->_checkError("_connectIndexDB")) { return (); }	
 
     #  set the upper level taxonomy
     $self->_setUpperLevelTaxonomy();
-    if($self->_checkError("_setUpperLevelTaxonomy")) { return (); }
-
 }
 
 #  this function returns the umls root
@@ -218,41 +225,39 @@ sub _setUpperLevelTaxonomy  {
     
     my $function = "_setUpperLevelTaxonomy";
     &_debug($function);
-    
-    return undef if(!defined $self || !ref $self);
+
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
     
     #  set the sourceDB handler
     my $sdb = $self->{'sdb'};
-    if(!$sdb) { return($self->_error($function, "A db is required.")); }       
+    if(!$sdb) { $errorhandler->_error($pkg, $function, "Error with sdb.", 3); }
     
     #  check if the taxonomy is already set
     my $ckeys = keys %childTaxonomyArray;
     my $pkeys = keys %parentTaxonomyArray;
     if($pkeys > 0) { return; }
     
-    #  check if the parent and child tables exist and if they do just return otherwise create them
-    if($self->_checkTableExists($childTable) and $self->_checkTableExists($parentTable)) {
+    #  check if the parent and child tables exist and
+    #  if they do just return otherwise create them
+    if($self->_checkTableExists($childTable) and 
+       $self->_checkTableExists($parentTable)) {
 	$self->_loadTaxonomyArrays();
-	if($self->_checkError("_loadTaxonomyArrays")) { return (); }   
 	return;
     }
     else {
 	$self->_createTaxonomyTables();
-	if($self->_checkError("_createTaxonomyTables")) { return (); }   
     }
-    
     
     #  if the parent and child files exist just load them into the database
     if( (-e $childFile) and (-e $parentFile) ) {
-
 	$self->_loadTaxonomyTables();
-	if($self->_checkError("_loadTaxonomyTables")) { return (); }   
     }
     #  otherwise we need to create them
     else {
-       
-	$self->_createUpperLevelTaxonomy();
-	if($self->_checkError("_createUpperLevelTaxonomy")) { return (); }   
+    	$self->_createUpperLevelTaxonomy();
     }
 }
 
@@ -265,19 +270,22 @@ sub _setUpperLevelTaxonomy  {
 sub _createUpperLevelTaxonomy {
 
     my $self = shift;
-    
-    return undef if(!defined $self || !ref $self);
-    
+        
     my $function = "_createUpperLevelTaxonomy";
     &_debug($function);
     
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
     #  set the index DB handler
     my $sdb = $self->{'sdb'};
-    if(!$sdb) {	return($self->_error($function, "A db is required.")); }
-        
+    if(!$sdb) { $errorhandler->_error($pkg, $function, "Error with sdb.", 3); }
+    
     #  set up the database
     my $db = $self->{'db'};
-    if(!$db) { return($self->_error($function, "A db is required.")); }
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
     
     # open the parent and child files to store the upper level 
     #  taxonomy information if the verbose option is defined
@@ -295,10 +303,9 @@ sub _createUpperLevelTaxonomy {
 	my $allCuis = $self->_getCuis($sab);
 	
 	#  select all the CUI1s from MRREL that have a parent link
-	if($debug) { print STDERR "selecting CUIs from MRREL that have parent link for $sab\n"; }
 	my $parCuis = $db->selectcol_arrayref("select CUI1 from MRREL where ($parentRelations) and (SAB=\'$sab\')");
-        if($self->_checkError($function)) { return undef; }
-	
+	$errorhandler->_checkDbError($pkg, $function, $db);
+
 	#  load the cuis that have a parent into a temporary hash
 	my %parCuisHash = ();
 	foreach my $cui (@{$parCuis}) { $parCuisHash{$cui}++; }
@@ -320,11 +327,11 @@ sub _createUpperLevelTaxonomy {
 	    push @{$childTaxonomyArray{$sab_cui}}, $cui;
 
 	    $sdb->do("INSERT INTO $parentTable (CUI1, CUI2) VALUES ('$cui', '$sab_cui')");	    
-	    if($self->_checkError($function)) { return (); }   		
+	    $errorhandler->_checkDbError($pkg, $function, $sdb);
 	    
 	    $sdb->do("INSERT INTO $childTable (CUI1, CUI2) VALUES ('$sab_cui', '$cui')");	    
-	    if($self->_checkError($function)) { return (); } 
-	    
+	    $errorhandler->_checkDbError($pkg, $function, $sdb);
+
 	    #  print this information to the parent and child 
 	    #  file is the verbose option has been set
 	    if($option_verbose) {
@@ -345,10 +352,10 @@ sub _createUpperLevelTaxonomy {
 	
 	#  store this information in the database
 	$sdb->do("INSERT INTO $parentTable (CUI1, CUI2) VALUES ('$sab_cui', '$umlsRoot')");	    
-	if($self->_checkError($function)) { return (); }   		
+	$errorhandler->_checkDbError($pkg, $function, $sdb);
 	
 	$sdb->do("INSERT INTO $childTable (CUI1, CUI2) VALUES ('$umlsRoot', '$sab_cui')"); 
-	if($self->_checkError($function)) { return (); }   		
+	$errorhandler->_checkDbError($pkg, $function, $sdb);
     }
     
     #  close the parent and child tables if opened
@@ -374,32 +381,35 @@ sub _createTaxonomyTables {
 
     my $self = shift;
 
-    return undef if(!defined $self || !ref $self);
-
     my $function = "_createTaxonomyTables";
     &_debug($function);
-
+    
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+    
     #  set the index DB handler
     my $sdb = $self->{'sdb'};
-    if(!$sdb) { return($self->_error($function, "A db is required.")); }
-
+    if(!$sdb) { $errorhandler->_error($pkg, $function, "Error with sdb.", 3); }
+    
     #  create parent table
     $sdb->do("CREATE TABLE IF NOT EXISTS $parentTable (CUI1 char(8), CUI2 char(8))");
-    if($self->_checkError($function)) { return (); }
+    $errorhandler->_checkDbError($pkg, $function, $sdb);
     
     #  create child table
     $sdb->do("CREATE TABLE IF NOT EXISTS $childTable (CUI1 char(8), CUI2 char(8))");
-    if($self->_checkError($function)) { return (); }
+    $errorhandler->_checkDbError($pkg, $function, $sdb);
     
     #  create the index table if it doesn't already exist
     $sdb->do("CREATE TABLE IF NOT EXISTS tableindex (TABLENAME blob(1000000), HEX char(41))");
-    if($self->_checkError($function)) { return (); }
+    $errorhandler->_checkDbError($pkg, $function, $sdb);
     
     #  add them to the index table
     $sdb->do("INSERT INTO tableindex (TABLENAME, HEX) VALUES ('$parentTableHuman', '$parentTable')");
-    if($self->_checkError($function)) { return (); }   
+    $errorhandler->_checkDbError($pkg, $function, $sdb);
     $sdb->do("INSERT INTO tableindex (TABLENAME, HEX) VALUES ('$childTableHuman', '$childTable')");
-    if($self->_checkError($function)) { return (); }   
+    $errorhandler->_checkDbError($pkg, $function, $sdb);
 }    
 
 #  this function loads the taxonomy tables if the
@@ -409,19 +419,21 @@ sub _createTaxonomyTables {
 sub _loadTaxonomyTables {
 
     my $self = shift;
-
-    return undef if(!defined $self || !ref $self);
     
     my $function = "_loadTaxonomyTables";
     &_debug($function);
     
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
     #  set the index DB handler
     my $sdb = $self->{'sdb'};
-    if(!$sdb) { return($self->_error($function, "A db is required.")); }
+    if(!$sdb) { $errorhandler->_error($pkg, $function, "Error with sdb.", 3); }
     
     open(PAR, $parentFile) || die "Could not open $parentFile\n";	
     open(CHD, $childFile)  || die "Could not open $childFile\n";
-    
     
     #  load parent table
     while(<PAR>) {
@@ -430,7 +442,7 @@ sub _loadTaxonomyTables {
 	my ($cui1, $cui2) = split/\s+/;
 	
 	my $arrRef = $sdb->do("INSERT INTO $parentTable (CUI1, CUI2) VALUES ('$cui1', '$cui2')");	    
-	if($self->_checkError($function)) { return (); }   
+	$errorhandler->_checkDbError($pkg, $function, $sdb);
     }
     
     #  load child table
@@ -438,8 +450,8 @@ sub _loadTaxonomyTables {
 	chomp;
 	if($_=~/^\s*$/) { next; }
 	my ($cui1, $cui2) = split/\s+/;
-	my $arrRef = $sdb->do("INSERT INTO $childTable (CUI1, CUI2) VALUES ('$cui1', '$cui2')");	    
-	if($self->_checkError($function)) { return (); }
+	my $arrRef = $sdb->do("INSERT INTO $childTable (CUI1, CUI2) VALUES ('$cui1', '$cui2')"); 
+	$errorhandler->_checkDbError($pkg, $function, $sdb);
     }
     close PAR; close CHD; 
 }
@@ -451,14 +463,17 @@ sub _loadTaxonomyArrays {
 
     my $self = shift;
 
-    return undef if(!defined $self || !ref $self);
-
     my $function = "_loadTaxonomyArrays";
     &_debug($function);
-
+    
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+    
     #  set the index DB handler
     my $sdb = $self->{'sdb'};
-    if(!$sdb) { return($self->_error($function, "A db is required.")); }
+    if(!$sdb) { $errorhandler->_error($pkg, $function, "Error with sdb.", 3); }
     
     #  set the parent taxonomy
     my $sql = qq{ SELECT CUI1, CUI2 FROM $parentTable};
@@ -468,8 +483,9 @@ sub _loadTaxonomyArrays {
     $sth->bind_columns( undef, \$cui1, \$cui2 );
     while( $sth->fetch() ) {
 	push @{$parentTaxonomyArray{$cui1}}, $cui2;    
-    } $sth->finish();
-    
+    } 
+    $errorhandler->_checkDbError($pkg, $function, $sth);
+    $sth->finish();
     
     #  set the child taxonomy
     $sql = qq{ SELECT CUI1, CUI2 FROM $childTable};
@@ -478,7 +494,9 @@ sub _loadTaxonomyArrays {
     $sth->bind_columns( undef, \$cui1, \$cui2 );
     while( $sth->fetch() ) {
 	push @{$childTaxonomyArray{$cui1}}, $cui2;    
-    } $sth->finish();
+    } 
+    $errorhandler->_checkDbError($pkg, $function, $sth);
+    $sth->finish();
 }
 
 #  function checks to see if a given table exists
@@ -488,26 +506,32 @@ sub _checkTableExists {
     
     my $self  = shift;
     my $table = shift;
-
-    return () if(!defined $self || !ref $self);
     
     my $function = "_checkTableExists";
-    
+    &_debug($function);
+
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    if(!defined $table) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$table.", 4);
+    }
+
     #  check that the database exists
     my $sdb = $self->{'sdb'};
-    if(!$sdb) { return($self->_error($function, "A db is required.")); }       
+    if(!$sdb) { $errorhandler->_error($pkg, $function, "Error with sdb.", 3); }
     
+    #  set an execute the query to show all of the tables
     my $sth = $sdb->prepare("show tables");
     $sth->execute();
-    if($sth->err()) {
-	return($self->_error($function, "Unable run query: ($sth->errstr())"));
-    }
+    $errorhandler->_checkDbError($pkg, $function, $sth);
     
     my $t      = "";
     my %tables = ();
     while(($t) = $sth->fetchrow()) {
-	$tables{lc($t)} = 1;
-	
+	$tables{lc($t)} = 1;	
     }
     $sth->finish();
     
@@ -525,9 +549,15 @@ sub _connectIndexDB {
 
     my $self = shift;
     
-    &_debug("_connectIndexDB");
+    my $function = "_connectIndexDB";
+    &_debug($function);
+    
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+    
     my $sdb = "";
-
     if(defined $self->{'username'}) {
 	
 	my $username = $self->{'username'};
@@ -535,28 +565,44 @@ sub _connectIndexDB {
 	my $hostname = $self->{'hostname'};
 	my $socket   = $self->{'socket'};
 	
-	$sdb = DBI->connect("DBI:mysql:database=$indexDB;mysql_socket=$socket;host=$hostname",$username, $password, {RaiseError => 1});
+	eval{$sdb = DBI->connect("DBI:mysql:database=$indexDB;mysql_socket=$socket;host=$hostname", 
+				 $username, $password, 
+				 {RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
+	
+	if($@) { $errorhandler->_error($pkg, $function, "No database to connect to", 1); }
     }
     else {
 	my $dsn = "DBI:mysql:$indexDB;mysql_read_default_group=client;";
-	$sdb = DBI->connect($dsn);
+	eval{$sdb = DBI->connect($dsn);};
+	if($@) { $errorhandler->_error($pkg, $function, "No database to connect to", 1); }
     }
-    
+
+    $errorhandler->_checkDbError($pkg, $function, $sdb);
+
     $self->{'sdb'} = $sdb;
     
     return $sdb;
 }
 
 #  return the database connection to the umlsinterfaceindex
+#  input : 
+#  output: $sdb <- database handler 
 sub _getIndexDB {
     my $self = shift;
     
     my $function = "_getIndexDB";
     &_debug($function);
 
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    #  get the databawse
     my $sdb = $self->{'sdb'};
-    if(!$sdb) { return($self->_error($function, "A db is required.")); }       
+    if(!$sdb) { $errorhandler->_error($pkg, $function, "Error with sdb.", 3); }
     
+    #  return the database
     return $sdb;
 }
 
@@ -566,22 +612,23 @@ sub _getIndexDB {
 sub _createIndexDB {
     
     my $self = shift;
-    
-    return () if(!defined $self || !ref $self);
-    
+
     my $function = "_createIndexDB";
     &_debug($function);
     
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
     #  check that the database exists
     my $db = $self->{'db'};
-    if(!$db) { return ($self->_error($function, "A db is required")); }
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
     
     #  show all of the databases
     my $sth = $db->prepare("show databases");
     $sth->execute();
-    if($sth->err()) {
-	return($self->_error($function, "Unable run query: ($sth->errstr())"));
-    }
+    $errorhandler->_checkDbError($pkg, $function, $sth);
     
     #  get all the databases in mysql
     my $database  = "";
@@ -598,7 +645,7 @@ sub _createIndexDB {
     #  if the database doesn't exist create it
     if(! (exists $databases{$indexDB})) {
 	$db->do("create database $indexDB");
-	if($self->_checkError($function)) { return (); }   		
+	$errorhandler->_checkDbError($pkg, $function, $db);
     }
 }
 
@@ -609,7 +656,19 @@ sub _inCuiList {
     
     my $self    = shift;
     my $concept = shift;
+
+    my $function = "_inCuiList";
     
+    #  check input vluaes
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    #  check parameters
+    if(!defined $concept) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept.", 4);
+    }
+
     if(exists $cuiListHash{$concept}) { return 1; }
     else                              { return 0; }
 }
@@ -625,13 +684,18 @@ sub _loadCuiList {
     
     my $function = "_loadCuiList";
 
+    #  check the input values
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
     if(defined $cuilist) {
 	open(CUILIST, $cuilist) || die "Could not open the cuilist file: $cuilist\n"; 
 	while(<CUILIST>) {
 	    chomp;
 	    
-	    if($self->_validCui($_)) {
-		return($self->_error($function, "Incorrect input value ($_) in cuilist."));
+	    if(! ($errorhandler->_validCui($_)) ) {
+		$errorhandler->_error($pkg, $function, "Incorrect input value ($_) in cuilist.", 6);
 	    }
 	    
 	    $cuiListHash{$_}++;
@@ -646,13 +710,15 @@ sub _setConfigFile {
 
     my $self   = shift;
 
-    return undef if(!defined $self || !ref $self);
-    
     if($option_verbose) {
-        
+
 	my $function = "_setConfigFile";
 	&_debug($function);
 	
+        if(!defined $self || !ref $self) {
+	    $errorhandler->_error($pkg, $function, "", 2);
+	}
+       
 	if(! (-e $configFile)) {
 	    
 	    open(CONFIG, ">$configFile") ||
@@ -686,10 +752,13 @@ sub _setConfigurationFile {
 
     my $self = shift;
 
-    return undef if(!defined $self || !ref $self);
-
     my $function = "_setConfigurationFile";
     &_debug($function);
+    
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
 
     #  get the database name that we are using
     my $database = $self->{'database'};
@@ -787,7 +856,13 @@ sub _setEnvironmentVariable {
 
     my $self = shift;
 
-    return undef if(!defined $self || !ref $self);
+    my $function = "_setEnvironmentVariable";
+    &_debug($function);
+
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
 
     if($option_verbose) {
 	if(! (defined $umlsinterface) ) {    
@@ -853,17 +928,23 @@ sub _setRelations {
     my $function = "_setRelations";
     &_debug($function);
     
-    return () if(!defined $self || !ref $self);
-
-    #  check the parameters are defined
-    if(!(defined $includerelkeys) || !(defined $excluderelkeys) || 
-       !(defined $includerel)     || !(defined $excluderel)) {
-	return ($self->_error($function, "Undefined input values."));
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
     }
     
+    #  check the parameters
+    if(!(defined $includerelkeys) || !(defined $excluderelkeys) || 
+       !(defined $includerel)     || !(defined $excluderel)) {
+	$errorhandler->_error($pkg, $function, "REL variables not defined.", 4);
+    }
+
+    if($includerelkeys <= 0 && $excluderelkeys <=0) { return; }
+
+    #  set the database
     my $db = $self->{'db'};
-    if(!$db) { return ($self->_error($function, "A db is required")); }
-	       
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
+    
     $parentRelations = "(";
     $childRelations  = "(";
     $relations       = "(";
@@ -876,7 +957,7 @@ sub _setRelations {
     else {
 	
 	my $arrRef = $db->selectcol_arrayref("select distinct REL from MRREL");
-	if($self->_checkError($function)) { return (); }
+	$errorhandler->_checkDbError($pkg, $function, $db);
 	@array = @{$arrRef};
     }
     
@@ -930,21 +1011,25 @@ sub _setSabDef {
     my $includesabdef     = shift;
     my $excludesabdef     = shift;
 
-
     my $function = "_setSabDef";
     &_debug($function);
     
-    return () if(!defined $self || !ref $self);
-
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+    
     #  check the parameters are defined
     if(!(defined $includesabdefkeys) || !(defined $excludesabdefkeys) || 
        !(defined $includesabdef)     || !(defined $excludesabdef)) {
-	return ($self->_error($function, "Undefined input values."));
+	$errorhandler->_error($pkg, $function, "SAB variables not defined", 4);
     }
     
+    if($includesabdefkeys <= 0 && $excludesabdefkeys <=0) { return; }
+
     #  check that the db is defined
     my $db = $self->{'db'};
-    if(!$db) { return ($self->_error($function, "A db is required")); }
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
 
     #  get the sabs
     my @array = ();
@@ -953,7 +1038,7 @@ sub _setSabDef {
     }
     else {
 	my $arrRef = $db->selectcol_arrayref("select distinct SAB from MRREL");
-	if($self->_checkError($function)) { return (); }
+	$errorhandler->_checkDbError($pkg, $function, $db);
 	@array = @{$arrRef};
     }
 	
@@ -974,7 +1059,7 @@ sub _setSabDef {
     
     my $string = join " or ", @sabarray;
     
-    $sabDefString = "( $string )";
+    $sabdefsources = "( $string )";
 }
 
 #  sets the relations, parentRelations and childRelations
@@ -992,20 +1077,25 @@ sub _setRelDef {
     my $includereldef     = shift;
     my $excludereldef     = shift;
 
-
     my $function = "_setRelDef";
     &_debug($function);
-    
-    return () if(!defined $self || !ref $self);
 
-    #  check the parameters are defined
-    if(!(defined $includereldefkeys) || !(defined $excludereldefkeys) || 
-       !(defined $includereldef)     || !(defined $excludereldef)) {
-	return ($self->_error($function, "Undefined input values."));
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
     }
     
+    #  check the parameters are defined
+    if(!(defined $includereldefkeys) || !(defined $excludereldefkeys) || 
+       !(defined $includereldef)     || !(defined $excludereldef)) {	
+	$errorhandler->_error($pkg, $function, "RELDEF variables not defined.", 4);
+    }
+    
+    if($includereldefkeys <= 0 && $excludereldefkeys <=0) { return; }
+
+    #  set the database
     my $db = $self->{'db'};
-    if(!$db) { return ($self->_error($function, "A db is required")); }
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
     
     #  get the relations
     my @array = ();
@@ -1015,7 +1105,7 @@ sub _setRelDef {
     else {
 	
 	my $arrRef = $db->selectcol_arrayref("select distinct REL from MRREL");
-	if($self->_checkError($function)) { return (); }
+	$errorhandler->_checkDbError($pkg, $function, $db);
 	@array = @{$arrRef};
     }
     
@@ -1027,7 +1117,6 @@ sub _setRelDef {
 	
 	#  if we are excluding check to see if this one should be excluded
 	if( ($excludereldefkeys > 0) and (exists ${$excludereldef}{$rel}) ) { next; }
-
 
 	#  otherwise store the relation in the reldef hash	
 	$relDefHash{$rel}++;
@@ -1060,26 +1149,23 @@ sub _setUMLS_ALL {
     my $function = "_setUMLS_ALL";
     &_debug($function);
     
-    return () if(!defined $self || !ref $self);
+    #  check input value
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
 
+    #  set the database
     my $db = $self->{'db'};
-    if(!$db) { return ($self->_error($function, "A db is required")); }
-	       
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
+    
     my $arrRef = $db->selectcol_arrayref("select distinct SAB from MRREL where $relations");
-    if($self->_checkError($function)) { return (); }
+    $errorhandler->_checkDbError($pkg, $function, $db);
     
     foreach my $sab (@{$arrRef}) {
-
 	my $cui = $self->_getSabCui($sab);
-	if($self->_checkError($function)) { return (); }
-	
-	if(! (defined $cui) ) {
-	    return($self->_error($function, "SAB ($sab) is not valid."));
-	}
 	
 	$sabnamesHash{$sab}++; 
 	$sabHash{$cui}++;
-	    
     }
 }
 
@@ -1097,21 +1183,26 @@ sub _setSabs {
     my $includesab     = shift;
     my $excludesab     = shift;
 
-
     my $function = "_setSabs";
     &_debug($function);
     
-    return () if(!defined $self || !ref $self);
+    #  check input value
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
 
     #  check the parameters are defined
     if(!(defined $includesabkeys) || !(defined $excludesabkeys) || 
        !(defined $includesab)     || !(defined $excludesab)) {
-	return ($self->_error($function, "Undefined input values."));
+	$errorhandler->_error($pkg, $function, "SAB variables not defined.", 4);
     }
     
+    if($includesabkeys <= 0 && $excludesabkeys <=0) { return; }
+
     #  check that the db is defined
+    #  set the database
     my $db = $self->{'db'};
-    if(!$db) { return ($self->_error($function, "A db is required")); }
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
 
     #  get the sabs
     my @array = ();
@@ -1120,7 +1211,7 @@ sub _setSabs {
     }
     else {
 	my $arrRef = $db->selectcol_arrayref("select distinct SAB from MRREL where $relations");
-	if($self->_checkError($function)) { return (); }
+	$errorhandler->_checkDbError($pkg, $function, $db);
 	@array = @{$arrRef};
     }
 	
@@ -1146,11 +1237,6 @@ sub _setSabs {
 	
 	#  get the sabs cui
 	my $cui = $self->_getSabCui($sab);
-	if($self->_checkError($function)) { return (); }
-	    
-	if(! (defined $cui) ) {
-	    return($self->_error($function, "SAB ($sab) is not valid."));
-	}
 	
 	#  store the sabs cui and name information
 	$sabnamesHash{$sab}++; 
@@ -1172,43 +1258,45 @@ sub _setRelas {
     my $includerela     = shift;
     my $excluderela     = shift;
 
-
     my $function = "_setRelas";
     &_debug($function);
-    
-    return () if(!defined $self || !ref $self);
 
+    #  check the input values
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+    
     #  check the parameters are defined
     if(!(defined $includerelakeys) || !(defined $excluderelakeys) || 
        !(defined $includerela)     || !(defined $excluderela)) {
-	return ($self->_error($function, "Undefined input values."));
+	$errorhandler->_error($pkg, $function, "RELA variables not defined.", 4);
     }
-    
+
+    if($includerelakeys <= 0 && $excluderelakeys <=0) { return }
     #  if no relas were specified just return
     if($includerelakeys <= 0 and $excluderelakeys <= 0) { return; }
-
-    #  check that the database is defined
-    my $db = $self->{'db'};
-    if(!$db) { return ($self->_error($function, "A db is required")); }
     
+    #  set the database
+    my $db = $self->{'db'};
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
+
     #  initalize the hash tables that will hold children and parent relas
     my %childrelas  = ();
-    my %parentrelas = ();
-    
+    my %parentrelas = ();    
    
     #  get the rela relations that exist for the given set of sources and 
     #  relations for the children relations that are specified in the config
     my $sth = "";
     if($umlsall) {
 	$sth = $db->prepare("select distinct RELA from MRREL where $childRelations");
+	$errorhandler->_checkDbError($pkg, $function, $db);	
     }
     else {
 	$sth = $db->prepare("select distinct RELA from MRREL where $childRelations and ($sources)");
+	$errorhandler->_checkDbError($pkg, $function, $db);	
     }
     $sth->execute();
-    if($sth->err()) {
-	return($self->_error($function, "Unable to run query: ($sth->errstr())"));
-    }
+    $errorhandler->_checkDbError($pkg, $function, $sth);
     
     #  get all the relas for the children
     my $crela = "";
@@ -1223,7 +1311,10 @@ sub _setRelas {
     
     my $crelakeys = keys %childrelas;
     if($crelakeys <= 0) {
-	return($self->_error($function, "There are no RELA relations for the given sources"));
+	$errorhandler->_error($pkg, 
+			      $function, 
+			      "There are no RELA relations for the given sources/relations.", 
+			      5);
     }
     
     
@@ -1231,14 +1322,14 @@ sub _setRelas {
     #  relations for the children relations that are specified in the config
     if($umlsall) {
 	$sth = $db->prepare("select distinct RELA from MRREL where $parentRelations");
+	$errorhandler->_checkDbError($pkg, $function, $db);
     }
     else {
 	$sth = $db->prepare("select distinct RELA from MRREL where $parentRelations and ($sources)");
+	$errorhandler->_checkDbError($pkg, $function, $db);	
     }
     $sth->execute();
-    if($sth->err()) {
-	return($self->_error($function, "Unable to run query: ($sth->errstr())"));
-    }
+    $errorhandler->_checkDbError($pkg, $function, $sth);
     
     #  get all the relas for the parents
     my $prela = "";
@@ -1253,7 +1344,10 @@ sub _setRelas {
     
     my $prelakeys = keys %parentrelas;
     if($prelakeys <= 0) { 
-	return ($self->_error($function, "There are no RELA relations for the given sources"));
+	$errorhandler->_error($pkg, 
+			      $function, 
+			      "There are no RELA relations for the given sources.", 
+			      5);
     }
     
     #  uses the relas that are set in the includrelakeys or excluderelakeys
@@ -1263,8 +1357,9 @@ sub _setRelas {
     }
     else {
 	
-	my $arrRef = $db->selectcol_arrayref("select distinct RELA from MRREL where ($sources) and $relations");
-	if($self->_checkError($function)) { return (); }
+	my $arrRef = 
+	    $db->selectcol_arrayref("select distinct RELA from MRREL where ($sources) and $relations");
+	$errorhandler->_checkDbError($pkg, $function, $db);	
 	@array = @{$arrRef};
 	shift @array;
     }
@@ -1286,7 +1381,8 @@ sub _setRelas {
 	if(exists $childrelas{$r})     { push @crelas, "RELA=\'$r\'";  }
 	elsif(exists $parentrelas{$r}) { push @prelas, "RELA=\'$r\'";  }
 	else {
-	    return ($self->_error($function, "RELA relation ($r) does not exist for the given sources"));
+	    my $errorstring = "RELA relation ($r) does not exist for the given sources/relations.";
+	    $errorhandler->_error($pkg, $function, $errorstring, 5);
 	}
     }
     
@@ -1312,27 +1408,21 @@ sub _config {
     my $self = shift;
     my $file = shift;
 
-    return () if(!defined $self || !ref $self);
-    
     my $function = "_config";
     &_debug($function);
-    
-    my $db = $self->{'db'};
-    if(!$db) { return ($self->_error($function, "A db is required")); }
-       
-    if(defined $file) {
-	
-	my %includesab    = ();
-	my %excludesab    = ();
-	my %includerel    = ();
-	my %excluderel    = ();
-	my %includerela   = ();
-	my %excluderela   = ();
-	my %includereldef = ();
-	my %excludereldef = ();
-	my %includesabdef = ();
-	my %excludesabdef = ();
 
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+    
+    my %includesab    = ();	my %excludesab    = ();
+    my %includerel    = ();	my %excluderel    = ();
+    my %includerela   = ();	my %excluderela   = ();
+    my %includereldef = ();	my %excludereldef = ();
+    my %includesabdef = ();	my %excludesabdef = ();
+    
+    if(defined $file) {
 	open(FILE, $file) || die "Could not open configuration file: $file\n"; 
 
 	while(<FILE>) {
@@ -1349,100 +1439,183 @@ sub _config {
 		
 		my @array = split/\s*\,\s*/, $list;
 		foreach my $element (@array) {
-		    if(   $type eq "SAB"    and $det eq "include") { $includesab{$element}++;   }
-		    elsif($type eq "SAB"    and $det eq "exclude") { $excludesab{$element}++;   }
-		    elsif($type eq "REL"    and $det eq "include") { $includerel{$element}++;   }
-		    elsif($type eq "REL"    and $det eq "exclude") { $excluderel{$element}++;   }
-		    elsif($type eq "RELA"   and $det eq "include") { $includerela{$element}++;  }
-		    elsif($type eq "RELA"   and $det eq "exclude") { $excluderela{$element}++;  }
-		    elsif($type eq "RELDEF" and $det eq "include") { $includereldef{$element}++;}
-		    elsif($type eq "SABDEF" and $det eq "include") { $includesabdef{$element}++;}
-		    elsif($type eq "RELDEF" and $det eq "exclude") { $excludereldef{$element}++;}
-		    elsif($type eq "SABDEF" and $det eq "exclude") { $excludesabdef{$element}++;}
+		    if(   $type eq "SAB"    and $det eq "include") { $includesab{$element}++;  
+								     $sabstring  = $_; 
+								     $parameters{"SAB"}++;
+		    }
+		    elsif($type eq "SAB"    and $det eq "exclude") { $excludesab{$element}++;  
+								     $sabstring  = $_; 
+								     $parameters{"SAB"}++;
+		    }
+		    elsif($type eq "REL"    and $det eq "include") { $includerel{$element}++;  
+								     $relstring  = $_; 
+								     $parameters{"REL"}++;
+		    }
+		    elsif($type eq "REL"    and $det eq "exclude") { $excluderel{$element}++;  
+								     $relstring  = $_; 
+								     $parameters{"REL"}++;
+		    }
+		    elsif($type eq "RELA"   and $det eq "include") { $includerela{$element}++; 
+								     $relastring = $_; 
+								     $parameters{"RELA"}++;
+		    }
+		    elsif($type eq "RELA"   and $det eq "exclude") { $excluderela{$element}++; 
+								     $relastring = $_; 
+								     $parameters{"RELA"}++;
+		    }
+
+		    elsif($type eq "RELDEF" and $det eq "include") { $includereldef{$element}++; 
+								     $reldefstring = $_; 
+								     $parameters{"RELDEF"}++;
+		    }
+		    elsif($type eq "SABDEF" and $det eq "include") { $includesabdef{$element}++; 
+								     $sabdefstring = $_; 
+								     $parameters{"SABDEF"}++;
+		    }
+		    elsif($type eq "RELDEF" and $det eq "exclude") { $excludereldef{$element}++; 
+								     $reldefstring = $_; 
+								     $parameters{"RELDEF"}++;
+		    }
+		    elsif($type eq "SABDEF" and $det eq "exclude") { $excludesabdef{$element}++; 
+								     $sabdefstring = $_; 
+								     $parameters{"SABDEF"}++;
+		    }
 		}
 	    }
 	    else {
-		$self->{'errorCode'} = 2;
-		$self->{'errorString'} .= "\nError (UMLS::Interface->$function()) - ";
-		$self->{'errorString'} .= "Configuration file format not correct ($_).";
-		return ();
+		$errorhandler->_error($pkg, $function, "Format not correct ($_)", 5);
 	    }
 	}
-	
-	my $includesabkeys    = keys %includesab;
-	my $excludesabkeys    = keys %excludesab;
-	my $includerelkeys    = keys %includerel;
-	my $excluderelkeys    = keys %excluderel;
-	my $includerelakeys   = keys %includerela;
-	my $excluderelakeys   = keys %excluderela;
-	my $includereldefkeys = keys %includereldef;
-	my $excludereldefkeys = keys %excludereldef;
-	my $includesabdefkeys = keys %includesabdef;
-	my $excludesabdefkeys = keys %excludesabdef;
-
-	#  check for errors
-	if($includesabkeys > 0 and $excludesabkeys > 0) {
-	    return($self->_error($function, 
-				 "Configuration file can not have an include and exclude list of sources"));
-	}
-	if($includerelkeys > 0 and $excluderelkeys > 0) {
-	    return($self->_error($function, 
-				 "Configuration file can not have an include and exclude list of relations"));
-	}
-	
-	#  The order matters here so don't mess with it
-
-	#  set the relations
-	$self->_setRelations($includerelkeys, $excluderelkeys, \%includerel, \%excluderel);
-	if($self->_checkError("_setRelations")) { return (); }
-
-	#  set the sabs
-	$self->_setSabs($includesabkeys, $excludesabkeys, \%includesab, \%excludesab);
-	if($self->_checkError("_setSabs")) { return (); }
-
-	#  set the relas
-	$self->_setRelas($includerelakeys, $excluderelakeys, \%includerela, \%excluderela);
-	if($self->_checkError("_setRelas")) { return (); }
-	
-	#  set the sabs for the CUI and extended definitions
-	$self->_setSabDef($includesabdefkeys, $excludesabdefkeys, \%includesabdef, \%excludesabdef);
-	if($self->_checkError("_setSabDef")) { return (); }
-
-	#  set the rels for the extended definition
-	$self->_setRelDef($includereldefkeys, $excludereldefkeys, \%includereldef, \%excludereldef);
-	if($self->_checkError("_setRelDef")) { return (); }
     }
-
-    #  there is no configuration file so set the default
     else {
-
-	#  get the CUIs of the default sources
-	my $mshcui = $self->_getSabCui('MSH');
-	if($self->_checkError($function)) { return (); }
-
-	if(! (defined $mshcui) ) {
-	    return($self->_error($function, "SAB (MSH) is not valid."));
-	}
-	$sources = "SAB=\'MSH\'";
-	$sabnamesHash{'MSH'}++; 
-	$sabHash{$mshcui}++;
 	
-	#  set default relations
-	$relations = "REL=\'CHD\' or REL=\'PAR\'";
-
-	#  set default parent and child relations
-	$parentRelations = "REL=\'PAR\'";
-	$childRelations  = "REL=\'CHD\'";
+	#  set the defaults
+	$includesab{"MSH"}++; 
+	$includerel{"PAR"}++; 
+	$includerel{"CHD"}++; 
+	
+	$sabstring = "SAB :: include MSH";
+	$relstring = "REL :: include CHD, PAR";
     }
 
+    
+    my $includesabkeys    = keys %includesab;
+    my $excludesabkeys    = keys %excludesab;
+    my $includerelkeys    = keys %includerel;
+    my $excluderelkeys    = keys %excluderel;
+    my $includerelakeys   = keys %includerela;
+    my $excluderelakeys   = keys %excluderela;
+    my $includereldefkeys = keys %includereldef;
+    my $excludereldefkeys = keys %excludereldef;
+    my $includesabdefkeys = keys %includesabdef;
+    my $excludesabdefkeys = keys %excludesabdef;
+    
+    #  check for errors
+    if($includesabkeys > 0 and $excludesabkeys > 0) {
+	$errorhandler->_error($pkg, 
+			      $function, 
+			      "Configuration file can not have an include and exclude list of sources.", 
+			      5);
+    }
+    if($includerelkeys > 0 and $excluderelkeys > 0) {
+	$errorhandler->_error($pkg, 
+			      $function, 
+			      "Configuration file can not have an include and exclude list of relations.",
+			      5);
+    }
+   
+    if( ($includerelkeys <= 0 or $excluderelkeys <= 0) && 
+	($includerelakeys > 0 or $excluderelakeys > 0) ) {
+	$errorhandler->_error($pkg, 
+			      $function, 
+			      "The relations (REL) must be specified if using the rela relations (RELA).",
+			      5);
+    }	
+    
+    #  The order matters here so don't mess with it
+    
+    #  set the relations
+    $self->_setRelations($includerelkeys, $excluderelkeys, \%includerel, \%excluderel);
+    
+    #  set the sabs
+    $self->_setSabs($includesabkeys, $excludesabkeys, \%includesab, \%excludesab);
+    
+    #  set the relas
+    $self->_setRelas($includerelakeys, $excluderelakeys, \%includerela, \%excluderela);
+    
+    #  set the sabs for the CUI and extended definitions
+    $self->_setSabDef($includesabdefkeys, $excludesabdefkeys, \%includesabdef, \%excludesabdef);
+    
+    #  set the rels for the extended definition
+    $self->_setRelDef($includereldefkeys, $excludereldefkeys, \%includereldef, \%excludereldef);
+
+    #  now at this point everything that is set with the names are set
+    #  if though SABDEF has been set without SAB then use SABDEF
+    #  similarity if SABREL has been set without REL then use SABREl
+      #  set the relations
+    $self->_setRelations($includereldefkeys, $excludereldefkeys, \%includereldef, \%excludereldef);
+    
+    #  set the sabs
+    $self->_setSabs($includesabdefkeys, $excludesabdefkeys, \%includesabdef, \%excludesabdef);
+
+    #  I don't really like how this is done but 
+    
     if($debug) {
 	if($umlsall) { print STDERR "SOURCE   : UMLS_ALL\n"; }
 	else         { print STDERR "SOURCE   : $sources\n"; }
 	print STDERR "RELATIONS: $relations\n";
 	print STDERR "PARENTS  : $parentRelations\n";
 	print STDERR "CHILDREN : $childRelations\n\n";
+	print STDERR "SABDEF   : $sabdefsources\n";
+	print STDERR "RELDEF   : $reldefstring\n";
     }
 }
+
+#  returns the SAB from the configuratino file
+#  input : 
+#  output: $string <- containing SAB line from config file
+sub _getSabString {
+    my $self = shift;
+    
+    return $sabstring;
+}
+
+#  returns the REL from the configuratino file
+#  input : 
+#  output: $string <- containing REL line from config file
+sub _getRelString {
+    my $self = shift;
+    
+    return $relstring;
+}
+
+#  returns the RELA from the configuratino file
+#  input : 
+#  output: $string <- containing RELA line from config file
+sub _getRelaString {
+    my $self = shift;
+    
+    return $relastring;
+}
+
+#  returns the SABDEF from the configuratino file
+#  input : 
+#  output: $string <- containing SABDEF line from config file
+sub _getSabDefString {
+    my $self = shift;
+    
+    return $sabdefstring;
+}
+
+#  returns the RELDEF from the configuratino file
+#  input : 
+#  output: $string <- containing RELDEF line from config file
+sub _getRelDefString {
+    my $self = shift;
+    
+    return $reldefstring;
+}
+
 
 #  set the version
 #  input : 
@@ -1451,25 +1624,28 @@ sub _setVersion {
 
     my $self = shift;
 
-    return undef if(!defined $self || !ref $self);
-    $self->{'traceString'} = "";
-
     my $function = "_setVersion";
     &_debug($function);
 
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+    
+    #  set the database
     my $db = $self->{'db'};
-    if(!$db) { return ($self->_error($function, "A db is required")); }
-    
-    my $arrRef = $db->selectcol_arrayref("select EXPL from MRDOC where VALUE = \'mmsys.version\'");
-    if($db->err()) {
-	return ($self->_error($function, "Error executing database query: ($db->errstr())"));
-    }
-    if(scalar(@{$arrRef}) < 1) {
-	return ($self->_error($function, "No version info in table MRDOC."));
-    }
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
 
-    ($version) = @{$arrRef}; 
+    #  get the verstion information
+    my $arrRef = $db->selectcol_arrayref("select EXPL from MRDOC where VALUE = \'mmsys.version\'");
+    $errorhandler->_checkDbError($pkg, $function, $db);
     
+    #  check that it was returned
+    if(scalar(@{$arrRef}) < 1) {
+	$errorhandler->_error($pkg, $function, "No version info in table MRDOC.", 7);
+    } 
+    
+    ($version) = @{$arrRef}; 
 }    
 
 
@@ -1480,20 +1656,22 @@ sub _checkTablesExist {
 
     my $self = shift;
 
-    return undef if(!defined $self || !ref $self);
-
     my $function = "_checkTablesExist";
     &_debug($function);
+    
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
 
+    #  set up the database
     my $db = $self->{'db'};
-    if(!$db) { return ($self->_error($function, "A db is required")); }
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
 
     #  check if the tables exist...
     my $sth = $db->prepare("show tables");
     $sth->execute();
-    if($sth->err()) {
-	return ($self->_error($function, "Unable run query: ($sth->errstr())"));
-    }
+    $errorhandler->_checkDbError($pkg, $function, $sth);
     
     my $table = "";
     my %tables = ();
@@ -1503,22 +1681,22 @@ sub _checkTablesExist {
     $sth->finish();
 
     if(!defined $tables{"MRCONSO"} and !defined $tables{"mrconso"}) { 
-	return ($self->_error($function, "Table MRCONSO not found in database")); 
+	$errorhandler->_error($pkg, $function, "Table MRCONSO not found in database", 7);
     }
     if(!defined $tables{"MRDEF"} and !defined $tables{"mrdef"}) { 
-	return ($self->_error($function, "Table MRDEF not found in database")); 
+	$errorhandler->_error($pkg, $function, "Table MRDEF not found in database", 7);
     }
     if(!defined $tables{"SRDEF"} and !defined $tables{"srdef"}) {
- 	return ($self->_error($function, "Table SRDEF not found in database")); 
+	$errorhandler->_error($pkg, $function, "Table SRDEF not found in database", 7);
     }
     if(!defined $tables{"MRREL"} and !defined $tables{"mrrel"}) { 
-	return ($self->_error($function, "Table MRREL not found in database")); 
+	$errorhandler->_error($pkg, $function, "Table MRREL not found in database", 7);
     }
     if(!defined $tables{"MRDOC"} and !defined $tables{"mrdoc"}) { 
-	return ($self->_error($function, "Table MRDEC not found in database")); 
+	$errorhandler->_error($pkg, $function, "Table MRDEC not found in database", 7);
     }
     if(!defined $tables{"MRSAB"} and !defined $tables{"mrsab"}) { 
-	return ($self->_error($function, "Table MRSAB not found in database")); 
+	$errorhandler->_error($pkg, $function, "Table MRSAB not found in database", 7);
     }
 }
 
@@ -1529,11 +1707,17 @@ sub _setOptions  {
     my $self = shift;
     my $params = shift;
 
-    return undef if(!defined $self || !ref $self);
-
     my $function = "_setOptions";
     &_debug($function);
-    
+
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    #  check the params
+    $params = {} if(!defined $params);
+
     #  get all the parameters
     my $verbose      = $params->{'verbose'};
     my $cuilist      = $params->{'cuilist'};
@@ -1582,13 +1766,18 @@ sub _setDatabase  {
     my $self   = shift;
     my $params = shift;
 
-    return undef if(!defined $self || !ref $self);
-        
-    $params = {} if(!defined $params);
-
     my $function = "_setDatabase";
     &_debug($function);
 
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    #  check the params
+    $params = {} if(!defined $params);
+
+    #  get the database connection parameters
     my $database     = $params->{'database'};
     my $hostname     = $params->{'hostname'};
     my $socket       = $params->{'socket'};
@@ -1596,29 +1785,36 @@ sub _setDatabase  {
     my $username     = $params->{'username'};
     my $password     = $params->{'password'};
 
+    #  set up defaults if the options were not passed 
     if(! defined $database) { $database = "umls";            }
     if(! defined $socket)   { $socket   = "/var/run/mysqld/mysqld.sock"; }
     if(! defined $hostname) { $hostname = "localhost";       }
-    
+
+    #  initialize the database handler
     my $db = "";
 
     #  create the database object...
     if(defined $username and defined $password) {
 	if($debug) { print STDERR "Connecting with username and password\n"; }
-	$db = DBI->connect("DBI:mysql:database=$database;mysql_socket=$socket;host=$hostname",$username, $password, {RaiseError => 1});
+	$db = DBI->connect("DBI:mysql:database=$database;mysql_socket=$socket;host=$hostname",$username, $password, {RaiseError => 0});
     }
     else {
 	if($debug) { print STDERR "Connecting using the my.cnf file\n"; }
 	my $dsn = "DBI:mysql:umls;mysql_read_default_group=client;";
 	$db = DBI->connect($dsn);
     } 
-
+    
     #  check if there is an error
-    if(!$db) { return ($self->_error($function, "A db is required")); }
+    $errorhandler->_checkDbError($pkg, $function, $db);
 
+    #  check that the db exists
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
+
+    #  set database parameters
     $db->{'mysql_enable_utf8'} = 1;
     $db->do('SET NAMES utf8');
 
+    #  set the self parameters
     $self->{'db'}           = $db;
     $self->{'username'}     = $username;
     $self->{'password'}     = $password;
@@ -1626,8 +1822,22 @@ sub _setDatabase  {
     $self->{'socket'}       = $socket;
     $self->{'database'}     = $database;
 
-
+    #  return the database handler
     return $db;
+}
+
+#  returns the parameters set in the configuration file
+#  input: 
+#  output : $hash <- reference to hash containing parameters in the 
+#                    configuration file - if there was not config
+#                    file the hash is empty and defaults are being
+#                    use
+sub _getConfigParameters {
+    my $self = shift;
+ 
+    my $function = "_getConfigParameters";
+
+    return \%parameters;
 }
 
 #  returns all of the cuis given the specified set of sources
@@ -1639,26 +1849,32 @@ sub _getCuis {
     my $self = shift;
     my $sab  = shift;
     
-    return undef if(!defined $self || !ref $self);
-    
     my $function = "_getCuis";
     &_debug($function);
+    
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
 
     #  check input variables
-    if(!$sab) {
-	return($self->_error($function, "Undefined input values."));
-    }
+    if(!$sab) { $errorhandler->_error($pkg, $function, "Error with input variable \$sab.", 4); }
 
     #  set up the database
     my $db = $self->{'db'};
-    if(!$db) { return ($self->_error($function, "A db is required")); }
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
     
+    #  NOTE: it is quicker to get all the CUI1s and then all of the CUI2 and then merge
+    #        rather than try to get them all together in a single query.
+    #  get all of the CUI1s
     my $allCui1 = $db->selectcol_arrayref("select CUI1 from MRREL where ($relations) and (SAB=\'$sab\')\;");
-    if($self->_checkError($function)) { return undef; }
+    $errorhandler->_checkDbError($pkg, $function, $db);
     
+    #  get all of the CUI1s
     my $allCui2 = $db->selectcol_arrayref("select CUI2 from MRREL where ($relations) and (SAB=\'$sab\')");
-    if($self->_checkError($function)) { return undef; }
+    $errorhandler->_checkDbError($pkg, $function, $db);
     
+    #  merge and return them
     my @allCuis = (@{$allCui1}, @{$allCui2});
     
     return \@allCuis;
@@ -1673,33 +1889,35 @@ sub _getCuis {
 sub _getSabCui {
     my $self = shift;
     my $sab  = shift;
-    
-    return undef if(!defined $self || !ref $self);
 
     my $function = "_getSabCui";   
-
-    #  check input variables
-    if(!$sab) {
-	return($self->_error($function, "Undefined input values."));
+    
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
     }
 
-    #  set up db
-    my $db = $self->{'db'};
-    if(!$db) { return ($self->_error($function, "A db is required")); }
+    #  check input variables
+    if(!$sab) { $errorhandler->_error($pkg, $function, "Error with input variable \$sab.", 4); }
 
+    #  set up the database
+    my $db = $self->{'db'};
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
+
+    #  if the sab is umls all 
     if($umlsall) { 
 	return $umlsRoot;
     }
         
     my $arrRef = $db->selectcol_arrayref("select distinct RCUI from MRSAB where RSAB='$sab'");
-    if($self->_checkError($function)) { return (); }
+    $errorhandler->_checkDbError($pkg, $function, $db);
     
     if(scalar(@{$arrRef}) < 1) {
-	return($self->_error($function, "No CUI info in table MRSAB for $sab."));
+	$errorhandler->_error($pkg, $function, "No CUI info in table MRSAB for $sab.", 7); 
     }
     
     if(scalar(@{$arrRef}) > 1) {
-	return($self->_error($function, "Internal error: Duplicate concept rows."));
+	$errorhandler->_error($pkg, $function, "Internal error: Duplicate concept rows.", 7);
     }
     
     return (pop @{$arrRef});
@@ -1712,6 +1930,13 @@ sub _getSabCui {
 sub _disconnect {
     my $self = shift;
 
+    my $function = "_disconnect";
+
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
     if($self) {
 	my $db = $self->{'db'};
 	$db->disconnect() if($db);
@@ -1723,68 +1948,7 @@ sub _disconnect {
 #  output: $version <- string containing version
 sub _version {
 
-    my $self = shift;
-
-    return undef if(!defined $self || !ref $self);
-    
     return $version;
-}
-
-
-#  set the error string
-#  input : $function <- the function the error is coming from
-#          $string   <- the error string
-#  output: 
-sub _error {
-
-    my $self     = shift;
-    my $function = shift;
-    my $string   = shift;
-
-    return undef if(!defined $self || !ref $self);
-        
-    $self->{'errorString'} .= "\nError (UMLS::Interface::CuiFinder->$function()) - ";
-    $self->{'errorString'} .= $string;
-    $self->{'errorCode'} = 2;
-}
-
-#  method that returns the error string and error code from the last method call on the object.
-#  input : 
-#  output: $returnCode, $returnString <- strining containing error information
-sub _getError {
-
-    my $self      = shift;
-
-    my $returnCode = $self->{'errorCode'};
-    my $returnString = $self->{'errorString'};
-
-    $returnString =~ s/^\n+//;
-
-    $self->{'errorString'} = "";
-    $self->{'errorCode'} = 0;
-    
-    return ($returnCode, $returnString);
-}
-
-#  check error function to determine if an error happened within a function
-#  input : $function <- string containing name of function
-#  output: 0|1 indicating if an error has been thrown 
-sub _checkError {
-    my $self     = shift;
-    my $function = shift;
-   
-    my $code = $self->{'errorCode'}; 
-    
-    my $db = $self->{'db'};
-    if($db->err()) {
-	$self->{'errorCode'} = 2;
-	$self->{'errorString'} .= "\nError (UMLS::Interface function: $function ) - ";
-	$self->{'errorString'} .= "Error executing database query: ".($db->errstr());
-	return 1;
-    }
-
-    if($code == 2) { return 1; }
-    else           { return 0; }
 }
 
 #  print out the function name to standard error
@@ -1809,18 +1973,26 @@ sub _exists {
 
     my $function = "_exists";
 
-    return undef if(!defined $self || !ref $self);
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
 
-     #  check parameter exists
-    if(!$concept) { return($self->_error($function, "Undefined input values.")); }
+    #  check parameter exists
+    if(!defined $concept) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept.", 4);
+    }
     
     #  check if valid concept
-    if($self->_validCui($concept)) { return($self->_error($function, "Incorrect input value ($concept).")); }
-    
+    if(! ($errorhandler->_validCui($concept)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($concept) is not valid.", 6);
+    }
+
     #  set up database
     my $db = $self->{'db'};
-    if(!$db) { return ($self->_error($function, "A db is required")); }
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
     
+    #  get the concept
     my $arrRef = "";    
     if($umlsall) {
 	$arrRef = $db->selectcol_arrayref("select distinct CUI from MRCONSO where CUI='$concept'");
@@ -1828,13 +2000,13 @@ sub _exists {
     else {
 	$arrRef = $db->selectcol_arrayref("select distinct CUI from MRCONSO where CUI='$concept' and $sources");
     }
-    if($self->_checkError($function)) { return (); }
     
+    #  check the database for errors
+    $errorhandler->_checkDbError($pkg, $function, $db);
+    
+    #  get the count
     my $count = scalar(@{$arrRef});
-    if($count > $count) {
-	return($self->_error($function, "Internal error: Duplicate concept rows."));
-    }
-    
+
     return 1 if($count); return 0;
 }
 
@@ -1849,23 +2021,31 @@ sub _getRelated {
     my $concept = shift;
     my $rel     = shift;
 
-    
-    return undef if(!defined $self || !ref $self);
-
     my $function = "_getRelated";
-    #&_debug($function);
+    &_debug($function);
 
-    #  verify the input
-    if(!$concept || !$rel) {
-	return($self->_error($function,"Undefined input values."));
+     #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
     }
-    if($self->_validCui($concept)) {
-	return($self->_error($function, "Incorrect input value ($concept)."));
-    } 
+    
+     #  check parameter exists
+    if(!defined $concept) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept.", 4);
+    }
 
-    #  get the database
+    if(!defined $rel) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$rel.", 4);
+    }
+    
+    #  check if valid concept
+    if(! ($errorhandler->_validCui($concept)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($concept) is not valid.", 6);
+    }
+    
+    #  set up database
     my $db = $self->{'db'};
-    if(!$db) { return ($self->_error($function, "A db is required")); }
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
 
     #  return all the relations 'rel' for cui 'concept'
     my $arrRef = "";
@@ -1877,7 +2057,7 @@ sub _getRelated {
     }
     
     #  check for errors
-    if($self->_checkError($function)) { return(); }
+    $errorhandler->_checkDbError($pkg, $function, $db);
     
     return @{$arrRef};
 }
@@ -1890,16 +2070,23 @@ sub _getTermList {
     my $self = shift;
     my $concept = shift;
 
-    return undef if(!defined $self || !ref $self);
-    
     my $function = "_getTermList";
     
-    #  verify the input
-    if(!$concept) { return($self->_error($function,"Undefined input values.")); }    
-    if($self->_validCui($concept)) {
-	return($self->_error($function, "Incorrect input value ($concept)."));
-    } 
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+    
+     #  check parameter exists
+    if(!defined $concept) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept.", 4);
+    }
 
+    #  check if valid concept
+    if(! ($errorhandler->_validCui($concept)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($concept) is not valid.", 6);
+    }
+ 
     #  set the return hash
     my %retHash = ();
 
@@ -1911,7 +2098,7 @@ sub _getTermList {
 
     #  set the database
     my $db = $self->{'db'};
-    if(!$db) { return ($self->_error($function, "A db is required")); }
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
 
     #  get the strings associated to the CUI
     my $arrRef = "";    
@@ -1921,7 +2108,9 @@ sub _getTermList {
     else {
 	$arrRef = $db->selectcol_arrayref("select distinct STR from MRCONSO where CUI='$concept' and ($sources or SAB='SRC')");
     }
-    if($self->_checkError($function)) { return(); }
+
+    #  check the database for errors
+    $errorhandler->_checkDbError($pkg, $function, $db);
 
     #  clean up the strings a bit and lower case them
     foreach my $tr (@{$arrRef}) {
@@ -1941,20 +2130,25 @@ sub _getTermList {
 sub _getAllTerms {
     my $self = shift;
     my $concept = shift;
-
-    return undef if(!defined $self || !ref $self);
     
     my $function = "_getAllTerms";
     &_debug($function);
 
-    #  verify the input
-    if(!$concept) {
-	return($self->_error($function,"Undefined input values.")); 
-    }    
-    if($self->_validCui($concept)) {
-	return($self->_error($function, "Incorrect input value ($concept)."));
-    } 
+  #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+    
+     #  check parameter exists
+    if(!defined $concept) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept.", 4);
+    }
 
+    #  check if valid concept
+    if(! ($errorhandler->_validCui($concept)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($concept) is not valid.", 6);
+    }
+ 
     #  initialize the return hash
     my %retHash = ();
 
@@ -1966,7 +2160,7 @@ sub _getAllTerms {
 
     #  otherwise, set up the db
     my $db = $self->{'db'};
-    if(!$db) { return ($self->_error($function, "A db is required")); }
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
 
     #  get all of the strings with their corresponding sab
     my %strhash = ();
@@ -1981,7 +2175,9 @@ sub _getAllTerms {
         $str =~ s/\s+/ /g;
 	$str = lc($str);
 	push @{$strhash{$str}}, $sab;
-    } $sth->finish();
+    } 
+    $errorhandler->_checkDbError($pkg, $function, $sth);
+    $sth->finish();
 
     #  set the output 
     foreach my $str (sort keys %strhash) {
@@ -1994,7 +2190,7 @@ sub _getAllTerms {
 }
 
 #  method to map CUIs to a terms in the sources 
-#  specified in the configuration file
+#  specified in the configuration file by SAB
 #  input : $term  <- string containing a term
 #  output: @array <- array containing cuis
 sub _getConceptList {
@@ -2002,17 +2198,21 @@ sub _getConceptList {
     my $self = shift;
     my $term = shift;
 
-    return undef if(!defined $self || !ref $self);
-
     my $function = "_getConceptList";
-    &_debug($function);
     
-    #  verify the input
-    if(!$term) { return($self->_error($function,"Undefined input values.")); }
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+    
+    #  check parameter exists
+    if(!defined $term) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$term.", 4);
+    }
     
     #  set up the database
     my $db = $self->{'db'};
-    if(!$db) { return ($self->_error($function, "A db is required")); }
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
     
     #  get the cuis
     my $arrRef = "";
@@ -2022,7 +2222,83 @@ sub _getConceptList {
     else {
 	$arrRef = $db->selectcol_arrayref("select distinct CUI from MRCONSO where STR='$term' and ($sources)");
     }
-    if($self->_checkError($function)) { return (); }
+    
+    #  check for database errors
+    $errorhandler->_checkDbError($pkg, $function, $db);
+    
+    return @{$arrRef};
+}
+
+#  method to map CUIs to a terms in the sources 
+#  specified in the configuration file by SABDEF
+#  input : $term  <- string containing a term
+#  output: @array <- array containing cuis
+sub _getSabDefConcepts {
+
+    my $self = shift;
+    my $term = shift;
+
+    my $function = "_getSabDefConcepts";
+    
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+    
+    #  check parameter exists
+    if(!defined $term) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$term.", 4);
+    }
+    
+    #  set up the database
+    my $db = $self->{'db'};
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
+    
+    #  get the cuis
+    my $arrRef = "";
+    if($sabdefsources ne "") {
+	$arrRef = $db->selectcol_arrayref("select distinct CUI from MRCONSO where STR='$term' and ($sabdefsources)");
+    }
+    else {
+	$arrRef = $db->selectcol_arrayref("select distinct CUI from MRCONSO where STR='$term'");
+    }
+    
+    #  check for database errors
+    $errorhandler->_checkDbError($pkg, $function, $db);
+    
+    return @{$arrRef};
+}
+
+#  method to map CUIs to a terms using the CUIs in the 
+#  entire UMLS not just the sources in the config file
+#  input : $term  <- string containing a term
+#  output: @array <- array containing cuis
+sub _getAllConcepts {
+
+    my $self = shift;
+    my $term = shift;
+
+    my $function = "_getAllConcepts";
+    
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+    
+    #  check parameter exists
+    if(!defined $term) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$term.", 4);
+    }
+    
+    #  set up the database
+    my $db = $self->{'db'};
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
+    
+    #  get the cuis
+    my $arrRef = $db->selectcol_arrayref("select distinct CUI from MRCONSO where STR='$term'");
+        
+    #  check for database errors
+    $errorhandler->_checkDbError($pkg, $function, $db);
     
     return @{$arrRef};
 }
@@ -2035,10 +2311,13 @@ sub _getCuiList {
 
     my $self = shift;
     
-    return undef if(!defined $self || !ref $self);
-    
     my $function = "_getCuiList";
     &_debug($function);
+
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
 
     #  if this has already been done just return the stored cuiListHash
     my $elements = keys %cuiListHash;
@@ -2046,15 +2325,15 @@ sub _getCuiList {
 	return \%cuiListHash;
     }
     
-
     #  otherwise, set up the database
     my $db = $self->{'db'};
-    if(!$db) { return ($self->_error($function, "A db is required")); }
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
         
     #  get the sabs in the config file
     my @sabs = ();
     if($umlsall) {
 	my $s = $db->selectcol_arrayref("select distinct SAB from MRREL");
+	$errorhandler->_checkDbError($pkg, $function, $db);
 	@sabs = @{$s};
     }
     else {
@@ -2090,8 +2369,12 @@ sub _getCuisFromSource {
     my $sab = shift;
     
     my $function = "_getCuisFromSource";
-
     &_debug($function);
+
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
 
     #  get the cuis from the specified source
     my $arrRef = $self->_getCuis($sab);
@@ -2106,26 +2389,33 @@ sub _getSab {
 
     my $self = shift;
     my $concept = shift;
-
-    return undef if(!defined $self || !ref $self);
  
     my $function = "_getSab";
     
-    #  verify the input arguments
-    if(!$concept) {
-	return($self->_error($function,"Undefined input values.")); 
-    } 
-    if($self->_validCui($concept)) {
-	return($self->_error($function, "Incorrect input value ($concept)."));
-    } 
-    
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    #  check parameter exists
+    if(!defined $concept) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept.", 4);
+    }
+
+    #  check if valid concept
+    if(! ($errorhandler->_validCui($concept)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($concept) is not valid.", 6);
+    }
+ 
     #  connect to the database
     my $db = $self->{'db'};
-    if(!$db) { return ($self->_error($function, "A db is required")); }
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
 
     #  select all the sources from the mrconso table
     my $arrRef = $db->selectcol_arrayref("select distinct SAB from MRCONSO where CUI='$concept'");    
-    if($self->_checkError($function)) { return (); }
+
+    #  check the database for errors
+    $errorhandler->_checkDbError($pkg, $function, $db);
     
     return @{$arrRef};
 }
@@ -2140,21 +2430,26 @@ sub _getChildren {
     my $self    = shift;
     my $concept = shift;
 
-    return undef if(!defined $self || !ref $self);
-    
     my $function = "_getChildren";
     
-    #  verify the input parameters
-    if(!$concept) {
-	return($self->_error($function,"Undefined input values.")); 
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
     }
-    if($self->_validCui($concept)) {
-	return($self->_error($function, "Incorrect input value ($concept)."));
-    } 
+
+    #  check parameter exists
+    if(!defined $concept) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept.", 4);
+    }
+
+    #  check if valid concept
+    if(! ($errorhandler->_validCui($concept)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($concept) is not valid.", 6);
+    }
 
     #  connect to the database
     my $db = $self->{'db'};
-    if(!$db) { return ($self->_error($function, "A db is required")); }
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
 
     #  if the concept is the umls root node cui return
     #  the source's cuis
@@ -2171,7 +2466,9 @@ sub _getChildren {
 	else {
 	    $arrRef = $db->selectcol_arrayref("select distinct CUI2 from MRREL where CUI1='$concept' and ($childRelations) and ($sources) and CUI2!='$concept'");
 	}
-	if($self->_checkError($function)) { return (); }
+
+	#  check the database for errors
+	$errorhandler->_checkDbError($pkg, $function, $db);
 	
 	#  add the children in the upper taxonomy
 	my @array = ();
@@ -2196,21 +2493,26 @@ sub _getParents {
     my $self    = shift;
     my $concept = shift;
 
-    return undef if(!defined $self || !ref $self);
-    
     my $function = "_getParents";
 
-    #  verify the input
-    if(!$concept) {
-	return($self->_error($function,"Undefined input values.")); 
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
     }
-    if($self->_validCui($concept)) {
-	return($self->_error($function, "Incorrect input value ($concept)."));
-    } 
+
+    #  check parameter exists
+    if(!defined $concept) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept.", 4);
+    }
+
+    #  check if valid concept
+    if(! ($errorhandler->_validCui($concept)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($concept) is not valid.", 6);
+    }
 
     #  connect to the database
     my $db = $self->{'db'};
-    if(!$db) { return ($self->_error($function, "A db is required")); }
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
         
     #  if the cui is a root return an empty array
     if($concept eq $umlsRoot) { 
@@ -2230,7 +2532,9 @@ sub _getParents {
 	else {
 	    $arrRef = $db->selectcol_arrayref("select distinct CUI2 from MRREL where CUI1='$concept' and ($parentRelations) and ($sources) and CUI2!='$concept'");
 	}
-	if($self->_checkError($function)) { return (); }
+
+	#  check the database for errors
+	$errorhandler->_checkDbError($pkg, $function, $db);
 
 	#  add the parents in the upper taxonomy
 	my @array = ();
@@ -2252,22 +2556,27 @@ sub _getRelations {
     my $self    = shift;
     my $concept = shift;
 
-    return undef if(!defined $self || !ref $self);
-    
     my $function = "_getRelations";
     &_debug($function);
 
-    #  verify the input
-    if(!$concept) {
-	return($self->_error($function,"Undefined input values.")); 
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
     }
-    if($self->_validCui($concept)) {
-	return($self->_error($function, "Incorrect input value ($concept)."));
+
+    #  check parameter exists
+    if(!defined $concept) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept.", 4);
     }
-    
+
+    #  check if valid concept
+    if(! ($errorhandler->_validCui($concept)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($concept) is not valid.", 6);
+    }
+
     #  connect to the database
     my $db = $self->{'db'};
-    if(!$db) { return ($self->_error($function, "A db is required")); }
+   if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
     
     #  get the relations
     my $arrRef = "";
@@ -2277,7 +2586,9 @@ sub _getRelations {
     else {
 	$arrRef = $db->selectcol_arrayref("select distinct REL from MRREL where (CUI1='$concept' or CUI2='$concept') and ($sources) and CUI1!=CUI2");
     }
-    if($self->_checkError($function)) { return (); }
+
+    #  check the database for errors
+    $errorhandler->_checkDbError($pkg, $function, $db);
 
     return @{$arrRef};
 }
@@ -2291,23 +2602,33 @@ sub _getRelationsBetweenCuis {
     my $self     = shift;
     my $concept1 = shift;
     my $concept2 = shift;
-
-    return undef if(!defined $self || !ref $self);
     
     my $function = "_getRelationBetweenCuis";
     &_debug($function);
 
-    #  verify input
-    if( (!$concept1) or (!$concept2) ) {
-	return($self->_error($function,"Undefined input values.")); 
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
     }
-    if( ($self->_validCui($concept1)) or ($self->_validCui($concept2)) ) {
-	return($self->_error($function, "Incorrect input value."));
-    } 
-    
+
+    #  check parameter exists
+    if(!defined $concept1) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept1.", 4);
+    }
+    if(!defined $concept2) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept2.", 4);
+    }
+
+    #  check if valid concept
+    if(! ($errorhandler->_validCui($concept1)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($concept1) is not valid.", 6);
+    }    
+    if(! ($errorhandler->_validCui($concept2)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($concept2) is not valid.", 6);
+    }    
     #  connect to the database
     my $db = $self->{'db'};
-    if(!$db) { return ($self->_error($function, "A db is required")); }
+   if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
 
     my @array = ();
 
@@ -2324,8 +2645,11 @@ sub _getRelationsBetweenCuis {
     else {
 	$sql = qq{ select distinct REL, SAB from MRREL where (CUI1='$concept1' and CUI2='$concept2') and ($sources) };
     }
+
     my $sth = $db->prepare( $sql );
     $sth->execute();
+    $errorhandler->_checkDbError($pkg, $function, $sth);
+
     my($rel, $sab);
     $sth->bind_columns( undef, \$rel, \$sab );
     while( $sth->fetch() ) {
@@ -2344,6 +2668,23 @@ sub _forbiddenConcept  {
     my $self = shift;
     my $concept = shift;
     
+    my $function = "_forbiddenConcept";
+
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    #  check parameter exists
+    if(!defined $concept) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept.", 4);
+    }
+
+    #  check if valid concept
+    if(! ($errorhandler->_validCui($concept)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($concept) is not valid.", 6);
+    }
+
     #  if concept is one of the following just return
     #C1274012|Ambiguous concept (inactive concept)
     if($concept=~/C1274012/) { return 1; }
@@ -2359,6 +2700,8 @@ sub _forbiddenConcept  {
     if($concept=~/C1274021/) { return 1; }
     #C1443286|unapproved attribute
     if($concept=~/C1443286/) { return 1; }
+    #C1274012|non-current concept - ambiguous
+    if($concept=~/C1274012/) { return 1; }
 
     return 0;
 }
@@ -2370,18 +2713,35 @@ sub _forbiddenConcept  {
 sub _getSt {
 
     my $self = shift;
-    my $cui   = shift;
+    my $concept   = shift;
 
     my $function = "_getSt";
     &_debug($function);
     
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    #  check parameter exists
+    if(!defined $concept) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept.", 4);
+    }
+
+    #  check if valid concept
+    if(! ($errorhandler->_validCui($concept)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($concept) is not valid.", 6);
+    }
+    
+    #  set the database
     my $db = $self->{'db'};
-    if(!$db)  { return ($self->_error($function, "A db is required")); }
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); } 
 
-    if(!$cui) { return($self->_error($function,"Undefined input values.")); }
-
-    my $arrRef = $db->selectcol_arrayref("select TUI from MRSTY where CUI=\'$cui\'");
-    if($self->_checkError($function)) { return (); }
+    #  get the TUI
+    my $arrRef = $db->selectcol_arrayref("select TUI from MRSTY where CUI=\'$concept\'");
+    
+    #  check for database errors
+    $errorhandler->_checkDbError($pkg, $function, $db);
     
     return (@{$arrRef});
 }
@@ -2397,13 +2757,25 @@ sub _getStString {
     my $function = "_getStString";
     &_debug($function);
 
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    #  check parameter exists
+    if(!defined $st) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$st.", 4);
+    }
+
+    #  set the database
     my $db = $self->{'db'};
-    if(!$db) { return ($self->_error($function, "A db is required")); }
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); } 
 
-    if(!$st) { return($self->_error($function,"Undefined input values.")); }
-
+    #  get the string associated with the semantic type
     my $arrRef = $db->selectcol_arrayref("select STY_RL from SRDEF where ABR=\'$st\'");
-    if($self->_checkError($function)) { return (); }
+
+    #  check database errors
+    $errorhandler->_checkDbError($pkg, $function, $db);
     
     return (shift @{$arrRef});
 } 
@@ -2419,14 +2791,26 @@ sub _getStAbr {
 
     my $function = "_getStString";
     &_debug($function);
-    
+
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    #  check parameter exists
+    if(!defined $tui) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$tui.", 4);
+    }
+
+    #  set the database
     my $db = $self->{'db'};
-    if(!$db)  { return ($self->_error($function, "A db is required")); }
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); } 
 
-    if(!$tui) {	return($self->_error($function,"Undefined input values.")); }
-
+    #  obtain the abbreviation
     my $arrRef = $db->selectcol_arrayref("select ABR from SRDEF where UI=\'$tui\'");
-    if($self->_checkError($function)) { return (); }
+    
+    #  check database errors
+    $errorhandler->_checkDbError($pkg, $function, $db);    
     
     return (shift @{$arrRef});
 } 
@@ -2443,16 +2827,80 @@ sub _getStDef {
     my $function = "_getStDef";
     &_debug($function);
   
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    #  check parameter exists
+    if(!defined $st) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$st.", 4);
+    }
+
+    #  set the database
     my $db = $self->{'db'};
-    if(!$db)  { return ($self->_error($function, "A db is required")); }
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); } 
 
-    if(!$st)  {	return($self->_error($function,"Undefined input values.")); }
-
+    #  get the definition
     my $arrRef = $db->selectcol_arrayref("select DEF from SRDEF where ABR=\'$st\'");
-    if($self->_checkError($function)) { return (); }
+
+    #  check database errors
+    $errorhandler->_checkDbError($pkg, $function, $db);    
     
     return (shift @{$arrRef});
 } 
+
+#  method that returns a list of concepts (@concepts) related 
+#  to a concept $concept through a relation $rel
+#  input : $concept <- string containing cui
+#          $rel     <- string containing a relation
+#  output: @array   <- array of cuis
+sub _getExtendedRelated {
+
+    my $self    = shift;
+    my $concept = shift;
+    my $rel     = shift;
+
+    my $function = "_getRelated";
+    &_debug($function);
+
+     #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+    
+     #  check parameter exists
+    if(!defined $concept) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept.", 4);
+    }
+
+    if(!defined $rel) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$rel.", 4);
+    }
+    
+    #  check if valid concept
+    if(! ($errorhandler->_validCui($concept)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($concept) is not valid.", 6);
+    }
+    
+    #  set up database
+    my $db = $self->{'db'};
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
+
+    #  return all the relations 'rel' for cui 'concept'
+    my $arrRef = "";
+    if($sabdefsources ne "") {
+	$arrRef = $db->selectcol_arrayref("select distinct CUI2 from MRREL where CUI1='$concept' and REL='$rel' and ($sabdefsources) and CUI2!='$concept'");
+    }
+    else {
+	$arrRef = $db->selectcol_arrayref("select distinct CUI2 from MRREL where CUI1='$concept' and REL='$rel' and CUI2!='$concept'");
+    }
+    
+    #  check for errors
+    $errorhandler->_checkDbError($pkg, $function, $db);
+    
+    return @{$arrRef};
+}
 
 #  subroutine to get the extended definition of a concept from
 #  the concept and its surrounding relations as specified in the
@@ -2465,23 +2913,25 @@ sub _getExtendedDefinition {
     my $concept = shift;
     
     my $function = "_getExtendedDefinition";
-    #&_debug($function);
-
-    return undef if(!defined $self || !ref $self);
-   
-    #  check if concept was obtained
-    if(!$concept) {
-	return($self->_error($function,"Undefined input values."));
-    }
     
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    #  check parameter exists
+    if(!defined $concept) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept.", 4);
+    }
+
     #  check if valid concept
-    if($self->_validCui($concept)) {
-	return($self->_error($function, "Incorrect input value ($concept)."));
-    } 
+    if(! ($errorhandler->_validCui($concept)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($concept) is not valid.", 6);
+    }
    
     #  get database
     my $db = $self->{'db'};
-    if(!$db)  { return ($self->_error($function, "A db is required")); }
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); } 
 
     my $sabflag = 1;
 
@@ -2490,7 +2940,7 @@ sub _getExtendedDefinition {
     my $dkeys = keys %relDefHash;
     
     if( ($dkeys <= 0) or (exists $relDefHash{"PAR"}) ) {
-	my @parents   = $self->_getRelated($concept, "PAR");
+	my @parents   = $self->_getExtendedRelated($concept, "PAR");
 	foreach my $parent (@parents) {
 	    my @odefs = $self->_getCuiDef($parent, $sabflag);
 	    foreach my $d (@odefs) {
@@ -2502,7 +2952,7 @@ sub _getExtendedDefinition {
 	}
     }
     if( ($dkeys <= 0) or (exists $relDefHash{"CHD"}) ) {
-	my @children   = $self->_getRelated($concept, "CHD");
+	my @children   = $self->_getExtendedRelated($concept, "CHD");
 	foreach my $child (@children) { 
 	    my @odefs = $self->_getCuiDef($child, $sabflag);
 	    foreach my $d (@odefs) {
@@ -2514,7 +2964,7 @@ sub _getExtendedDefinition {
 	}
     }
     if( ($dkeys <= 0) or (exists $relDefHash{"SIB"}) ) {
-	my @siblings   = $self->_getRelated($concept, "SIB");
+	my @siblings   = $self->_getExtendedRelated($concept, "SIB");
 	foreach my $sib (@siblings) {
 	    my @odefs = $self->_getCuiDef($sib, $sabflag);
 	    foreach my $d (@odefs) {
@@ -2526,7 +2976,7 @@ sub _getExtendedDefinition {
 	}
     }
     if( ($dkeys <= 0) or (exists $relDefHash{"SYN"}) ) {
-	my @syns   = $self->_getRelated($concept, "SYN");
+	my @syns   = $self->_getExtendedRelated($concept, "SYN");
 	foreach my $syn (@syns) {
 	    my @odefs = $self->_getCuiDef($syn, $sabflag);
 	    foreach my $d (@odefs) {
@@ -2538,7 +2988,7 @@ sub _getExtendedDefinition {
 	}
     }
     if( ($dkeys <= 0) or (exists $relDefHash{"RB"}) ) {
-	my @rbs    = $self->_getRelated($concept, "RB");
+	my @rbs    = $self->_getExtendedRelated($concept, "RB");
 	foreach my $rb (@rbs) {
 	    my @odefs = $self->_getCuiDef($rb, $sabflag);
 	    foreach my $d (@odefs) {
@@ -2550,7 +3000,7 @@ sub _getExtendedDefinition {
 	}
     }
     if( ($dkeys <= 0) or (exists $relDefHash{"RN"}) ) {
-	my @rns    = $self->_getRelated($concept, "RN");
+	my @rns    = $self->_getExtendedRelated($concept, "RN");
 	foreach my $rn (@rns) {
 	    my @odefs = $self->_getCuiDef($rn, $sabflag);
 	    foreach my $d (@odefs) {
@@ -2562,7 +3012,7 @@ sub _getExtendedDefinition {
 	}
     }
     if( ($dkeys <= 0) or (exists $relDefHash{"RO"}) ) {
-	my @ros    = $self->_getRelated($concept, "RO");
+	my @ros    = $self->_getExtendedRelated($concept, "RO");
 	foreach my $ro (@ros) {
 	    my @odefs = $self->_getCuiDef($ro, $sabflag);
 	    foreach my $d (@odefs) {
@@ -2601,35 +3051,42 @@ sub _getCuiDef {
     my $sabflag = shift;
 
     my $function = "_getCuiDef";
-    #&_debug($function);
 
-    return undef if(!defined $self || !ref $self);
-
-    #  check if concept was obtained
-    if(!$concept) {
-	return($self->_error($function,"Undefined input values."));
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
     }
-    
+
+    #  check parameter exists
+    if(!defined $concept) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept.", 4);
+    }
+
     #  check if valid concept
-    if($self->_validCui($concept)) {
-	return($self->_error($function, "Incorrect input value ($concept)."));
-    } 
+    if(! ($errorhandler->_validCui($concept)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($concept) is not valid.", 6);
+    }
    
     #  get database
     my $db = $self->{'db'};
-    if(!$db)  { return ($self->_error($function, "A db is required")); }
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); } 
 
+    #  set the query
     my $sql = "";
-    
-    if($sabDefString ne "") { 
-	$sql = qq{ SELECT DEF, SAB FROM MRDEF WHERE CUI=\'$concept\' and ($sabDefString) };
+
+    if($sabdefsources ne "") { 
+	$sql = qq{ SELECT DEF, SAB FROM MRDEF WHERE CUI=\'$concept\' and ($sabdefsources) };
     }
     else {
 	$sql = qq{ SELECT DEF, SAB FROM MRDEF WHERE CUI=\'$concept\' };
     }
-
+    
+    #  get the information from the database
     my $sth = $db->prepare( $sql );
     $sth->execute();
+    $errorhandler->_checkDbError($pkg, $function, $sth);
+
+    #  set the output variable
     my($def, $sab);
     my @defs = ();
     $sth->bind_columns( undef, \$def, \$sab );
@@ -2641,29 +3098,6 @@ sub _getCuiDef {
     return (@defs);
 }
 
-#  subroutine to check if CUI is valid
-#  input : $concept <- string containing a cui
-#  output: 0 | 1    <- integer indicating if the cui is valide
-sub _validCui {
-
-    my $self = shift;
-    my $concept = shift;
-    
-    return undef if(!defined $self || !ref $self);
-    
-    my $function = "_validCui";
-    
-    if(!$concept) {
-	return($self->_error($function,"Undefined input values."));
-    }
-    
-    if($concept=~/C[0-9][0-9][0-9][0-9][0-9][0-9][0-9]/) {
-	return 0;
-    }
-    else {
-	return 1;
-    }
-}
 
 #  returns the table names in both human readable and hex form
 #  input : 
@@ -2672,6 +3106,14 @@ sub _validCui {
 sub _returnTableNames {
     my $self = shift;
     
+    my $function = "_returnTableNames";
+    
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+    
+    #  set the output variable
     my %hash = ();
     $hash{$parentTableHuman} = $parentTable;
     $hash{$childTableHuman}  = $childTable;
@@ -2687,24 +3129,22 @@ sub _dropConfigTable {
     
     my $self    = shift;
 
-    return undef if(!defined $self || !ref $self);
-
     my $function = "_dropConfigTable";
     &_debug($function);
 
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
     #  connect to the database
     my $sdb = $self->_connectIndexDB();
-    if(!$sdb) { return($self->_error($function, "A db is required.")); }       
+    if(!$sdb) { $errorhandler->_error($pkg, $function, "Error with sdb.", 3); }
 
     #  show all of the tables
     my $sth = $sdb->prepare("show tables");
     $sth->execute();
-    if($sth->err()) {
-	$self->{'errorString'} .= "\nError (UMLS::Interface::Interface->$function()) - ";
-	$self->{'errorString'} .= "Unable run query: ".($sth->errstr());
-	$self->{'errorCode'} = 2;
-	return ();
-    }
+    $errorhandler->_checkDbError($pkg, $function, $sth);
     
     #  get all the tables in mysql
     my $table  = "";
@@ -2714,36 +3154,35 @@ sub _dropConfigTable {
     }
     $sth->finish();
     
-
     if(exists $tables{$parentTable}) {	
 	$sdb->do("drop table $parentTable");
-	if($self->_checkError($function)) { return (); }
+	$errorhandler->_checkDbError($pkg, $function, $sdb);
     }
     if(exists $tables{$childTable}) {	
 	$sdb->do("drop table $childTable");
-	if($self->_checkError($function)) { return (); }
+	$errorhandler->_checkDbError($pkg, $function, $sdb);
     }
     if(exists $tables{$tableName}) {	
 	$sdb->do("drop table $tableName");
-	if($self->_checkError($function)) { return (); }
+	$errorhandler->_checkDbError($pkg, $function, $sdb);
     }
     if(exists $tables{$propTable}) {
 	$sdb->do("drop table $propTable");
-	if($self->_checkError($function)) { return (); }
+	$errorhandler->_checkDbError($pkg, $function, $sdb);
     }
     if(exists $tables{"tableindex"}) {	
 
 	$sdb->do("delete from tableindex where HEX='$parentTable'");
-	if($self->_checkError($function)) { return (); }
+	$errorhandler->_checkDbError($pkg, $function, $sdb);
 	
 	$sdb->do("delete from tableindex where HEX='$childTable'");
-	if($self->_checkError($function)) { return (); }
+	$errorhandler->_checkDbError($pkg, $function, $sdb);
 	
 	$sdb->do("delete from tableindex where HEX='$tableName'");
-	if($self->_checkError($function)) { return (); }
+	$errorhandler->_checkDbError($pkg, $function, $sdb);
 	
 	$sdb->do("delete from tableindex where HEX='$propTable'");
-	if($self->_checkError($function)) { return (); }
+	$errorhandler->_checkDbError($pkg, $function, $sdb);
     }
 }
 
@@ -2753,11 +3192,16 @@ sub _dropConfigTable {
 sub _removeConfigFiles {
 
     my $self = shift;
-    return undef if(!defined $self || !ref $self);
     
     my $function = "_removeConfigFiles";
     &_debug($function);
     
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    #  remove the files
     if(-e $tableFile) {
 	system "rm $tableFile";
     }
@@ -2781,21 +3225,24 @@ sub _inParentTaxonomy {
 
     my $self = shift;
     my $concept = shift;
-
-   return undef if(!defined $self || !ref $self);
     
     my $function = "_inParentTaxonomy";
     &_debug($function);
- 
-    #  check if concept was obtained
-    if(!$concept) {
-	return($self->_error($function,"Undefined input values."));
-    }
     
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    #  check parameter exists
+    if(!defined $concept) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept.", 4);
+    }
+
     #  check if valid concept
-    if($self->_validCui($concept)) {
-	return($self->_error($function, "Incorrect input value ($concept)."));
-    } 
+    if(! ($errorhandler->_validCui($concept)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($concept) is not valid.", 6);
+    }
 
     if(exists $parentTaxonomyArray{$concept}) { return 1; }
     else                                 { return 0; }
@@ -2809,21 +3256,24 @@ sub _inChildTaxonomy {
 
     my $self = shift;
     my $concept = shift;
-
-   return undef if(!defined $self || !ref $self);
     
     my $function = "_inChildTaxonomy";
     &_debug($function);
  
-    #  check if concept was obtained
-    if(!$concept) {
-	return($self->_error($function,"Undefined input values."));
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
     }
-    
+
+    #  check parameter exists
+    if(!defined $concept) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept.", 4);
+    }
+
     #  check if valid concept
-    if($self->_validCui($concept)) {
-	return($self->_error($function, "Incorrect input value ($concept)."));
-    } 
+    if(! ($errorhandler->_validCui($concept)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($concept) is not valid.", 6);
+    }
 
     if(exists $childTaxonomyArray{$concept}) { return 1; }
     else                                 { return 0; }
@@ -2881,31 +3331,34 @@ sub _getTableNameHuman {
     
     return $tableNameHuman;
 }
-
+1;
 __END__
 
 =head1 NAME
 
-UMLS::Interface::CuiFinder - Perl interface to support the 
-UMLS::Interface.pm which is an interface to the Unified 
-Medical Language System (UMLS). 
+UMLS::Interface::CuiFinder - provides the information 
+about CUIs in the UMLS for the modules in the 
+UMLS::Interface package.
+
+=head1 DESCRIPTION
+
+This package provides the information about CUIs in the 
+UMLS for the modules in the UMLS::Interface package.
+
+For more information please see the UMLS::Interface.pm 
+documentation. 
 
 =head1 SYNOPSIS
 
  #!/usr/bin/perl
 
  use UMLS::Interface::CuiFinder;
- 
+
  %params = ();
 
  $cuifinder = UMLS::Interface::CuiFinder->new(\%params); 
-
  die "Unable to create UMLS::Interface::CuiFinder object.\n" if(!$cuifinder);
 
- ($errCode, $errString) = $cuifinder->_getError();
-
- die "$errString\n" if($errCode);
-    
  $root = $cuifinder->_root();
 
  $version = $cuifinder->_version();
@@ -2921,6 +3374,10 @@ Medical Language System (UMLS).
  $term = shift @array;
 
  @array = $cuifinder->_getConceptList($term);
+
+ @array = $cuifinder ->_getAllConcepts($term);
+
+ @array = $cuifinder -> _getSabDefConcepts($term);
 
  $hash = $cuifinder->_getCuiList();
 
@@ -2966,24 +3423,7 @@ Medical Language System (UMLS).
 
  $cuifinder->_removeConfigFiles();
 
- if(!( $cuifinder->_checkError())) {
-     print "No errors: All is good\n";
- }
- else {
-     my ($returnCode, $returnString) = $cuifinder->_getError();
-     print STDERR "$returnString\n";
- }
-
-=head1 ABSTRACT
-
-This package provides a Perl interface to the Unified Medical Language 
-System. The package is set up to access pre-specified sources of the UMLS
-present in a mysql database.  The package was essentially created for use 
-with the UMLS::Similarity package for measuring the semantic relatedness 
-of concepts.
-
 =head1 INSTALL
-
 
 To install the module, run the following magic commands:
 
@@ -3003,22 +3443,6 @@ It is possible to modify other parameters during installation. The
 details of these can be found in the ExtUtils::MakeMaker
 documentation. However, it is highly recommended not messing around
 with other parameters, unless you know what you're doing.
-
-=head1 DESCRIPTION
-
-This package provides a Perl interface to the Unified Medical 
-Language System (UMLS). The UMLS is a knowledge representation 
-framework encoded designed to support broad scope biomedical 
-research queries. There exists three major sources in the UMLS. 
-The Metathesaurus which is a taxonomy of medical concepts, the 
-Semantic Network which categorizes concepts in the Metathesaurus, 
-and the SPECIALIST Lexicon which contains a list of biomedical 
-and general English terms used in the biomedical domain. The 
-UMLS-Interface package is set up to access the Metathesaurus
-and the Semantic Network present in a mysql database.
-
-For more information please see the UMLS::Interface.pm 
-documentation. 
 
 =head1 SEE ALSO
 
@@ -3042,7 +3466,7 @@ Ted Pedersen <tpederse@d.umn.edu>
 
  Siddharth Patwardhan, University of Utah, Salt Lake City
  sidd at cs.utah.edu
- 
+
  Serguei Pakhomov, University of Minnesota Twin Cities
  pakh0002 at umn.edu
 

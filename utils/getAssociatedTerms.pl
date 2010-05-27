@@ -10,8 +10,6 @@ This program takes in a CUI and returns all of its associated terms either
 given the sources and relations specified in the config file or in the 
 entire UMLS.
 
-
-
 =head1 USAGE
 
 Usage: getAssociatedTerms.pl [OPTIONS] CUI
@@ -36,11 +34,14 @@ SAB :: <include|exclude> <source1, source2, ... sourceN>
 
 REL :: <include|exclude> <relation1, relation2, ... relationN>
 
+RELA :: <include|exclude> <rela1, rela2, ... relaN>  (optional)
+
 For example, if we wanted to use the MSH vocabulary with only 
 the RB/RN relations, the configuration file would be:
 
 SAB :: include MSH
 REL :: include RB, RN
+RELA :: include inverse_isa, isa
 
 or 
 
@@ -212,17 +213,8 @@ if(defined $opt_socket) {
 
 $umls = UMLS::Interface->new(\%option_hash); 
 die "Unable to create UMLS::Interface object.\n" if(!$umls);
-($errCode, $errString) = $umls->getError();
-die "$errString\n" if($errCode);
-
-&errorCheck($umls);
 
 my $cui = shift;
-
-if($umls->validCui($cui)) {
-    print STDERR "ERROR: Input argument ($cui) must be a CUI (C\\d\\d\\d\\d\\d\\d\\d\\d).\n";
-    exit;
-}
 
 my @terms = ();
 if(defined $opt_config) {
@@ -231,8 +223,6 @@ if(defined $opt_config) {
 else {
     @terms = $umls->getAllTerms($cui);
 }
-
-&errorCheck($umls);
 
 if($#terms < 0) {
     print "There are no terms associated with $cui\n";
@@ -244,15 +234,6 @@ else {
 	print "$i. $term\n"; $i++;
     }
 }
-
-sub errorCheck
-{
-    my $obj = shift;
-    ($errCode, $errString) = $obj->getError();
-    print STDERR "$errString\n" if($errCode);
-    exit if($errCode > 1);
-}
-
 
 ##############################################################################
 #  function to output minimal usage notes
@@ -300,7 +281,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getAssociatedTerms.pl,v 1.7 2010/05/11 20:29:07 btmcinnes Exp $';
+    print '$Id: getAssociatedTerms.pl,v 1.8 2010/05/24 17:57:16 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

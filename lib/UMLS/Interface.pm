@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.66 2010/05/19 17:30:40 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.71 2010/05/26 20:15:32 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -50,14 +50,16 @@ use UMLS::Interface::CuiFinder;
 use UMLS::Interface::PathFinder;
 use UMLS::Interface::ICFinder;
 
+my $cuifinder    = "";
+my $pathfinder   = "";
+my $icfinder     = "";
+my $errorhandler = "";
 
-my $cuifinder  = "";
-my $pathfinder = "";
-my $icfinder   = "";
+my $pkg = "UMLS::Interface";
 
 use vars qw($VERSION);
 
-$VERSION = '0.59';
+$VERSION = '0.61';
 
 my $debug = 0;
 
@@ -65,84 +67,138 @@ my $debug = 0;
 
 # -------------------- Class methods start here --------------------
 
-#  Method to create a new UMLS::Interface object
+#  method to create a new UMLS::Interface object
+#  input : $params <- reference to hash containing the parameters 
+#  output:
 sub new {
 
-    my $self = {};
+    my $self      = {};
     my $className = shift;
-    my $paramHash = shift;
+    my $params    = shift;
 
-    # Initialize Error String and Error Code.
-    $self->{'errorString'} = "";
-    $self->{'errorCode'} = 0;
-
-    # Bless the object.
+    # bless the object.
     bless($self, $className);
 
+    # initialize error handler
+    $errorhandler = UMLS::Interface::ErrorHandler->new();
+    if(! defined $errorhandler) {
+	print STDERR "The error handler did not get passed properly.\n";
+	exit;
+    }
+
+    #  check options
+    $self->_checkOptions($params);
+
     # Initialize the object.
-    $self->_initialize($paramHash);
+    $self->_initialize($params);
 
     return $self;
 }
 
 #  initialize the variables and set the parameters
+#  input : $params <- reference to hash containing the parameters 
+#  output:
 sub _initialize {
 
     my $self = shift;
     my $params = shift;
 
-    return undef if(!defined $self || !ref $self);
+    my $function = "_initialize";
 
-    $params = {} if(!defined $params);
-    
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    #  NOTE: The PathFinder and ICFinder require the CuiFinder 
+    #        therefore it needs to be initialized the first
+
     #  set the cuifinder
     $cuifinder = UMLS::Interface::CuiFinder->new($params);
-    if($self->_checkError($cuifinder)) { return; }
-
+    if(! defined $cuifinder) { 
+	my $str = "The UMLS::Interface::CuiFinder object was not created.";
+	$errorhandler->_error($pkg, $function, $str, 8);
+    }
+    
     #  set the pathfinder
     $pathfinder = UMLS::Interface::PathFinder->new($params, $cuifinder);
-    if($self->_checkError($pathfinder)) { return; }
+    if(! defined $pathfinder) { 
+	my $str = "The UMLS::Interface::PathFinder object was not created.";
+	$errorhandler->_error($pkg, $function, $str, 8);
+    }
+    
 
     #  set the icfinder
     $icfinder = UMLS::Interface::ICFinder->new($params, $cuifinder);
-    if($self->_checkError($icfinder)) { return; }
+    if(! defined $icfinder) { 
+	my $str = "The UMLS::Interface::ICFinder object was not created.";
+	$errorhandler->_error($pkg, $function, $str, 8);
+    }
+    
 }
 
-#  method that returns the error string and error code from the 
-#  last method call on the object.
-#  input : 
-#  output: $returnCode, $returnString <- string containing 
-#                                        error information
-sub getError {
+#  method checks the parameters based to the UMLS::Interface package
+#  input : $params <- reference to hash containing the parameters 
+#  output:
+sub _checkOptions {
 
-    my $self    = shift;
+    my $self = shift;
+    my $params = shift;
 
-    return undef if(!defined $self || !ref $self);
+    my $function = "_checkOptions";
+
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    #  database options
+    my $database     = $params->{'database'};
+    my $hostname     = $params->{'hostname'};
+    my $socket       = $params->{'socket'};
+    my $port         = $params->{'port'};
+    my $username     = $params->{'username'};
+    my $password     = $params->{'password'};
+   
+    #  cuifinder options
+    my $config       = $params->{'config'};
     
-    my $returnCode   = $self->{'errorCode'};
-    my $returnString = $self->{'errorString'};
+    #  pathfinder options
+    my $forcerun     = $params->{'forcerun'};
+    my $realtime     = $params->{'realtime'};
+    my $debugpath    = $params->{'debugpath'};
 
-    $returnString =~ s/^\n+//;
+    #  icfinder options
+    my $icpropagation = $params->{'icpropagation'};
+    my $icfrequency   = $params->{'icfrequency'};
+    my $icsmooth      = $params->{'smooth'};
 
-    return ($returnCode, $returnString);
-} 
+    #  general options
+    my $debugoption  = $params->{'debug'};
+    my $verbose      = $params->{'verbose'};
+    my $cuilist      = $params->{'cuilist'};
 
-#  check error function to determine if an error happened within a function
-#  input : $handler <- handler 
-#  output: 0|1      <- indicating if an error has been thrown 
-sub _checkError {
-    my $self    = shift;
-    my $handler = shift;
-    
-    return undef if(!defined $self || !ref $self);
+    if( (defined $username) && (!defined $password) ) {
+	my $str = "The --password option must be defined when using --username.";
+	$errorhandler->_error($pkg, $function, $str, 10);
+    }
 
-    my ($returnCode, $returnString) = $handler->_getError();
-    
-    $self->{'errorCode'} = $returnCode;
-    $self->{'errorString'} = $returnString;
-    
-    if($returnCode == 2) { return 1; }
-    else                 { return 0; }
+    if( (!defined $username) && (defined $password) ) {
+	my $str = "The --username option must be defined when using --password.";
+	$errorhandler->_error($pkg, $function, $str, 10);
+    }
+
+    if( (defined $forcerun) && (defined $realtime) ) {
+	my $str = "The --forcerun and --realtime option ";
+	$str   .= "can not be set at the same time.";
+	$errorhandler->_error($pkg, $function, $str, 10);
+    }
+	
+    if( (defined $icpropagation) && (defined $icfrequency) ) {
+	my $str = "The --icpropagation and --icfrequency ";
+	$str   .= "option can not be set at the same time.";
+    	$errorhandler->_error($pkg, $function, $str, 10);
+    }
 
 }
 
@@ -158,7 +214,7 @@ sub root {
     my $self = shift;
 
     my $root = $cuifinder->_root();
-    if($self->_checkError($cuifinder)) { return; }
+
     return $root;
 }
 
@@ -171,8 +227,58 @@ sub version {
     my $self = shift;
 
     my $version = $cuifinder->_version();
-    if($self->_checkError($cuifinder)) { return; }
+
     return $version;
+}
+
+#  returns the parameters set in the configuration file
+#  input: 
+#  output : $hash <- reference to hash containing parameters in the 
+#                    configuration file - if there was not config
+#                    file the hash is empty and defaults are being
+#                    use
+sub getConfigParameters {
+    my $self = shift;
+
+    my $function = "getConfigParameters";
+
+    return $cuifinder->_getConfigParameters();
+}
+
+#  returns the sab information from the configuration file
+#  input : 
+#  output: $string <- containing the SAB line from the config file
+sub getSabString {
+    
+    my $self = shift;
+    
+    my $function = "getSabString";
+    
+    return $cuifinder->_getSabString();
+}
+
+#  returns the relation information from the configuration file
+#  input : 
+#  output: $string <- containing the REL line from the config file
+sub getRelString {
+    
+    my $self = shift;
+    
+    my $function = "getRelString";
+    
+    return $cuifinder->_getRelString();
+}
+
+#  returns the rela information from the configuration file
+#  input : 
+#  output: $string <- containing the RELA line from the config file
+sub getRelaString {
+    
+    my $self = shift;
+    
+    my $function = "getRelaString";
+    
+    return $cuifinder->_getRelaString();
 }
 
 #  method that returns a list of concepts (@concepts) related 
@@ -187,7 +293,7 @@ sub getRelated {
     my $rel     = shift;
 
     my @array = $cuifinder->_getRelated($concept, $rel);
-    if($self->_checkError($cuifinder)) { return; }
+
     return @array;
 }
 
@@ -201,7 +307,7 @@ sub getTermList {
     my $concept = shift;
     
     my @array = $cuifinder->_getTermList($concept);
-    if($self->_checkError($cuifinder)) { return; }    
+
     return @array;
 }
 
@@ -214,12 +320,12 @@ sub getAllTerms {
     my $concept = shift;
 
     my @array = $cuifinder->_getAllTerms($concept);
-    if($self->_checkError($cuifinder)) { return; }
+
     return @array;
 }
 
 #  method to maps a given term to a set cuis in the sources
-#  specified in the configuration file 
+#  specified in the configuration file by SAB
 #  input : $term  <- string containing a term
 #  output: @array <- array containing cuis
 sub getConceptList {
@@ -228,7 +334,34 @@ sub getConceptList {
     my $term = shift;
 
     my @array = $cuifinder->_getConceptList($term);
-    if($self->_checkError($cuifinder)) { return; }
+
+    return @array;
+}
+
+#  method to maps a given term to a set cuis in the sources
+#  specified in the configuration file by SABDEF
+#  input : $term  <- string containing a term
+#  output: @array <- array containing cuis
+sub getSabDefConcepts {
+
+    my $self = shift;
+    my $term = shift;
+
+    my @array = $cuifinder->_getSabDefConcepts($term);
+
+    return @array;
+}
+
+#  method to maps a given term to a set cuis all the sources
+#  input : $term  <- string containing a term
+#  output: @array <- array containing cuis
+sub getAllConcepts {
+
+    my $self = shift;
+    my $term = shift;
+
+    my @array = $cuifinder->_getAllConcepts($term);
+
     return @array;
 }
 
@@ -241,7 +374,7 @@ sub getCuiList {
     my $self = shift;
 
     my $hash = $cuifinder->_getCuiList();
-    if($self->_checkError($cuifinder)) { return; }
+
     return $hash;
 }
 
@@ -254,7 +387,7 @@ sub getCuisFromSource {
     my $sab = shift;
     
     my $array = $cuifinder->_getCuisFromSource($sab);
-    if($self->_checkError($cuifinder)) { return; }
+
     return $array;
 }
 
@@ -268,7 +401,7 @@ sub getSab {
     my $concept = shift;
 
     my @array = $cuifinder->_getSab($concept);
-    if($self->_checkError($cuifinder)) { return; }
+
     return @array;
 }
 
@@ -283,7 +416,7 @@ sub getChildren {
     my $concept = shift;
 
     my @array = $cuifinder->_getChildren($concept);
-    if($self->_checkError($cuifinder)) { return; }
+
     return @array;
 }
 
@@ -299,7 +432,7 @@ sub getParents {
     my $concept = shift;
 
     my @array = $cuifinder->_getParents($concept);
-    if($self->_checkError($cuifinder)) { return; }
+
     return @array;
     
 }
@@ -314,7 +447,7 @@ sub getRelations {
     my $concept = shift;
     
     my @array = $cuifinder->_getRelations($concept);
-    if($self->_checkError($cuifinder)) { return; }
+
     return @array;
 }
 
@@ -329,7 +462,7 @@ sub getRelationsBetweenCuis {
     my $concept2 = shift;
 
     my @array = $cuifinder->_getRelationsBetweenCuis($concept1, $concept2);
-    if($self->_checkError($cuifinder)) { return; }
+
     return @array;
 }
 
@@ -343,7 +476,6 @@ sub getSt {
     my $cui   = shift;
 
     my @array = $cuifinder->_getSt($cui);
-    if($self->_checkError($cuifinder)) { return; }
     
     return @array;
 }
@@ -358,7 +490,7 @@ sub getStString {
     my $st   = shift;
 
     my $string = $cuifinder->_getStString($st);
-    if($self->_checkError($cuifinder)) { return; }
+
     return $string;
 } 
 
@@ -372,7 +504,7 @@ sub getStAbr {
     my $tui   = shift;
 
     my $abr = $cuifinder->_getStAbr($tui);
-    if($self->_checkError($cuifinder)) { return; }
+
     return $abr;
 } 
 
@@ -386,7 +518,7 @@ sub getStDef {
     my $st   = shift;
 
     my $definition = $cuifinder->_getStDef($st);
-    if($self->_checkError($cuifinder)) { return; }
+
     return $definition;
 } 
 
@@ -400,7 +532,7 @@ sub getExtendedDefinition {
     my $concept = shift;
 
     my $array = $cuifinder->_getExtendedDefinition($concept);
-    if($self->_checkError($cuifinder)) { return; }
+
     return $array;
 }
 
@@ -416,7 +548,7 @@ sub getCuiDef {
     my $sabflag = shift;
 
     my @array = $cuifinder->_getCuiDef($concept, $sabflag);
-    if($self->_checkError($cuifinder)) { return; }
+
     return @array;
 }
 
@@ -429,7 +561,7 @@ sub validCui {
     my $concept = shift;
     
     my $bool = $cuifinder->_validCui($concept);
-    if($self->_checkError($cuifinder)) { return; }
+
     return $bool;
     
 }
@@ -443,7 +575,7 @@ sub exists() {
     my $concept = shift;
     
     my $bool = $cuifinder->_exists($concept);
-    if($self->_checkError($cuifinder)) { return; }
+
     return $bool;
 }   
 
@@ -456,7 +588,7 @@ sub returnTableNames {
     my $self = shift;
     
     my $hash = $cuifinder->_returnTableNames();
-    if($self->_checkError($cuifinder)) { return; }
+
     return $hash;
 
 }
@@ -469,7 +601,7 @@ sub dropConfigTable {
     my $self    = shift;
 
     $cuifinder->_dropConfigTable();
-    $self->_checkError($cuifinder);
+
     return;
     
 }
@@ -482,7 +614,7 @@ sub removeConfigFiles {
     my $self = shift;
 
     $cuifinder->_removeConfigFiles();
-    $self->_checkError($cuifinder);
+
     return; 
 }
 
@@ -497,7 +629,7 @@ sub depth {
     my $self = shift;
 
     my $depth = $pathfinder->_depth();
-    if($self->_checkError($pathfinder)) { return; }
+
     return $depth;
 }
 
@@ -511,7 +643,7 @@ sub pathsToRoot
     my $concept = shift;
 
     my $array = $pathfinder->_pathsToRoot($concept);
-    if($self->_checkError($pathfinder)) { return; }    
+
     return $array;
 }
 
@@ -525,7 +657,7 @@ sub findMinimumDepth {
     my $cui  = shift;
     
     my $depth = $pathfinder->_findMinimumDepth($cui);
-    if($self->_checkError($pathfinder)) { return; }
+
     return $depth;
 }
   
@@ -540,7 +672,7 @@ sub findMaximumDepth {
     my $cui  = shift;
     
     my $depth = $pathfinder->_findMaximumDepth($cui);
-    if($self->_checkError($pathfinder)) { return; }  
+
     return $depth;
 }    
 
@@ -556,7 +688,7 @@ sub findShortestPath {
     my $concept2 = shift;
 
     my @array = $pathfinder->_findShortestPath($concept1, $concept2);
-    if($self->_checkError($pathfinder)) { return; }    
+
     return @array;
 }
    
@@ -572,7 +704,7 @@ sub findLeastCommonSubsumer {
     my $concept2 = shift;
     
     my @array = $pathfinder->_findLeastCommonSubsumer($concept1, $concept2);
-    if($self->_checkError($pathfinder)) { return; }    
+
     return @array;
 }    
 
@@ -588,7 +720,7 @@ sub getIC {
     my $concept  = shift;
     
     my $ic = $icfinder->_getIC($concept);
-    if($self->_checkError($icfinder)) { return; }    
+
     return $ic;    
 }
 
@@ -601,7 +733,7 @@ sub getPropagationCuis
     my $self = shift;
     
     my $hash = $icfinder->_getPropagationCuis();
-    if($self->_checkError($icfinder)) { return; }    
+
     return $hash;
     
 }
@@ -619,7 +751,7 @@ sub propagateCounts
     my $fhash = shift;
     
     my $hash = $icfinder->_propagateCounts($fhash);
-    if($self->_checkError($icfinder)) { return; }
+
     return $hash;
 }
 
@@ -639,19 +771,13 @@ UMLS::Interface - Perl interface to the Unified Medical Language System (UMLS)
  use UMLS::Interface;
 
  $umls = UMLS::Interface->new(); 
-
- die "Unable to create UMLS::Interface object.\n" if(!$umls);
-
- ($errCode, $errString) = $umls->getError();
-
- die "$errString\n" if($errCode);
+ if(!$umls) die "Unable to create UMLS::Interface object.\n";
 
  my $root = $umls->root();
 
  my $term1    = "blood";
 
  my @tList1   = $umls->getConceptList($term1);
-
  my $cui1     = pop @tList1;
 
  if($umls->exists($cui1) == 0) { 
@@ -659,103 +785,73 @@ UMLS::Interface - Perl interface to the Unified Medical Language System (UMLS)
  } else { print "This concept ($cui1) does exist\n"; }
 
  my $term2    = "cell";
-
  my @tList2   = $umls->getConceptList($term2);
 
  my $cui2     = pop @tList2;
-
  my $exists1  = $umls->exists($cui1);
-
  my $exists2  = $umls->exists($cui2);
 
  if($exists1) { print "$term1($cui1) exists in your UMLS view.\n"; }
-
  else         { print "$term1($cui1) does not exist in your UMLS view.\n"; }
- 
+
  if($exists2) { print "$term2($cui2) exists in your UMLS view.\n"; }
-
  else         { print "$term2($cui2) does not exist in your UMLS view.\n"; }
-
  print "\n";
 
  my @cList1   = $umls->getTermList($cui1);
-
  my @cList2   = $umls->getTermList($cui2);
 
  print "The terms associated with $term1 ($cui1):\n";
-
  foreach my $c1 (@cList1) {
-
     print " => $c1\n";
-
  } print "\n";
 
  print "The terms associated with $term2 ($cui2):\n";
 
  foreach my $c2 (@cList2) {
-
     print " => $c2\n";
-
  } print "\n";
 
  my $lcs = $umls->findLeastCommonSubsumer($cui1, $cui2);
-
  print "The least common subsumer between $term1 ($cui1) and \n";
-
  print "$term2 ($cui2) is $lcs\n\n";
 
  my @shortestpath = $umls->findShortestPath($cui1, $cui2);
-
  print "The shortest path between $term1 ($cui1) and $term2 ($cui2):\n";
-
  print "  => @shortestpath\n\n";
 
  my $pathstoroot   = $umls->pathsToRoot($cui1);
-
  print "The paths from $term1 ($cui1) and the root:\n";
 
  foreach  $path (@{$pathstoroot}) {
-
     print "  => $path\n";
-
  } print "\n";
 
  my $mindepth = $umls->findMinimumDepth($cui1);
-
  my $maxdepth = $umls->findMaximumDepth($cui1);
-
  print "The minimum depth of $term1 ($cui1) is $mindepth\n";
-
  print "The maximum depth of $term1 ($cui1) is $maxdepth\n\n";
 
  my @children = $umls->getChildren($cui2); 
-
  print "The child(ren) of $term2 ($cui2) are: @children\n\n";
 
  my @parents = $umls->getParents($cui2);
-
  print "The parent(s) of $term2 ($cui2) are: @parents\n\n";
 
  my @relations = $umls->getRelations($cui2);
-
  print "The relation(s) of $term2 ($cui2) are: @relations\n\n";
 
  my @rel_sab = $umls->getRelationsBetweenCuis($cui1, "C1524024");
- 
  print "The relation (source) between $cui1 and $cui2: @rel_sab\n";
-   
- my @siblings = $umls->getRelated($cui2, "SIB");
 
+ my @siblings = $umls->getRelated($cui2, "SIB");
  print "The sibling(s) of $term2 ($cui2) are: @siblings\n\n";
 
  my @definitions = $umls->getCuiDef($cui1);
-
  print "The definition(s) of $term1 ($cui1) are:\n";
 
  foreach $def (@definitions) {
-
     print "  => $def\n"; $i++;
-
  } print "\n";
 
  my @sabs = $umls->getSab($cui1);
@@ -765,19 +861,15 @@ UMLS::Interface - Perl interface to the Unified Medical Language System (UMLS)
  print "The semantic type(s) of $term1 ($cui1) and the semantic\n";
 
  print "definition are:\n";
-
  my @sts = $umls->getSt($cui1);
 
  foreach my $st (@sts) {
 
     my $abr = $umls->getStAbr($st);
-
     my $string = $umls->getStString($abr);
-    
     my $def    = $umls->getStDef($abr);
-
     print "  => $string ($abr) : $def\n";
-    
+
  } print "\n";
 
  $umls->removeConfigFiles();
@@ -843,7 +935,7 @@ The UMLS database must contain six tables:
         5. MRDEF
         6. MRSTY
         7. SRDEF
-        
+
 All other tables in the databases will be ignored, and any of these
 tables missing would raise an error.
 
@@ -898,7 +990,7 @@ instantiating an instance. For example:
   'password'     -> Password for access to the database server. If not
                     provided, the module attempts to access the server
                     without a password.
-  
+
 More information is provided in the INSTALL file Stage 5 Step D (search for 
 'Step D' and you will find it).
 
@@ -922,7 +1014,7 @@ of the Interface.pm module.
   'realtime'     -> This parameter will not create a database of path 
                     information (what we refer to as the index) but obtain
                     the path information about a concept on the fly
-  
+
   'cuilist'      -> This parameter contains a file containing a list 
                     of CUIs in which the path information should be 
                     store for - if the CUI isn't on the list the path 
@@ -942,7 +1034,6 @@ of the Interface.pm module.
   'icfrequency'  -> This parameter contains a file consisting of frequency
                     counts of a CUIs. Then the information content is 
                     created on the fly (in realtime). 
-                   
 
 =head1 CONFIGURATION FILE
 
@@ -975,25 +1066,35 @@ SAB :: <include|exclude> <source1, source2, ... sourceN>
 
 REL :: <include|exclude> <relation1, relation2, ... relationN>
 
+RELA :: <include|exclude> <rela1, rela2, ... relaN> 
+
 SABDEF :: <include|exclude> <source1, source2, ... sourceN>
 
 RELDEF :: <include|exclude> <relation1, relation2, ... relationN>
 
-The SAB and REL are for specifing what sources and relations 
+The SAB, REL and RELA are for specifing what sources and relations 
 should be used when traversing the UMLS. For example, if we 
-wanted to use the MSH vocabulary with only the RB/RN relations, 
-the configuration file would be:
+wanted to use the MSH vocabulary with only the RB/RN relations 
+that have been identified as 'isa' RELAs, then the configuration 
+file would be:
+
+SAB :: include MSH
+REL :: include RB, RN
+RELA :: include inverse_isa, isa
+
+if we did not care what type of RELA the RB/RN relations were the 
+configuration would be:
 
 SAB :: include MSH
 REL :: include RB, RN
 
-or if we wanted to use MSH and use any relation except for PAR/CHD, 
+
+if we wanted to use MSH and use any relation except for PAR/CHD, 
 the configuration would be:
 
 SAB :: include MSH
 REL :: exclude PAR, CHD
 
- 
 The SABDEF and RELDEF are for obtaining a definition or extended 
 definition of the CUI. SABDEF signifies which sources to extract 
 the definition from. For example, 
@@ -1075,10 +1176,10 @@ Ted Pedersen <tpederse@d.umn.edu>
 
  Siddharth Patwardhan, University of Utah, Salt Lake City
  sidd at cs.utah.edu
- 
+
  Serguei Pakhomov, University of Minnesota Twin Cities
  pakh0002 at umn.edu
- 
+
  Ying Liu, University of Minnesota
  liux0935 at umn.edu
 

@@ -34,11 +34,14 @@ SAB :: <include|exclude> <source1, source2, ... sourceN>
 
 REL :: <include|exclude> <relation1, relation2, ... relationN>
 
+RELA :: <include|exclude> <rela1, rela2, ... relaN> (optional)
+
 For example, if we wanted to use the MSH vocabulary with only 
 the RB/RN relations, the configuration file would be:
 
 SAB :: include MSH
 REL :: include RB, RN
+RELA :: include isa, inverse_isa
 
 or 
 
@@ -298,11 +301,6 @@ if(defined $opt_socket) {
 
 $umls = UMLS::Interface->new(\%option_hash); 
 die "Unable to create UMLS::Interface object.\n" if(!$umls);
-($errCode, $errString) = $umls->getError();
-die "$errString\n" if($errCode);
-
-
-&errorCheck($umls);
 
 my @inputarray = ();
 
@@ -332,16 +330,10 @@ foreach my $input (@inputarray) {
     else {
 	@c = $umls->getConceptList($input);
     }
-    &errorCheck($umls);
 
     my $printFlag = 0;
 
     foreach my $cui (@c) {
-	#  check that the cui is valid
-	if($umls->validCui($cui)) {
-	    print STDERR "ERROR: The concept ($cui) is not valid.\n";
-	    exit;
-	}
 	
 	#  make certain cui exists in this view
 	if(! ($umls->exists($cui)) ) {
@@ -351,22 +343,18 @@ foreach my $input (@inputarray) {
 	#  get the minimum depth
 	if(defined $opt_minimum) {
 	    my $min = $umls->findMinimumDepth($cui);
-	    &errorCheck($umls);
 	    print "The minimum depth of $term ($cui) is $min\n";
 	}
 	#  get the maximum depth
 	elsif(defined $opt_maximum) {
 	    my $max = $umls->findMaximumDepth($cui);
-	    &errorCheck($umls);
 	    print "The maximum depth of $term ($cui) is $max\n";
 	}
 	else {
 	    my $min = $umls->findMinimumDepth($cui);
-	    &errorCheck($umls);
 	    print "The minimum depth of $term ($cui) is $min\n";
 	    
 	    my $max = $umls->findMaximumDepth($cui);
-	    &errorCheck($umls);
 	    print "The maximum depth of $term ($cui) is $max\n";
 	}
 	
@@ -377,15 +365,6 @@ foreach my $input (@inputarray) {
 	print "$input does not exist in this view of the UMLS.\n";
     }
 }
-
-sub errorCheck
-{
-    my $obj = shift;
-    ($errCode, $errString) = $obj->getError();
-    print STDERR "$errString\n" if($errCode);
-    exit if($errCode > 1);
-}
-
 
 ##############################################################################
 #  function to output minimal usage notes
@@ -464,7 +443,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findCuiDepth.pl,v 1.10 2010/05/11 20:29:07 btmcinnes Exp $';
+    print '$Id: findCuiDepth.pl,v 1.11 2010/05/24 17:57:16 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

@@ -184,16 +184,10 @@ if(defined $opt_socket) {
 
 $umls = UMLS::Interface->new(\%option_hash); 
 die "Unable to create UMLS::Interface object.\n" if(!$umls);
-($errCode, $errString) = $umls->getError();
-die "$errString\n" if($errCode);
-
-&errorCheck($umls);
 
 my $st = shift;
 
 my $def = $umls->getStDef($st);
-
-&errorCheck($umls);
 
 if($def=~/^\s*$/) {
     print "There are no definitions for the semantic type ($st)\n";
@@ -202,15 +196,6 @@ else {
     print "The definition of the semantic type ($st):\n";
     print "$def\n"; 
 }
-
-sub errorCheck
-{
-    my $obj = shift;
-    ($errCode, $errString) = $obj->getError();
-    print STDERR "$errString\n" if($errCode);
-    exit if($errCode > 1);
-}
-
 
 ##############################################################################
 #  function to output minimal usage notes
@@ -258,7 +243,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getStDef.pl,v 1.6 2010/04/19 16:24:12 btmcinnes Exp $';
+    print '$Id: getStDef.pl,v 1.7 2010/05/24 17:57:16 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

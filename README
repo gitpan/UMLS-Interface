@@ -139,8 +139,8 @@ NAME
         'realtime'     -> This parameter will not create a database of path 
                           information (what we refer to as the index) but obtain
                           the path information about a concept on the fly
-      
-    'cuilist'      -> This parameter contains a file containing a list 
+
+        'cuilist'      -> This parameter contains a file containing a list 
                           of CUIs in which the path information should be 
                           store for - if the CUI isn't on the list the path 
                           information for that CUI will not be stored
@@ -173,10 +173,6 @@ NAME
      $hash  refers to a reference to a hash
 
     The methods are as follows:
-
-     my ($errorCode, $errorString) = $interface->getError(); 
-        Returns the error code and error string from 
-        the last method call on the object.
 
      my $root = $interface->root();                
          Returns the concept ID of the root of the tree.

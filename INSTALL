@@ -103,7 +103,6 @@ Stage 1: Install Programming Languages, if already installed go to Stage 2
     lf-extracting>
 
 Stage 2 - Install CPAN modules, if already installed go to Stage 3
-CPAN MODULES
   DBI
     CPAN modules, and will not be repeated in detail for each module.****
 
@@ -338,8 +337,8 @@ Stage 4 - Install UMLS, if already installed go to Stage 5
 
      -- 'Install UMLS' and 'MetamorphoSys Configuration' windows will appear
          - Click 'New Configuration' in the 'MetamorphoSys Configuration' 
-                         
- -- 'License Agreement Notice' window will appear
+
+     -- 'License Agreement Notice' window will appear
          - Click 'Accept'
 
      -- 'Select Default Subset' window will appear
@@ -359,8 +358,8 @@ Stage 4 - Install UMLS, if already installed go to Stage 5
          - this is up to you; I clicked 'No'
 
          Now the UMLS will install and the load scripts will be created 
-                            
- -- 'Finished' window will appear
+
+     -- 'Finished' window will appear
         - Click 'Done'
 
 Stage 5 - Load UMLS into MySQL, if already installed go to Stage 6
@@ -621,19 +620,19 @@ Stage 6 - Install UMLS-Interface and set environment variable
     writing out system files. The system files that created are:
 
            1. <UMLS_version>_<sources><relations>_config
-              
-          which is an example configuration file of the 
+
+              which is an example configuration file of the 
               the current run
-              
-       2. <UMLS_version>_<sources><relations>_child
+
+           2. <UMLS_version>_<sources><relations>_child
               <UMLS_version>_<sources><relations>_parent
-              
-          this files store the upper level taxonomy which is 
+
+              this files store the upper level taxonomy which is 
               created when connecting multiple sources
 
            3. <UMLS_version>_<sources><relations>_table
-              
-          this file contains the path to the root for each 
+
+              this file contains the path to the root for each 
               concept in the UMLS view. this information is stored 
               in a mysql database of the same name. This really 
               helps speed up the initialization.

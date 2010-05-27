@@ -12,4 +12,5 @@ UMLS-Interface Configuration Information
 
 
 
-ERROR: Input argument (hand) must be a CUI (C\d\d\d\d\d\d\d\d).
+The terms for CUI (C0018563) are :
+1. hand

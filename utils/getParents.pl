@@ -32,11 +32,14 @@ SAB :: <include|exclude> <source1, source2, ... sourceN>
 
 REL :: <include|exclude> <relation1, relation2, ... relationN>
 
+RELA :: <include|exclude> <rela1, rela2, ... relaN>  (optional)
+
 For example, if we wanted to use the MSH vocabulary with only 
 the RB/RN relations, the configuration file would be:
 
 SAB :: include MSH
 REL :: include RB, RN
+RELA :: include inverse_isa, isa
 
 or 
 
@@ -213,11 +216,6 @@ if(defined $opt_socket) {
 
 $umls = UMLS::Interface->new(\%option_hash); 
 die "Unable to create UMLS::Interface object.\n" if(!$umls);
-($errCode, $errString) = $umls->getError();
-die "$errString\n" if($errCode);
-
-
-&errorCheck($umls);
 
 my $input = shift;
 my $term  = $input;
@@ -231,23 +229,14 @@ else {
     @c = $umls->getConceptList($input);
 }
 
-&errorCheck($umls);
- 
 my $printFlag = 0;
 
 foreach my $cui (@c) {
-
-    if($umls->validCui($cui)) {
-	print STDERR "ERROR: The concept ($cui) is not valid.\n";
-	exit;
-    }
 
     #  make certain cui exists in this view
     if($umls->exists($cui) == 0) { next; }	
 
     my @parents= $umls->getParents($cui); 
-
-    &errorCheck($umls);
 
     if($#parents < 0) {
 	print "The term $term ($cui) does not have any parents\n";
@@ -259,7 +248,6 @@ foreach my $cui (@c) {
 	    print "  $t($parent) ";
 	    if(defined $opt_info) {
 		my @relations = $umls->getRelationsBetweenCuis($cui, $parent);
-		&errorCheck($umls);
 		print " => @relations";
 	    }
 	    print "\n";
@@ -271,15 +259,6 @@ foreach my $cui (@c) {
 if(! ($printFlag) ) {
     print "Input $input does not exist in this view of the UMLS.\n";
 }
-
-sub errorCheck
-{
-    my $obj = shift;
-    ($errCode, $errString) = $obj->getError();
-    print STDERR "$errString\n" if($errCode);
-    exit if($errCode > 1);
-}
-
 
 ##############################################################################
 #  function to output minimal usage notes
@@ -331,7 +310,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getParents.pl,v 1.9 2010/05/12 15:41:47 btmcinnes Exp $';
+    print '$Id: getParents.pl,v 1.10 2010/05/24 17:57:16 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 
