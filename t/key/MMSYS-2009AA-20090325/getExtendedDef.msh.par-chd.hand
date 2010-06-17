@@ -1,9 +1,9 @@
 
 
 UMLS-Interface Configuration Information
-  Sources:
+  Sources (SAB):
     MSH
-  Relations:
+  Relations (REL):
     CHD
     PAR
   Database: 
@@ -115,46 +115,3 @@ The definition(s) of hand (C0018563):
   99. C0018563 CUI C0018563 CSP : part of the upper limb distal to the wrist including carpus, metacarpus and fingers.
   100. C0018563 CUI C0018563 NCI : The distal portion of the upper extremity. It consists of the carpus, metacarpus, and digits.
   101. C0018563 TERM C0018563 nosab : hand hands
-The definition(s) of hand (C1281583):
-21
-  1. C1281583 PAR C0018563 CSP : part of the upper limb distal to the wrist including carpus, metacarpus and fingers.
-  2. C1281583 PAR C0018563 NCI : The distal portion of the upper extremity. It consists of the carpus, metacarpus, and digits.
-  3. C1281583 RB C0018563 CSP : part of the upper limb distal to the wrist including carpus, metacarpus and fingers.
-  4. C1281583 RB C0018563 NCI : The distal portion of the upper extremity. It consists of the carpus, metacarpus, and digits.
-  5. C1281583 RB C1552914 NCI : A traditional unit of length equal to 4 inches or 10.16 centimeters.
-  6. C1281583 RB C1552914 HL7V3.0 : 4 [in_i]
-  7. C1281583 RB C1552914 HL7V3.0 : 4 [in_i]
-  8. C1281583 RN C0016129 UWDA : Subdivision of the hand demarcated from the hand proper by the skin crease in line with the distal edge of finger webs. Examples: thumb, right middle finger, left little finger.
-  9. C1281583 RN C0016129 CSP : one of the five digits of the hand.
-  10. C1281583 RN C0016129 FMA : Subdivision of the hand demarcated from the hand proper by the skin crease in line with the distal edge of finger webs. Examples: thumb, right middle finger, left little finger.
-  11. C1281583 RN C0016129 NCI : Any of the digits of the hand.
-  12. C1281583 RN C0025525 MSH : The articulation between a metacarpal bone and a phalanx.
-  13. C1281583 RN C0025526 MSH : The five cylindrical bones of the METACARPUS, articulating with the CARPAL BONES proximally and the PHALANGES OF FINGERS distally.
-  14. C1281583 RN C0223792 NCI : Bone of the hand.
-  15. C1281583 RN C0223792 MSH : Bones that make up the SKELETON of the FINGERS, consisting of two for the THUMB, and three for each of the other fingers.
-  16. C1281583 RN C0224620 MSH : The articulations between the CARPAL BONES and the METACARPAL BONES.
-  17. C1281583 RN C0448064 MSH : The CARPAL BONES; METACARPAL BONES; and FINGER PHALANGES. In each hand there are eight carpal bones, five metacarpal bones, and 14 phalanges.
-  18. C1281583 RN C0459470 MSH : The articulations extending from the WRIST distally to the FINGERS. These include the WRIST JOINT; CARPAL JOINTS; METACARPOPHALANGEAL JOINT; and FINGER JOINT.
-  19. C1281583 RN C0580156 UWDA : Synovial joint between the bases of adjacent metacarpals. Examples: intermetacarpal joint of right second and third metacarpal bones, intermetacarpal joint of right fourth and fifth metacarpal bones.
-  20. C1281583 RN C0580156 FMA : Synovial joint between the bases of adjacent metacarpals. Examples: intermetacarpal joint of right second and third metacarpal bones, intermetacarpal joint of right fourth and fifth metacarpal bones.
-  21. C1281583 RO C0441987 NCI : One of the two lateral margins or surfaces of a body, midway between the front and back.
-  22. C1281583 TERM C1281583 nosab : 
-The definition(s) of hand (C1552290):
-3
-  1. C1552290 PAR C1610728 HL7V3.0 : An occupational therapist is a person qualified by completion of an approved program in occupational therapy, licensed by the state and practicing within the scope of that license, or where licensure does not exist, certified by the American Occupational Therapy Certification Board. An occupational therapist evaluates the self-care, work and leisure performance skills of well and disabled clients and plans and implements programs to restore, develop or maintain the task performance skills necessary for daily living and for the client's particular occupational role.
-  2. C1552290 RO C0018563 CSP : part of the upper limb distal to the wrist including carpus, metacarpus and fingers.
-  3. C1552290 RO C0018563 NCI : The distal portion of the upper extremity. It consists of the carpus, metacarpus, and digits.
-  4. C1552290 TERM C1552290 nosab : 
-The definition(s) of hand (C1552301):
-3
-  1. C1552301 PAR C0871082 HL7V3.0 : (1) Physical therapists are health care professionals who evaluate and treat people with health problems resulting from injury or disease. PT's assess joint motion, muscle strength and endurance, function of heart and lungs, and performance of activities required in daily living, among other responsibilities. Treatment includes therapeutic exercises, cardiovascular endurance training, and training in activities of daily living. (2) A physical therapist is a person qualified by an accredited program in physical therapy, licensed by the state, and practicing within the scope of that license. Physical therapists treat disease, injury, or loss of a bodily part by physical means, such as the application of light, heat, cold, water, electricity, massage and exercise. They develop treatment plans based upon each patient's strengths, weaknesses, range of motion and ability to function. (3) A health professional who specializes in physical therapy- the health care field concerned primarily with the treatment of disorders with physical agents and methods, such as massage, manipulation, therapeutic exercises, cold, heat (including short-wave, microwave, and ultrasonic diathermy), hydrotherapy, electric stimulation and light to assist in rehabilitating patients and in restoring normal function after an illness or injury.Source: (1) APTA Guidelines for Physical Therapy Claims Review, American Physical Therapy Association. (3) Lexikon: Dictionary of Health Care Terms, Organizations and Acronyms for the Era of Reform, Joint Commission on Accreditation of Healthcare Organizations, Oakbrook Terrace, IL: 1994, p. 612
-  2. C1552301 RO C0018563 CSP : part of the upper limb distal to the wrist including carpus, metacarpus and fingers.
-  3. C1552301 RO C0018563 NCI : The distal portion of the upper extremity. It consists of the carpus, metacarpus, and digits.
-  4. C1552301 TERM C1552301 nosab : 
-The definition(s) of hand (C1552914):
-4
-  1. C1552914 PAR C0439196 NCI : An indication of the type of unit of measure being used to express a length or distance.
-  2. C1552914 CUI C1552914 NCI : A traditional unit of length equal to 4 inches or 10.16 centimeters.
-  3. C1552914 CUI C1552914 HL7V3.0 : 4 [in_i]
-  4. C1552914 CUI C1552914 HL7V3.0 : 4 [in_i]
-  5. C1552914 TERM C1552914 nosab : 

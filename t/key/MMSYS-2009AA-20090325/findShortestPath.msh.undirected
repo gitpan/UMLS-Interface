@@ -1,0 +1,23 @@
+
+
+UMLS-Interface Configuration Information
+  Sources (SAB):
+    MSH
+  Relations (REL):
+    CHD
+    PAR
+  Database: 
+    umls (MMSYS-2009AA-20090325)
+
+
+
+PathFinder User Options:
+  --undirected   --realtime option set
+
+
+
+The shortest path between hand (C0018563) and skull (C0037303):
+  => C0018563 (hand) C1140618 (limbs, upper) C0015385 (limbs) C0005898 (regions, body) C0018670 (head) C0149543 (skull base) C0037303 (skull) 
+
+The shortest path between hand (C0018563) and skull (C0037303):
+  => C0018563 (hand) C1140618 (limbs, upper) C0015385 (limbs) C0005898 (regions, body) C0817096 (thoraces) C0005931 (bones and bone tissue) C0037303 (skull) 

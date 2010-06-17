@@ -54,6 +54,7 @@ t/key/MMSYS-2009AA-20090325/findLeastCommonSubsumer.snomedct.par-chd
 t/key/MMSYS-2009AA-20090325/findPathToRoot.msh.par-chd
 t/key/MMSYS-2009AA-20090325/findPathToRoot.mth.rb-rn
 t/key/MMSYS-2009AA-20090325/findPathToRoot.snomedct.par-chd
+t/key/MMSYS-2009AA-20090325/findShortestPath.msh.undirected
 t/key/MMSYS-2009AA-20090325/findShortestPath.mth.rb-rn
 t/key/MMSYS-2009AA-20090325/findShortestPath.snomedct.par-chd
 t/key/MMSYS-2009AA-20090325/getAssociatedCuis.msh.par-chd.hand
@@ -137,6 +138,7 @@ t/tests/findPathToRoot.msh.par-chd
 t/tests/findPathToRoot.mth.rb-rn
 t/tests/findPathToRoot.snomedct.par-chd
 t/tests/findPathToRoot.snomedct.par-chd-rb-rn
+t/tests/findShortestPath.msh.undirected
 t/tests/findShortestPath.mth.rb-rn
 t/tests/findShortestPath.snomedct.par-chd
 t/tests/findShortestPath.snomedct.par-chd-rb-rn

@@ -1,6 +1,27 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.61 to 0.63
+    1. updated the source and relation output for SABDEF/RELDEF and SAB/REl
+
+    2. the UMLS_ROOT showing up as a child of C0282503 - that seems a bit
+    odd (priority)
+
+       we figured out why - this node seems to be part of three sources:
+       MSH, NCI and HL7v2.5 (as a PAR/CHD relationship). 
+
+       we are fixing this by creating a fake root: C0000000
+
+    3. implement shortest path algorithm (priority)
+
+    4. implement the lcs algorithm for the new shortest path (priority)
+
+    5. allow SABDEF, SABREL and REL to have the UMLS_ALL option
+
+    6. add --undirected option to shortest path
+
+    7. require that both the SAB and REL or SABDEF and RELDEF be specified
+
   Changes from version 0.59 to 0.61
     1. add validOptions() check in the Interface.pm module -> I actually
     called it checkOptions since this is consistent with other functions

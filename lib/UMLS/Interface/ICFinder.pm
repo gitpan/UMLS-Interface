@@ -1,5 +1,5 @@
 # UMLS::Interface::ICFinder
-# (Last Updated $Id: ICFinder.pm,v 1.7 2010/05/26 22:17:58 btmcinnes Exp $)
+# (Last Updated $Id: ICFinder.pm,v 1.8 2010/06/08 15:35:11 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -191,7 +191,7 @@ sub _setOptions
     
     if(defined $icsmooth) {
 	$smooth = $icsmooth;
-	$output .= "   --smooth\n";
+	$output .= "  --smooth\n";
     }
 
     #  check if the propagation option has been identified
@@ -365,9 +365,7 @@ sub _initializePropagationHash {
     
     #  clear out the hash just in case
     my $hash = $self->_getPropagationCuis();
-        
-    if($debug) { print STDERR "SMOOTH: $smooth\n"; }
-
+       
     #  add the cuis to the propagation hash
     foreach my $cui (sort keys %{$hash}) { 
 	$propagationHash{$cui} = "";
@@ -401,7 +399,6 @@ sub _loadPropagationFreq {
 	$N+= $freq;
     }
     
-
     #  check if something has been set
     if($smooth == 1) { 
 	my $pkeys = keys %propagationFreq;
@@ -410,7 +407,7 @@ sub _loadPropagationFreq {
     
     #  loop through again and set the probability
     foreach my $cui (sort keys %propagationFreq) { 
-	$propagationFreq{$cui} = $propagationFreq{$cui} / $N;
+	$propagationFreq{$cui} = ($propagationFreq{$cui}) / $N;
     }
 }
 
@@ -576,8 +573,9 @@ sub _tallyCounts {
     if(!defined $self || !ref $self) {
 	$errorhandler->_error($pkg, $function, "", 2);
     }
-    
+
     foreach my $cui (sort keys %propagationHash) {
+
 	my $set    = $propagationHash{$cui};
 	my $pcount = $propagationFreq{$cui};
 
@@ -588,8 +586,8 @@ sub _tallyCounts {
 		$pcount += $propagationFreq{$c};
 		$hash{$c}++;
 	    }
-	}
-	
+	}	
+
 	$propagationHash{$cui} = $pcount;
     }
 }

@@ -224,10 +224,10 @@ my $term  = $input;
 my @c = ();
 if($input=~/C[0-9]+/) {
     push @c, $input;
-    ($term) = $umls->getSabDefConcepts($input);
+    ($term) = $umls->getConceptList($input);
 }
 else {
-    @c = $umls->getSabDefConcepts($input);
+    @c = $umls->getConceptList($input);
 }
 
 my $printFlag = 0;
@@ -303,7 +303,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getExtendedDef.pl,v 1.6 2010/05/24 23:05:10 btmcinnes Exp $';
+    print '$Id: getExtendedDef.pl,v 1.7 2010/06/08 12:39:01 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

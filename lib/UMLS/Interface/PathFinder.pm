@@ -1,5 +1,5 @@
 # UMLS::Interface::PathFinder
-# (Last Updated $Id: PathFinder.pm,v 1.10 2010/05/26 20:33:02 btmcinnes Exp $)
+# (Last Updated $Id: PathFinder.pm,v 1.14 2010/06/09 16:42:05 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -62,6 +62,7 @@ my $option_realtime    = 0;
 my $option_t           = 0;
 my $option_debugpath   = 0;
 my $option_cuilist     = 0;
+my $option_undirected  = 0;
 
 my $errorhandler = "";
 my $cuifinder    = "";
@@ -155,6 +156,7 @@ sub _setOptions  {
     my $t            = $params->{'t'};
     my $debugpath    = $params->{'debugpath'};
     my $cuilist      = $params->{'cuilist'};
+    my $undirected   = $params->{'undirected'};
 
     my $output = "";
     if(defined $forcerun    || defined $verbose   || defined $realtime || 
@@ -175,7 +177,12 @@ sub _setOptions  {
 	$option_t = 1;
     }
 
-
+    #  check if the undirected option is set for shortest path
+    if(defined $undirected) { 
+	$option_undirected = 1;
+	$output .= "  --undirected";
+    }
+    
     #  check if the cuilist option has been defined
     if(defined $cuilist) { 
 	$option_cuilist = 1;
@@ -1003,7 +1010,50 @@ sub _findShortestPath {
     if(! ($errorhandler->_validCui($concept2)) ) {
 	$errorhandler->_error($pkg, $function, "Concept ($concept2) in not valid.", 6);
     }    
+
+    #  if realtime option is set find the shortest path in realtime 
+    if($option_realtime) {
+	return $self->_findShortestPathInRealTime($concept1, $concept2);
+    }
+    else {
+	return $self->_findShortestPathThroughLCS($concept1, $concept2);
+    }
+}
+
+#  this function returns the shortest path between two concepts
+#  input : $concept1 <- string containing the first cui
+#          $concept2 <- string containing the second
+#  output: @array    <- array containing the lcs(es)
+sub _findShortestPathThroughLCS {
     
+    my $self = shift;
+    my $concept1 = shift;
+    my $concept2 = shift;
+    
+    my $function = "_findShortestPathThroughLCS";
+    &_debug($function);
+    
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    #  check parameter exists
+    if(!defined $concept1) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept1.", 4);
+    }
+    if(!defined $concept2) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept2.", 4);
+    }
+
+    #  check if valid concept
+    if(! ($errorhandler->_validCui($concept1)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($concept1) in not valid.", 6);
+    }    
+    if(! ($errorhandler->_validCui($concept2)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($concept2) in not valid.", 6);
+    }    
+
     #  find the shortest path(s) and lcs - there may be more than one
     my $hash = $self->_shortestPath($concept1, $concept2);
     
@@ -1018,6 +1068,7 @@ sub _findShortestPath {
     #  return the shortest paths (all of them)
     return @paths;
 }
+
 
 #  this function returns the least common subsummer between two concepts
 #  input : $concept1 <- string containing the first cui
@@ -1052,25 +1103,102 @@ sub _findLeastCommonSubsumer {
     if(! ($errorhandler->_validCui($concept2)) ) {
 	$errorhandler->_error($pkg, $function, "Concept ($concept2) in not valid.", 6);
     }    
-
-    #  find the shortest path(s) and lcs - there may be more than one
-    my $hash = $self->_shortestPath($concept1, $concept2);
-        
-    #  get all of the lcses
-    my @lcses = (); 
     
-    if(defined $hash) {
-	foreach my $path (sort keys %{$hash}) { 
-	    my $c = ${$hash}{$path};
-	    
-	    if($c=~/C[0-9]+/) {
-		push @lcses, $c;
+    #  initialize the array that will contain the lcses
+    my @lcses = (); 
+
+    #  get the LCSes
+    if($option_realtime) {
+	@lcses = $self->_findLeastCommonSubsumerInRealTime($concept1, $concept2);
+    }
+    else {
+
+	my $hash = $self->_shortestPath($concept1, $concept2);
+	my %lcshash = ();
+	if(defined $hash) {
+	    foreach my $path (sort keys %{$hash}) { 
+		my $c = ${$hash}{$path};
+		if($c=~/C[0-9]+/) { $lcshash{$c}++; }
 	    }
 	}
+	foreach my $lcs (sort keys %lcshash) { push @lcses, $lcs; }
     }
     
     #  return the lcses
     return @lcses;
+}
+
+#  this function returns the least common subsummer between two concepts
+#  input : $concept1 <- string containing the first cui
+#          $concept2 <- string containing the second
+#  output: @array    <- array containing the lcs(es)
+sub _findLeastCommonSubsumerInRealTime {
+
+    my $self = shift;
+    my $concept1 = shift;
+    my $concept2 = shift;
+    
+    my $function = "_findLeastCommonSubsumer";
+    &_debug($function);
+
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    #  check parameter exists
+    if(!defined $concept1) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept1.", 4);
+    }
+    if(!defined $concept2) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept2.", 4);
+    }
+
+    #  check if valid concept
+    if(! ($errorhandler->_validCui($concept1)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($concept1) in not valid.", 6);
+    }    
+    if(! ($errorhandler->_validCui($concept2)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($concept2) in not valid.", 6);
+    }    
+    
+    #  get the shorest paths
+    my @paths = $self->_findShortestPathInRealTime($concept1, $concept2);
+    
+    #  get the child relations
+    my $childstring = $cuifinder->_getChildRelations();
+
+    #  initialize the lcses array
+    my %lcses = ();
+ 
+   #  check for the lcs in each of the paths
+    foreach my $p (@paths) {
+	#  get the path and the first concept
+	my @path     = split/\s+/, $p;
+	my $concept1 = shift @path;
+	my $flag     = 0;
+	
+	#  loop through the rest of the concepts looking for the first child relation
+	foreach my $concept2 (@path) {
+	    my @relations = $cuifinder->_getRelationsBetweenCuis($concept1, $concept2);
+	    foreach my $item (@relations) {
+		$item=~/([A-Z]+) \([A-Z]+\)/;
+		my $rel = $1;
+		#  if the relation is a child we have the LCS - it is concept1
+		if($childstring=~/($rel)/ && $flag == 0) {
+		    $lcses{$concept1}++; $flag++;
+		}
+	    }
+	    $concept1 = $concept2;
+	}
+    }
+
+    #  get the unique lcses - note a single lcs may have more than one path
+    my @unique = ();
+    foreach my $lcs (sort keys %lcses) { push @unique, $lcs; }
+
+    #  return the unique lcses
+    return @unique;
 }
 
 #  method to get the Least Common Subsumer of two 
@@ -1118,6 +1246,188 @@ sub _getLCSfromTrees {
     }
     
     return undef;
+}
+
+sub _findShortestPathInRealTime {
+    
+    my $self = shift;
+    my $concept1 = shift;
+    my $concept2 = shift;
+    
+    my $function = "_findShortestPathInRealTime";
+    &_debug($function);
+      
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    #  check parameter exists
+    if(!defined $concept1) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept1.", 4);
+    }
+    if(!defined $concept2) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept2.", 4);
+    }
+
+    #  check if valid concept
+    if(! ($errorhandler->_validCui($concept1)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($concept1) in not valid.", 6);
+    }    
+    if(! ($errorhandler->_validCui($concept2)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($concept2) in not valid.", 6);
+    }    
+    
+    #  set the  storage
+    my @path_storage= ();
+    my $path_length = 99999;
+
+    #  set the count
+    my %visited = ();
+    
+    #  set the stack with the parents because 
+    #  we want to start going up inorder to 
+    #  have an LCS
+    my @directions = ();
+    my @relations  = ();
+    my @paths      = ();
+    my @stack = $cuifinder->_getParents($concept1);
+
+    #  unless the undirected option is set then 
+    #  we require both
+    if($option_undirected) {
+	my @children = $cuifinder->_getChildren($concept1);
+	@stack = (@stack, @children);
+    }
+    foreach my $element (@stack) {
+	my @array      = (); 
+	push @paths, \@array;
+	push @directions, 0;
+	push @relations, "PAR";
+    }
+
+    #  now loop through the stack
+    while($#stack >= 0) {
+	
+	my $concept    = pop @stack;
+	my $path       = pop @paths;
+	my $direction  = pop @directions;
+	my $relation   = pop @relations;
+	
+        #  set up the new path
+	my @intermediate = @{$path};
+	my $series = join " ", @intermediate;
+	push @intermediate, $concept;
+	my $distance = $#intermediate;
+
+	#  check if the distance is greater than what we 
+	#  already have
+	if($distance > $path_length) { next; }
+
+	#  check that the concept is not one of the forbidden concepts
+	if($cuifinder->_forbiddenConcept($concept)) { next; }	
+
+        #  check if concept has been visited already through that path
+	my $v = "$concept : $series";
+	if(exists $visited{$v}) { next; }	
+	else { $visited{$v}++; }
+	
+        #  check if it is our concept2
+	if($concept eq $concept2) { 
+	    if($distance < $path_length) {
+		@path_storage = ();
+		push @path_storage, \@intermediate;
+		$path_length = $distance;
+
+	    }
+	    elsif($distance == $path_length) {
+		push @path_storage, \@intermediate;
+	    }
+	}
+	
+        #  print information into the file if debugpath option is set
+	if($option_debugpath) { 
+	    my $d = $#intermediate+1;
+	    print DEBUG_FILE "$concept\t$d\t@intermediate\n"; 
+	}
+	
+
+	#  we are going to start with the parents here; the code 
+	#  for both is similar except for the relation/direction
+	#  which is why I have the seperate right now - currently 
+	
+
+	#  if the previous direction was a child we have a change in direction
+	my $dchange = $direction;
+      
+	#  if the undirected option is set the dchange doesn't matter
+	#  otherwise we need to check
+	if(!$option_undirected) { 
+	    if($relation eq "CHD") { $dchange = $direction + 1; }
+	}
+
+	#  if we have not had more than a single direction change
+	if($dchange < 2) {
+	    #  search through the parents
+	    my @parents  = $cuifinder->_getParents($concept);		
+	    foreach my $parent (@parents) {
+		
+		#  check if child cui has already in the path
+		my $flag = 0;
+		foreach my $cui (@intermediate) {
+		    if($cui eq $parent) { $flag = 1; }
+		}
+		
+		#  if it isn't add it to the stack
+		if($flag == 0) {
+		    unshift @stack, $parent;
+		    unshift @paths, \@intermediate;
+		    unshift @relations, "PAR";
+		    unshift @directions, $dchange;
+		}
+	    }
+	}
+	
+	#  now with the chilcren if the previous direction was a parent we have
+	#  have to change the direction
+	$dchange = $direction;
+	#  if the undirected option is set the dchange doesn't matter
+	#  otherwise we need to check
+	if(!$option_undirected) { 
+	    if($relation eq "PAR") { $dchange = $direction + 1; }
+	}
+
+	#  if we have not had more than a single direction change
+	if($dchange < 2) {
+	    #  now search through the children
+	    my @children = $cuifinder->_getChildren($concept);
+	    foreach my $child (@children) {
+		
+		#  check if child cui has already in the path
+		my $flag = 0;
+		foreach my $cui (@intermediate) {
+		    if($cui eq $child) { $flag = 1; }
+		}
+		
+		#  if it isn't add it to the stack
+		if($flag == 0) {
+		    unshift @stack, $child;
+		    unshift @paths, \@intermediate;
+		    unshift @relations, "CHD";
+		    unshift @directions, $dchange;
+		}
+	    }
+	}
+    }
+    
+    #  set the return
+    my @return_paths = ();
+    foreach my $p (@path_storage) {
+	unshift @{$p}, $concept1;
+	my $string = join " " , @{$p};
+	push @return_paths, $string;
+    }
+    return @return_paths;
 }
 
 #  this function finds the shortest path between 
@@ -1199,14 +1509,16 @@ sub _shortestPath {
 
 		#  length of the path
 		if(exists $lcsLengths{$lcs}) {
-		    if($lcsLengths{$lcs} > ($rCount + $lCount - 1)) {
+		    if($lcsLengths{$lcs} >= ($rCount + $lCount - 1)) {
 			$lcsLengths{$lcs} = $rCount + $lCount - 1;
-			@{$lcsPaths{$lcs}} = (@lArray, (reverse @rArray));
+			my @fullpath = (@lArray, (reverse @rArray));
+			push @{$lcsPaths{$lcs}}, \@fullpath;
 		    }
 		}
 		else {
 		    $lcsLengths{$lcs} = $rCount + $lCount - 1;
-		    @{$lcsPaths{$lcs}} = (@lArray, (reverse @rArray));
+		    my @fullpath = (@lArray, (reverse @rArray));
+		    push @{$lcsPaths{$lcs}}, \@fullpath;
 		}
 	    }
 	}
@@ -1222,142 +1534,17 @@ sub _shortestPath {
     my $prev_len = -1;
     foreach my $lcs (sort {$lcsLengths{$a} <=> $lcsLengths{$b}} keys(%lcsLengths)) {
 	if( ($prev_len == -1) or ($prev_len == $lcsLengths{$lcs}) ) {
-	    my $path = join " ", @{$lcsPaths{$lcs}};
-	    $rhash{$path} = $lcs;
+	    foreach my $pathref (@{$lcsPaths{$lcs}}) { 
+		my $path = join " ", @{$pathref};
+		$rhash{$path} = $lcs;
+	    }
 	}
-	else { last; }
+	else { next;; }
 	$prev_len = $lcsLengths{$lcs};
     }
     
     #  return a reference to the hash containing the lcses and their path(s)
     return \%rhash;
-}
-
-#  This is like a reverse DFS only it is not recursive
-#  due to the stack overflow errors I received when it was
-#  input : $concept <- string containing CUI
-#  output: 
-sub _getShortestPathInRealTime {
-
-    my $self    = shift;
-    my $concept = shift;
-
-    return () if(!defined $self || !ref $self);
-
-    my $function = "_getShortestPathInRealtime";
-    &_debug($function);
-    
-    #  check self
-    if(!defined $self || !ref $self) {
-	$errorhandler->_error($pkg, $function, "", 2);
-    }
-
-    #  check concept was obtained
-    if(!$concept) { 
-	$errorhandler->_error($pkg, $function, "Error with input variable \$concept.", 4);
-    }
-    
-    #  check if valid concept
-    if(! ($errorhandler->_validCui($concept)) ) {
-	$errorhandler->_error($pkg, $function, "Concept ($concept) in not valid.", 6);
-    }
-
-    #  set the  storage
-    my @path_storage= ();
-
-    #  set the stack
-    my @stack = ();
-    push @stack, $concept;
-
-    #  set the count
-    my %visited = ();
-
-    #  set the paths
-    my @paths = ();
-    my @empty = ();
-    push @paths, \@empty;
-
-    #  now loop through the stack
-    while($#stack >= 0) {
-	
-	my $concept = $stack[$#stack];
-	my $path    = $paths[$#paths];
-
-	#  set up the new path
-	my @intermediate = @{$path};
-	my $series = join " ", @intermediate;
-	push @intermediate, $concept;
-	
-        #  print information into the file if debugpath option is set
-	if($option_debugpath) { 
-	    my $d = $#intermediate+1;
-	    print DEBUG_FILE "$concept\t$d\t@intermediate\n"; 
-	}
-        
-	#  check that the concept is not one of the forbidden concepts
-	if($cuifinder->_forbiddenConcept($concept)) { 
-	    pop @stack; pop @paths;
-	    next;
-	}
-
-	#  check if concept has been visited already
-	my $found = 0;
-	if(exists $visited{$concept}) { 
-	    foreach my $s (sort keys %{$visited{$concept}}) {
-		if($series eq $s) {
-		    $found = 1;
-		}
-	    }
-	}
-	
-	if($found == 1) {
-	    pop @stack; pop @paths;
-	    next; 
-	}
-	else { $visited{$concept}{$series}++; }
-		
-	#  if the concept is the umls root - we are done
-	if($concept eq $root) { 
-	    #  this is a complete path to the root so push it on the paths 
-	    my @reversed = reverse(@intermediate);
-	    my $rseries  = join " ", @reversed;
-	    push @path_storage, $rseries;
-	}
-	
-	#  get all the parents
-	my @parents = $cuifinder->_getParents($concept);
-
-	#  if there are no children we are finished with this concept
-	if($#parents < 0) {
-	    pop @stack; pop @paths;
-	    next;
-	}
-
-	#  search through the children
-	my $stackflag = 0;
-	foreach my $parent (@parents) {
-	
-	    #  check if child cui has already in the path
-	    my $flag = 0;
-	    foreach my $cui (@intermediate) {
-		if($cui eq $parent) { $flag = 1; }
-	    }
-
-	    #  if it isn't continue on with the depth first search
-	    if($flag == 0) {
-		push @stack, $parent;
-		push @paths, \@intermediate;
-		$stackflag++;
-	    }
-	}
-	
-	#  check to make certain there were actually children
-	if($stackflag == 0) {
-	    pop @stack; pop @paths;
-	}
-    }
-
-    return \@path_storage;
 }
 
 1;

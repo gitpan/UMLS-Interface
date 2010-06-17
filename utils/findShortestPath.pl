@@ -52,6 +52,14 @@ If you go to the configuration file directory, there will
 be example configuration files for the different runs that 
 you have performed.
 
+=head3 --undirected
+
+The path between the concepts is not required to be directed such 
+that an LCS can be obtained. This means that we can obtain a path 
+from CUI1 to CUI2 by meandering through the graph rather than 
+finding the CUI that subsumes both of them and then finding the 
+shortest path between those points. 
+
 =head3 --info
 
 This prints out the relation and source information between the 
@@ -213,7 +221,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-eval(GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui", "infile=s", "forcerun", "verbose", "debugpath=s", "cuilist=s", "realtime", "debug", "icpropagation=s", "length", "info")) or die ("Please check the above mentioned option(s).\n");
+eval(GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui", "infile=s", "forcerun", "verbose", "debugpath=s", "cuilist=s", "realtime", "debug", "icpropagation=s", "length", "info", "undirected")) or die ("Please check the above mentioned option(s).\n");
 
 
 #  if help is defined, print out help
@@ -275,6 +283,9 @@ if(defined $opt_debug) {
 }
 if(defined $opt_realtime) {
     $option_hash{"realtime"} = $opt_realtime;
+}
+if(defined $opt_undirected) {
+    $option_hash{"undirected"} = $opt_undirected;
 }
 if(defined $opt_config) {
     $option_hash{"config"} = $opt_config;
@@ -437,6 +448,9 @@ sub showHelp() {
 
     print "Options:\n\n";
 
+    print "--undirected             The path between the concepts is not \n";
+    print "                         required to be directed.\n\n";
+
     print "--info                   Outputs the source and relation information\n";
     print "                         between the concepts in the path\n\n";
 
@@ -486,7 +500,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findShortestPath.pl,v 1.19 2010/05/24 17:57:16 btmcinnes Exp $';
+    print '$Id: findShortestPath.pl,v 1.20 2010/06/09 16:07:00 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

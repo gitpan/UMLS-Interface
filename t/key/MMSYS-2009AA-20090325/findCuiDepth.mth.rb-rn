@@ -1,9 +1,9 @@
 
 
 UMLS-Interface Configuration Information
-  Sources:
+  Sources (SAB):
     MTH
-  Relations:
+  Relations (REL):
     RN
     RB
   Database: 

@@ -242,7 +242,7 @@ $umls = UMLS::Interface->new(\%option_hash);
 die "Unable to create UMLS::Interface object.\n" if(!$umls);
 
 #  set the root
-my $root = "C0085567";
+my $root = "C0000000";
 if(defined $opt_root) {
     $root = $opt_root;
 }

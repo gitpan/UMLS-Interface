@@ -1,5 +1,5 @@
 # UMLS::Interface::CuiFinder
-# (Last Updated $Id: CuiFinder.pm,v 1.10 2010/05/26 22:17:58 btmcinnes Exp $)
+# (Last Updated $Id: CuiFinder.pm,v 1.18 2010/06/14 16:28:14 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -59,7 +59,7 @@ local(*DEBUG_FILE);
 
 #  global variables
 my $debug     = 0;
-my $umlsRoot  = "C0085567";
+my $umlsRoot  = "C0000000";
 my $version   = "";
 my $max_depth = 0;
 
@@ -781,7 +781,15 @@ sub _setConfigurationFile {
     
     my $output = "";
     $output .= "UMLS-Interface Configuration Information\n";
-    $output .= "  Sources:\n";
+    
+    my $dk = keys %sabDefHash;
+    if($dk > 0) { 
+	$output .= "  Sources (SABDEF):\n";
+    }
+    else {
+	$output .= "  Sources (SAB):\n";
+    }
+
     foreach my $sab (sort keys %sabnamesHash) {
 	$tableFile  .= "_$sab";
 	$childFile  .= "_$sab";
@@ -795,11 +803,18 @@ sub _setConfigurationFile {
 	
 	$output .= "    $sab\n"; 	
     }
+    
     if($umlsall) { 
 	$output .= "    UMLS_ALL\n";
     }
-
-    $output .= "  Relations:\n";
+    
+    my $rk = keys %relDefHash;
+    if($rk > 0) { 
+	$output .= "  Relations (RELDEF):\n";
+    }
+    else {
+	$output .= "  Relations (REL):\n";
+    }
     while($relations=~/=\'(.*?)\'/g) {
 	my $rel = $1;
 	$rel=~s/\s+//g;
@@ -811,10 +826,10 @@ sub _setConfigurationFile {
 	$parentTable.= "_$rel";
 	$childTable .= "_$rel";
 	$propTable  .= "_$rel";
-
+	
 	$output .= "    $rel\n";
     }
-    
+      
     $tableFile  .= "_table";
     $childFile  .= "_child";
     $parentFile .= "_parent";
@@ -941,10 +956,20 @@ sub _setRelations {
 
     if($includerelkeys <= 0 && $excluderelkeys <=0) { return; }
 
+    #  if the umls all option is set clear out the the includerel hash and 
+    #  add the umlsall to the exclude. This way all should be included since
+    #  there will never be a source called UMLS_ALL - this is a bit of a dirty 
+    #  swap but I think it will simplify the code and work
+    if(exists ${$includerel}{"UMLS_ALL"}) {
+	$includerel = "";             $includerelkeys = 0; 
+	${$excluderel}{"UMLS_ALL"} = 1; $excluderelkeys = 1;
+	
+    }	
+   
     #  set the database
     my $db = $self->{'db'};
     if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
-    
+ 
     $parentRelations = "(";
     $childRelations  = "(";
     $relations       = "(";
@@ -961,6 +986,7 @@ sub _setRelations {
 	@array = @{$arrRef};
     }
     
+
     my $relcount = 0;
     my @parents  = ();
     my @children = ();
@@ -983,13 +1009,16 @@ sub _setRelations {
     }
     
     #  set the parentRelations and childRelations variables
-    for my $i (0..($#parents-1)) { 
-	$parentRelations .= "REL=\'$parents[$i]\' or "; 
-    } $parentRelations .= "REL=\'$parents[$#parents]\'"; 
-    
-    for my $i (0..($#children-1)) { 
-	$childRelations .= "REL=\'$children[$i]\' or "; 
-    } $childRelations .= "REL=\'$children[$#children]\'";     
+    if($#parents >= 0) {
+	for my $i (0..($#parents-1)) { 
+	    $parentRelations .= "REL=\'$parents[$i]\' or "; 
+	} $parentRelations .= "REL=\'$parents[$#parents]\'"; 
+    }
+    if($#children >= 0) { 
+	for my $i (0..($#children-1)) { 
+	    $childRelations .= "REL=\'$children[$i]\' or "; 
+	} $childRelations .= "REL=\'$children[$#children]\'";     
+    }
     
     $parentRelations .= ") ";
     $childRelations  .= ") ";
@@ -1026,6 +1055,15 @@ sub _setSabDef {
     }
     
     if($includesabdefkeys <= 0 && $excludesabdefkeys <=0) { return; }
+
+    #  if the umls all option is set clear out the the includesabdef hash and 
+    #  add the umlsall to the exclude. This way all should be included since
+    #  there will never be a source called UMLS_ALL - this is a bit of a dirty 
+    #  swap but I think it will simplify the code and work
+    if(exists ${$includesabdef}{"UMLS_ALL"}) {
+	$includesabdef = "";               $includesabdefkeys = 0; 
+	${$excludesabdef}{"UMLS_ALL"} = 1; $excludesabdefkeys = 1;
+    }	
 
     #  check that the db is defined
     my $db = $self->{'db'};
@@ -1093,6 +1131,15 @@ sub _setRelDef {
     
     if($includereldefkeys <= 0 && $excludereldefkeys <=0) { return; }
 
+    #  if the umls all option is set clear out the the includereldef hash and 
+    #  add the umlsall to the exclude. This way all should be included since
+    #  there will never be a source called UMLS_ALL - this is a bit of a dirty 
+    #  swap but I think it will simplify the code and work
+    if(exists ${$includereldef}{"UMLS_ALL"}) {
+	$includereldef = "";               $includereldefkeys = 0; 
+	${$excludereldef}{"UMLS_ALL"} = 1; $excludereldefkeys = 1;
+    }	
+
     #  set the database
     my $db = $self->{'db'};
     if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
@@ -1142,11 +1189,11 @@ sub _setRelDef {
 #  sets the variables for using the entire umls rather than just a subset    
 #  input : 
 #  output: 
-sub _setUMLS_ALL {
+sub _setSabUmlsAll {
     
     my $self = shift;
     
-    my $function = "_setUMLS_ALL";
+    my $function = "_setSabUmlsAll";
     &_debug($function);
     
     #  check input value
@@ -1196,8 +1243,20 @@ sub _setSabs {
        !(defined $includesab)     || !(defined $excludesab)) {
 	$errorhandler->_error($pkg, $function, "SAB variables not defined.", 4);
     }
-    
+
+
     if($includesabkeys <= 0 && $excludesabkeys <=0) { return; }
+
+    #  if the umls all option is set clear out the the includesab hash and 
+    #  add the umlsall to the exclude. This way all should be included since
+    #  there will never be a source called UMLS_ALL - this is a bit of a dirty 
+    #  swap but I think it will simplify the code and work
+    if(exists ${$includesab}{"UMLS_ALL"}) {
+	$includesab = "";             $includesabkeys = 0; 
+	${$excludesab}{"UMLS_ALL"} = 1; $excludesabkeys = 1;
+	$umlsall = 1;
+	$sources = "UMLS_ALL";
+    }	
 
     #  check that the db is defined
     #  set the database
@@ -1219,14 +1278,6 @@ sub _setSabs {
     foreach my $sab (@array) { 
 	    
 	$sabcount++;
-	    
-	#  if the sab is UMLS_ALL set the flag and be done
-	if($sab eq "UMLS_ALL") { 
-	    $umlsall = 1;
-	    $sources = "UMLS_ALL";
-	    &_setUMLS_ALL();
-	    last;
-	}
 	
 	#  if we are excluding check to see if this sab can be included
 	if(($excludesabkeys > 0) and (exists ${$excludesab}{$sab})) { next; }	
@@ -1421,7 +1472,8 @@ sub _config {
     my %includerela   = ();	my %excluderela   = ();
     my %includereldef = ();	my %excludereldef = ();
     my %includesabdef = ();	my %excludesabdef = ();
-    
+
+    my %check = ();
     if(defined $file) {
 	open(FILE, $file) || die "Could not open configuration file: $file\n"; 
 
@@ -1437,11 +1489,17 @@ sub _config {
 		my $det  = $2;
 		my $list = $3;
 		
+		#  catch what types are in the config file for checking
+		#  right now the checking is pretty simple but I think 
+		#  in the future as others get added it might be more 
+		#  extensive
+		$check{$type}++;
+	
 		my @array = split/\s*\,\s*/, $list;
 		foreach my $element (@array) {
 		    if(   $type eq "SAB"    and $det eq "include") { $includesab{$element}++;  
 								     $sabstring  = $_; 
-								     $parameters{"SAB"}++;
+								     $parameters{"SAB"}++; 
 		    }
 		    elsif($type eq "SAB"    and $det eq "exclude") { $excludesab{$element}++;  
 								     $sabstring  = $_; 
@@ -1509,30 +1567,45 @@ sub _config {
     my $excludereldefkeys = keys %excludereldef;
     my $includesabdefkeys = keys %includesabdef;
     my $excludesabdefkeys = keys %excludesabdef;
-    
+
+
     #  check for errors
-    if($includesabkeys > 0 and $excludesabkeys > 0) {
+    if( (!exists $check{"SAB"} && exists $check{"REL"}) ||
+	(!exists $check{"REL"} && exists $check{"SAB"}) ) {
+	$errorhandler->_error($pkg, 
+			      $function, 
+			      "Configuration file must include both REL and SAB information.", 
+			      5);
+    }
+    if( (!exists $check{"SABDEF"} && exists $check{"RELDEF"}) ||
+	(!exists $check{"RELDEF"} && exists $check{"SABDEF"}) ) {
+	$errorhandler->_error($pkg, 
+			      $function, 
+			      "Configuration file must include both RELDEF and SABDEF information.", 
+			      5);
+    }
+    if($includesabkeys > 0 && $excludesabkeys > 0) {
 	$errorhandler->_error($pkg, 
 			      $function, 
 			      "Configuration file can not have an include and exclude list of sources.", 
 			      5);
     }
-    if($includerelkeys > 0 and $excluderelkeys > 0) {
+    if($includerelkeys > 0 && $excluderelkeys > 0) {
 	$errorhandler->_error($pkg, 
 			      $function, 
 			      "Configuration file can not have an include and exclude list of relations.",
 			      5);
     }
    
-    if( ($includerelkeys <= 0 or $excluderelkeys <= 0) && 
-	($includerelakeys > 0 or $excluderelakeys > 0) ) {
+    if( ($includerelkeys <= 0 || $excluderelkeys <= 0) && 
+	($includerelakeys > 0 || $excluderelakeys > 0) ) {
 	$errorhandler->_error($pkg, 
 			      $function, 
 			      "The relations (REL) must be specified if using the rela relations (RELA).",
 			      5);
     }	
     
-    #  The order matters here so don't mess with it
+    #  The order matters here so don't mess with it!
     
     #  set the relations
     $self->_setRelations($includerelkeys, $excluderelkeys, \%includerel, \%excluderel);
@@ -1542,7 +1615,7 @@ sub _config {
     
     #  set the relas
     $self->_setRelas($includerelakeys, $excluderelakeys, \%includerela, \%excluderela);
-    
+
     #  set the sabs for the CUI and extended definitions
     $self->_setSabDef($includesabdefkeys, $excludesabdefkeys, \%includesabdef, \%excludesabdef);
     
@@ -1551,14 +1624,19 @@ sub _config {
 
     #  now at this point everything that is set with the names are set
     #  if though SABDEF has been set without SAB then use SABDEF
-    #  similarity if SABREL has been set without REL then use SABREl
-      #  set the relations
-    $self->_setRelations($includereldefkeys, $excludereldefkeys, \%includereldef, \%excludereldef);
-    
-    #  set the sabs
-    $self->_setSabs($includesabdefkeys, $excludesabdefkeys, \%includesabdef, \%excludesabdef);
+    #  similarity if SABREL has been set without REL then use SABREL
+    #  set the relations - this is done right now to extract terms and 
+    #  and such from the umls - I don't really like how this is done but 
+    #  it will be okay for right now. It would be nice to have them 
+    #  completely seperate. Doing it this way though allows for the REL,
+    #  SAB, RELDEF and SABDEF to all be specified
+    if($includerelkeys == 0 && $excluderelkeys == 0) {
+	$self->_setRelations($includereldefkeys, $excludereldefkeys, \%includereldef, \%excludereldef);
+    }
+    if($includesabkeys == 0 && $excludesabkeys == 0) {
+	$self->_setSabs($includesabdefkeys, $excludesabdefkeys, \%includesabdef, \%excludesabdef);
+    }
 
-    #  I don't really like how this is done but 
     
     if($debug) {
 	if($umlsall) { print STDERR "SOURCE   : UMLS_ALL\n"; }
@@ -2216,53 +2294,19 @@ sub _getConceptList {
     
     #  get the cuis
     my $arrRef = "";
+
     if($umlsall) {
 	$arrRef = $db->selectcol_arrayref("select distinct CUI from MRCONSO where STR='$term'");
     }
-    else {
+    elsif($sources ne "") {
 	$arrRef = $db->selectcol_arrayref("select distinct CUI from MRCONSO where STR='$term' and ($sources)");
     }
-    
-    #  check for database errors
-    $errorhandler->_checkDbError($pkg, $function, $db);
-    
-    return @{$arrRef};
-}
-
-#  method to map CUIs to a terms in the sources 
-#  specified in the configuration file by SABDEF
-#  input : $term  <- string containing a term
-#  output: @array <- array containing cuis
-sub _getSabDefConcepts {
-
-    my $self = shift;
-    my $term = shift;
-
-    my $function = "_getSabDefConcepts";
-    
-    #  check self
-    if(!defined $self || !ref $self) {
-	$errorhandler->_error($pkg, $function, "", 2);
-    }
-    
-    #  check parameter exists
-    if(!defined $term) { 
-	$errorhandler->_error($pkg, $function, "Error with input variable \$term.", 4);
-    }
-    
-    #  set up the database
-    my $db = $self->{'db'};
-    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
-    
-    #  get the cuis
-    my $arrRef = "";
-    if($sabdefsources ne "") {
+    elsif($sabdefsources ne "") {
 	$arrRef = $db->selectcol_arrayref("select distinct CUI from MRCONSO where STR='$term' and ($sabdefsources)");
     }
     else {
-	$arrRef = $db->selectcol_arrayref("select distinct CUI from MRCONSO where STR='$term'");
+	$errorhandler->_error($pkg, $function, "Error with sources from configuration file.", 5);
     }
-    
     #  check for database errors
     $errorhandler->_checkDbError($pkg, $function, $db);
     
@@ -2419,6 +2463,24 @@ sub _getSab {
     
     return @{$arrRef};
 }
+
+#  returns the child relations
+#  input : 
+#  output: $string <- containing the child relations
+sub _getChildRelations {
+    my $self = shift;
+    
+    return $childRelations;
+}
+#  returns the parent relations
+#  input : 
+#  output: $string <- containing the parent relations
+sub _getParentRelations {
+    my $self = shift;
+    
+    return $parentRelations;
+}
+
 
 #  returns the children of a concept - the relations that 
 #  are considered children are predefined by the user.
@@ -2640,10 +2702,10 @@ sub _getRelationsBetweenCuis {
     #  get the relations
     my $sql = "";
     if($umlsall) {
-	$sql = qq{ select distinct REL, SAB from MRREL where (CUI1='$concept1' and CUI2='$concept2') };
+	$sql = qq{ select distinct REL, SAB from MRREL where (CUI1='$concept1' and CUI2='$concept2') and ($relations)};
     }
     else {
-	$sql = qq{ select distinct REL, SAB from MRREL where (CUI1='$concept1' and CUI2='$concept2') and ($sources) };
+	$sql = qq{ select distinct REL, SAB from MRREL where (CUI1='$concept1' and CUI2='$concept2') and ($sources) and ($relations)};
     }
 
     my $sth = $db->prepare( $sql );
@@ -2938,7 +3000,7 @@ sub _getExtendedDefinition {
     my @defs = ();
     
     my $dkeys = keys %relDefHash;
-    
+
     if( ($dkeys <= 0) or (exists $relDefHash{"PAR"}) ) {
 	my @parents   = $self->_getExtendedRelated($concept, "PAR");
 	foreach my $parent (@parents) {
@@ -3038,6 +3100,10 @@ sub _getExtendedDefinition {
 	push @defs, $def;
     }
     
+    if($debug) {
+	print "SABDEF: $sabdefstring\n";
+	print "RELDEF: $reldefstring\n";
+    }
     return \@defs;
 }
 
@@ -3075,6 +3141,7 @@ sub _getCuiDef {
     my $sql = "";
 
     if($sabdefsources ne "") { 
+	
 	$sql = qq{ SELECT DEF, SAB FROM MRDEF WHERE CUI=\'$concept\' and ($sabdefsources) };
     }
     else {
@@ -3377,8 +3444,6 @@ documentation.
 
  @array = $cuifinder ->_getAllConcepts($term);
 
- @array = $cuifinder -> _getSabDefConcepts($term);
-
  $hash = $cuifinder->_getCuiList();
 
  $sab = "MSH";
@@ -3412,8 +3477,6 @@ documentation.
  $array = $cuifinder->_getExtendedDefinition($concept);
 
  @array = $cuifinder->_getCuiDef($concept, $sabflag);
-
- $bool = $cuifinder->_validCui($concept);
 
  $bool = $cuifinder->_exists($concept);
 

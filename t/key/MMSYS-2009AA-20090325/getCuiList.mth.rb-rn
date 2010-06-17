@@ -1,9 +1,9 @@
 
 
 UMLS-Interface Configuration Information
-  Sources:
+  Sources (SAB):
     MTH
-  Relations:
+  Relations (REL):
     RN
     RB
   Database: 
@@ -12,6 +12,7 @@ UMLS-Interface Configuration Information
 
 
 
+C0000000
 C0000097
 C0000102
 C0000120
@@ -19799,7 +19800,6 @@ C0085552
 C0085557
 C0085559
 C0085560
-C0085567
 C0085568
 C0085569
 C0085570

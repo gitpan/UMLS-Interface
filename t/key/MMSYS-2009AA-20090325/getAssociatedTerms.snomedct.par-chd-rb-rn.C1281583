@@ -1,9 +1,9 @@
 
 
 UMLS-Interface Configuration Information
-  Sources:
+  Sources (SAB):
     SNOMEDCT
-  Relations:
+  Relations (REL):
     RN
     CHD
     RB
