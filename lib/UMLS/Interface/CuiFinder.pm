@@ -1,5 +1,5 @@
 # UMLS::Interface::CuiFinder
-# (Last Updated $Id: CuiFinder.pm,v 1.18 2010/06/14 16:28:14 btmcinnes Exp $)
+# (Last Updated $Id: CuiFinder.pm,v 1.21 2010/06/27 15:18:48 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -110,11 +110,14 @@ my $option_cuilist     = 0;
 my $option_t           = 0;
 
 #  definition containers
-my $sabdefsources       = "";
+my $sabdefsources      = "";
 my %relDefHash         = ();
 my %sabDefHash         = ();
 my $reldefstring       = "";
 my $sabdefstring       = "";
+my $reladefchildren    = "";
+my $reladefparents     = "";
+
 my %parameters         = ();
 
 ######################################################################
@@ -145,7 +148,6 @@ sub new {
 
     return $self;
 }
-
 
 #  method to initialize the UMLS::Interface object.
 #  input : $parameters <- reference to a hash
@@ -343,7 +345,7 @@ sub _createUpperLevelTaxonomy {
         #  add the sab cuis to the parent and children Taxonomy
 	push @{$parentTaxonomyArray{$sab_cui}}, $umlsRoot;
 	push @{$childTaxonomyArray{$umlsRoot}}, $sab_cui;
-
+	
 	#  print it to the table if the verbose option is set
 	if($option_verbose) { 
 	    print PAR "$sab_cui  $umlsRoot\n"; 
@@ -372,13 +374,12 @@ sub _createUpperLevelTaxonomy {
     }
 }
 
-
 #  this function creates the taxonomy tables if they don't
 #  already exist in the umlsinterfaceindex database
 #  input : 
 #  output: 
 sub _createTaxonomyTables {
-
+    
     my $self = shift;
 
     my $function = "_createTaxonomyTables";
@@ -410,7 +411,7 @@ sub _createTaxonomyTables {
     $errorhandler->_checkDbError($pkg, $function, $sdb);
     $sdb->do("INSERT INTO tableindex (TABLENAME, HEX) VALUES ('$childTableHuman', '$childTable')");
     $errorhandler->_checkDbError($pkg, $function, $sdb);
-}    
+}
 
 #  this function loads the taxonomy tables if the
 #  configuration files exist for them
@@ -808,6 +809,14 @@ sub _setConfigurationFile {
 	$output .= "    UMLS_ALL\n";
     }
     
+    #  seperate the RELs and the RELAs from $relations
+    my %rels = (); my %relas = ();
+    while($relations=~/=\'(.*?)\'/g) {
+	my $rel = $1;
+	if($rel=~/[a-z\_]+/) { $relas{$rel}++; }
+	else                 { $rels{$rel}++; }
+    }
+    
     my $rk = keys %relDefHash;
     if($rk > 0) { 
 	$output .= "  Relations (RELDEF):\n";
@@ -815,9 +824,29 @@ sub _setConfigurationFile {
     else {
 	$output .= "  Relations (REL):\n";
     }
-    while($relations=~/=\'(.*?)\'/g) {
-	my $rel = $1;
-	$rel=~s/\s+//g;
+    foreach my $rel (sort keys %rels) { 
+	$tableFile  .= "_$rel";
+	$childFile  .= "_$rel";
+	$parentFile .= "_$rel";
+	$configFile .= "_$rel";
+	$tableName  .= "_$rel";	
+	$parentTable.= "_$rel";
+	$childTable .= "_$rel";
+	$propTable  .= "_$rel";
+	
+	$output .= "    $rel\n";
+    }
+
+    my $rak = keys %relas;
+    if($rak > 0) { 
+	if($rk > 0) { 
+	    $output .= "  Relations (RELADEF):\n";
+	}
+	else {
+	    $output .= "  Relations (RELA):\n";
+	}
+    }
+    foreach my $rel (sort keys %relas) { 
 	$tableFile  .= "_$rel";
 	$childFile  .= "_$rel";
 	$parentFile .= "_$rel";
@@ -1063,6 +1092,7 @@ sub _setSabDef {
     if(exists ${$includesabdef}{"UMLS_ALL"}) {
 	$includesabdef = "";               $includesabdefkeys = 0; 
 	${$excludesabdef}{"UMLS_ALL"} = 1; $excludesabdefkeys = 1;
+	$umlsall = 1;
     }	
 
     #  check that the db is defined
@@ -1323,9 +1353,8 @@ sub _setRelas {
 	$errorhandler->_error($pkg, $function, "RELA variables not defined.", 4);
     }
 
-    if($includerelakeys <= 0 && $excluderelakeys <=0) { return }
     #  if no relas were specified just return
-    if($includerelakeys <= 0 and $excluderelakeys <= 0) { return; }
+    if($includerelakeys <= 0 && $excluderelakeys <=0) { return }
     
     #  set the database
     my $db = $self->{'db'};
@@ -1335,15 +1364,31 @@ sub _setRelas {
     my %childrelas  = ();
     my %parentrelas = ();    
    
+    #  set the parent relations
+    my $prelations = "";
+    if($relations=~/PAR/) { 
+	if($relations=~/RB/) { 
+	    $prelations = "(REL='PAR') or (REL='RB')"; 
+	} else { $prelations = "(REL='PAR')"; }
+    } elsif($relations=~/RB/) { $prelations = "(REL='RB')"; }
+
+    #  set the child relations
+    my $crelations = "";
+    if($relations=~/CHD/) { 
+	if($relations=~/RN/) { 
+	    $crelations = "(REL='CHD') or (REL='RN')"; 
+	} else { $crelations = "(REL='CHD')"; }
+    } elsif($relations=~/RB/) { $crelations = "(REL='RN')"; }
+
     #  get the rela relations that exist for the given set of sources and 
     #  relations for the children relations that are specified in the config
     my $sth = "";
     if($umlsall) {
-	$sth = $db->prepare("select distinct RELA from MRREL where $childRelations");
+	$sth = $db->prepare("select distinct RELA from MRREL where $crelations");
 	$errorhandler->_checkDbError($pkg, $function, $db);	
     }
     else {
-	$sth = $db->prepare("select distinct RELA from MRREL where $childRelations and ($sources)");
+	$sth = $db->prepare("select distinct RELA from MRREL where $crelations and ($sources)");
 	$errorhandler->_checkDbError($pkg, $function, $db);	
     }
     $sth->execute();
@@ -1372,11 +1417,11 @@ sub _setRelas {
     #  get the rela relations that exist for the given set of sources and 
     #  relations for the children relations that are specified in the config
     if($umlsall) {
-	$sth = $db->prepare("select distinct RELA from MRREL where $parentRelations");
+	$sth = $db->prepare("select distinct RELA from MRREL where $prelations");
 	$errorhandler->_checkDbError($pkg, $function, $db);
     }
     else {
-	$sth = $db->prepare("select distinct RELA from MRREL where $parentRelations and ($sources)");
+	$sth = $db->prepare("select distinct RELA from MRREL where $prelations and ($sources)");
 	$errorhandler->_checkDbError($pkg, $function, $db);	
     }
     $sth->execute();
@@ -1409,7 +1454,7 @@ sub _setRelas {
     else {
 	
 	my $arrRef = 
-	    $db->selectcol_arrayref("select distinct RELA from MRREL where ($sources) and $relations");
+	    $db->selectcol_arrayref("select distinct RELA from MRREL where ($sources) and $prelations and $crelations");
 	$errorhandler->_checkDbError($pkg, $function, $db);	
 	@array = @{$arrRef};
 	shift @array;
@@ -1444,9 +1489,191 @@ sub _setRelas {
     
 	my $crelasline = join " or ", @crelas;
 	my $prelasline = join " or ", @prelas;
+
+	#  set the parent relations
+	if($parentRelations=~/PAR/) {
+	    $parentRelations=~s/REL='PAR'/\(REL='PAR' and \($prelasline\)\)/g;
+	    $relations=~s/REL='PAR'/\(REL='PAR' and \($prelasline\)\)/g;
+	}
+	if($parentRelations=~/RB/) {
+	    $parentRelations=~s/REL='RB'/\(REL='RB' and \($prelasline\)\)/g;
+	    $relations=~s/REL='RB'/\(REL='RB' and \($prelasline\)\)/g;
+	}
+	#  set the child relations
+	if($childRelations=~/CHD/) {
+	    $childRelations=~s/REL='CHD'/\(REL='CHD' and \($crelasline\)\)/g;
+	    $relations=~s/REL='CHD'/\(REL='CHD' and \($crelasline\)\)/g;
+	}
+	if($childRelations=~/RN/) {
+	    $childRelations=~s/REL='RN'/\(REL='RN' and \($crelasline\)\)/g;
+	    $relations=~s/REL='RN'/\(REL='RN' and \($crelasline\)\)/g;
+	}
+    }
+}
+
+#  sets the reladef variables from the information in the config file
+#  input : $includereladefkeys <- integer
+#        : $excludereladefkeys <- integer
+#        : $includereladef     <- reference to hash
+#        : $excludereladef     <- reference to hash
+#  output: 
+sub _setRelaDef {
+
+    my $self               = shift;
+    my $includereladefkeys = shift;
+    my $excludereladefkeys = shift;
+    my $includereladef     = shift;
+    my $excludereladef     = shift;
+
+    my $function = "_setRelaDef";
+    &_debug($function);
+
+    #  check the input values
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
     
-	$parentRelations .= " and ($prelasline)";
-	$childRelations  .= " and ($crelasline)";
+    #  check the parameters are defined
+    if(!(defined $includereladefkeys) || !(defined $excludereladefkeys) || 
+       !(defined $includereladef)     || !(defined $excludereladef)) {
+	$errorhandler->_error($pkg, $function, "RELADEF variables not defined.", 4);
+    }
+
+    #  if no relas were specified just return
+    if($includereladefkeys <= 0 && $excludereladefkeys <=0) { return; }
+    
+    #  set the database
+    my $db = $self->{'db'};
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
+    
+    #  initalize the hash tables that will hold children and parent relas
+    my %childrelas  = ();
+    my %parentrelas = ();    
+    
+    #  set the parent relations
+    my $prelations = "";
+    if($reldefstring=~/PAR/) { 
+	if($reldefstring=~/RB/) { 
+	    $prelations = "(REL='PAR') or (REL='RB')"; 
+	} else { $prelations = "(REL='PAR')"; }
+    } elsif($reldefstring=~/RB/) { $prelations = "(REL='RB')"; }
+    
+    #  set the child relations
+    my $crelations = "";
+    if($reldefstring=~/CHD/) { 
+	if($reldefstring=~/RN/) { 
+	    $crelations = "(REL='CHD') or (REL='RN')"; 
+	} else { $crelations = "(REL='CHD')"; }
+    } elsif($reldefstring=~/RB/) { $crelations = "(REL='RN')"; }
+    
+    #  get the rela relations that exist for the given set of sources and 
+    #  relations for the children relations that are specified in the config
+    my $sth = "";
+    if($umlsall) {
+	$sth = $db->prepare("select distinct RELA from MRREL where $crelations");
+	$errorhandler->_checkDbError($pkg, $function, $db);	
+    }
+    else {
+	$sth = $db->prepare("select distinct RELA from MRREL where $crelations and ($sabdefsources)");
+	$errorhandler->_checkDbError($pkg, $function, $db);	
+    }
+    $sth->execute();
+    $errorhandler->_checkDbError($pkg, $function, $sth);
+    
+    #  get all the relas for the children
+    my $crela = "";
+    while(($crela) = $sth->fetchrow()) {
+	if(defined $crela) {
+	    if($crela ne "NULL") {
+		$childrelas{$crela}++;
+	    }
+	}
+    }
+    $sth->finish();
+    
+    my $crelakeys = keys %childrelas;
+    if($crelakeys <= 0) {
+	$errorhandler->_error($pkg, 
+			      $function, 
+			      "There are no RELA relations for the given sources/relations.", 
+			      5);
+    }
+
+    #  get the rela relations that exist for the given set of sources and 
+    #  relations for the children relations that are specified in the config
+    if($umlsall) {
+	$sth = $db->prepare("select distinct RELA from MRREL where $prelations");
+	$errorhandler->_checkDbError($pkg, $function, $db);
+    }
+    else {
+	$sth = $db->prepare("select distinct RELA from MRREL where $prelations and ($sabdefsources)");
+	$errorhandler->_checkDbError($pkg, $function, $db);	
+    }
+    $sth->execute();
+    $errorhandler->_checkDbError($pkg, $function, $sth);
+    
+    #  get all the relas for the parents
+    my $prela = "";
+    while(($prela) = $sth->fetchrow()) {
+	if(defined $prela) {
+	    if($prela ne "NULL") {
+		$parentrelas{$prela}++;
+	    }
+	}
+    }
+    $sth->finish();
+    
+    my $prelakeys = keys %parentrelas;
+    if($prelakeys <= 0) { 
+	$errorhandler->_error($pkg, 
+			      $function, 
+			      "There are no RELA relations for the given sources.", 
+			      5);
+    }
+    
+    #  uses the relas that are set in the includrelakeys or excludereladefkeys
+    my @array = ();
+    if($includereladefkeys > 0) {
+	@array = keys %{$includereladef};
+    }
+    else {
+	
+	my $arrRef = 
+	    $db->selectcol_arrayref("select distinct RELA from MRREL where ($sources) and $prelations and $crelations");
+	$errorhandler->_checkDbError($pkg, $function, $db);	
+	@array = @{$arrRef};
+	shift @array;
+    }
+    
+    my @crelas = ();
+    my @prelas = ();
+    my $relacount = 0;
+    
+    my @newrelations = ();
+  
+    foreach my $r (@array) {
+	
+	$relacount++;
+	
+	if( ($excludereladefkeys > 0) and (exists ${$excludereladef}{$r}) ) { next; }
+	
+	push @newrelations, "RELA=\'$r\'";     	    
+	
+	if(exists $childrelas{$r})     { push @crelas, "RELA=\'$r\'";  }
+	elsif(exists $parentrelas{$r}) { push @prelas, "RELA=\'$r\'";  }
+	else {
+	    my $errorstring = "RELA relation ($r) does not exist for the given sources/relations.";
+	    $errorhandler->_error($pkg, $function, $errorstring, 5);
+	}
+    }
+    
+    if($#newrelations >= 0) { 
+	my $string = join " or ", @newrelations;
+    
+	$relations .= "and ( $string )";	
+    
+	$reladefchildren = join " or ", @crelas;
+	$reladefparents  = join " or ", @prelas;
     }
 }
 
@@ -1467,11 +1694,12 @@ sub _config {
 	$errorhandler->_error($pkg, $function, "", 2);
     }
     
-    my %includesab    = ();	my %excludesab    = ();
-    my %includerel    = ();	my %excluderel    = ();
-    my %includerela   = ();	my %excluderela   = ();
-    my %includereldef = ();	my %excludereldef = ();
-    my %includesabdef = ();	my %excludesabdef = ();
+    my %includesab     = ();	my %excludesab     = ();
+    my %includerel     = ();	my %excluderel     = ();
+    my %includerela    = ();	my %excluderela    = ();
+    my %includereldef  = ();	my %excludereldef  = ();
+    my %includesabdef  = ();	my %excludesabdef  = ();
+    my %includereladef = ();	my %excludereladef = ();
 
     my %check = ();
     if(defined $file) {
@@ -1521,8 +1749,11 @@ sub _config {
 								     $relastring = $_; 
 								     $parameters{"RELA"}++;
 		    }
-
 		    elsif($type eq "RELDEF" and $det eq "include") { $includereldef{$element}++; 
+								     $reldefstring = $_; 
+								     $parameters{"RELDEF"}++;
+		    }  
+		    elsif($type eq "RELDEF" and $det eq "exclude") { $excludereldef{$element}++; 
 								     $reldefstring = $_; 
 								     $parameters{"RELDEF"}++;
 		    }
@@ -1530,13 +1761,15 @@ sub _config {
 								     $sabdefstring = $_; 
 								     $parameters{"SABDEF"}++;
 		    }
-		    elsif($type eq "RELDEF" and $det eq "exclude") { $excludereldef{$element}++; 
-								     $reldefstring = $_; 
-								     $parameters{"RELDEF"}++;
-		    }
 		    elsif($type eq "SABDEF" and $det eq "exclude") { $excludesabdef{$element}++; 
 								     $sabdefstring = $_; 
 								     $parameters{"SABDEF"}++;
+		    }
+		    elsif($type eq "RELADEF" and $det eq "include"){ $includereladef{$element}++; 
+								     $parameters{"RELADEF"}++;
+		    }
+		    elsif($type eq "RELADEF" and $det eq "exclude"){ $excludereladef{$element}++; 
+								     $parameters{"RELADEF"}++;
 		    }
 		}
 	    }
@@ -1556,19 +1789,25 @@ sub _config {
 	$relstring = "REL :: include CHD, PAR";
     }
 
-    
-    my $includesabkeys    = keys %includesab;
-    my $excludesabkeys    = keys %excludesab;
-    my $includerelkeys    = keys %includerel;
-    my $excluderelkeys    = keys %excluderel;
-    my $includerelakeys   = keys %includerela;
-    my $excluderelakeys   = keys %excluderela;
-    my $includereldefkeys = keys %includereldef;
-    my $excludereldefkeys = keys %excludereldef;
-    my $includesabdefkeys = keys %includesabdef;
-    my $excludesabdefkeys = keys %excludesabdef;
-
-
+    #  check about the UMLS_ALL option in RELA and RELADEF
+    #  this is the default so just remove them - it is here 
+    #  for the user not really for us
+    if(exists $includerela{"UMLS_ALL"})    { %includerela    = (); }
+    if(exists $includereladef{"UMLS_ALL"}) { %includereladef = (); }
+     
+    my $includesabkeys     = keys %includesab;
+    my $excludesabkeys     = keys %excludesab;
+    my $includerelkeys     = keys %includerel;
+    my $excluderelkeys     = keys %excluderel;
+    my $includerelakeys    = keys %includerela;
+    my $excluderelakeys    = keys %excluderela;
+    my $includereldefkeys  = keys %includereldef;
+    my $excludereldefkeys  = keys %excludereldef;
+    my $includesabdefkeys  = keys %includesabdef;
+    my $excludesabdefkeys  = keys %excludesabdef;
+    my $includereladefkeys = keys %includereladef;
+    my $excludereladefkeys = keys %excludereladef;
+ 
     #  check for errors
     if( (!exists $check{"SAB"} && exists $check{"REL"}) ||
 	(!exists $check{"REL"} && exists $check{"SAB"}) ) {
@@ -1596,31 +1835,61 @@ sub _config {
 			      "Configuration file can not have an include and exclude list of relations.",
 			      5);
     }
-   
-    if( ($includerelkeys <= 0 || $excluderelkeys <= 0) && 
+    if( ($includerelkeys <= 0 && $excluderelkeys <= 0) && 
 	($includerelakeys > 0 || $excluderelakeys > 0) ) {
 	$errorhandler->_error($pkg, 
 			      $function, 
 			      "The relations (REL) must be specified if using the rela relations (RELA).",
 			      5);
-    }	
-    
-    #  The order matters here so don't mess with it!
-    
+    }
+    if( ($includereldefkeys <= 0 || $excludereldefkeys <= 0) && 
+	($includereladefkeys > 0 || $excludereladefkeys > 0) ) {
+	$errorhandler->_error($pkg, 
+			      $function, 
+			      "The relations (RELDEF) must be specified if using the rela relations (RELADEF).",
+			      5);
+    }	    
+
+    #  The order matters here so don't mess with it! The relations have to be set 
+    #  prior to the sabs and both need to be set prior to the relas. 
+
     #  set the relations
     $self->_setRelations($includerelkeys, $excluderelkeys, \%includerel, \%excluderel);
     
     #  set the sabs
     $self->_setSabs($includesabkeys, $excludesabkeys, \%includesab, \%excludesab);
-    
-    #  set the relas
-    $self->_setRelas($includerelakeys, $excluderelakeys, \%includerela, \%excluderela);
+
+    #  set the relas as long as there exists a PAR/CHD or RB/RN relation
+    if($relations=~/(PAR|CHD|RB|RN)/) {
+	$self->_setRelas($includerelakeys, $excluderelakeys, \%includerela, \%excluderela);
+    }
+    else {
+	if($includerelkeys > 0 || $excluderelkeys > 0) { 
+	    $errorhandler->_error($pkg, 
+				  $function, 
+				  "The rela relations (RELA) can only be used with the PAR/CHD or RB/RN relations (REL).",
+				  5);
+	}
+    }
 
     #  set the sabs for the CUI and extended definitions
     $self->_setSabDef($includesabdefkeys, $excludesabdefkeys, \%includesabdef, \%excludesabdef);
     
     #  set the rels for the extended definition
     $self->_setRelDef($includereldefkeys, $excludereldefkeys, \%includereldef, \%excludereldef);
+
+    #  set the relas for the extended definition 
+    if($reldefstring=~/(PAR|CHD|RB|RN)/) { 
+	$self->_setRelaDef($includereladefkeys, $excludereladefkeys, \%includereladef, \%excludereladef);
+    }
+    else {
+	if($includereldefkeys > 0 || $excludereldefkeys > 0) { 
+	    $errorhandler->_error($pkg, 
+				  $function, 
+				  "The rela relations (RELADEF) can only be used with the PAR/CHD or RB/RN relations (RELDEF).",
+				  5);
+	}
+    }
 
     #  now at this point everything that is set with the names are set
     #  if though SABDEF has been set without SAB then use SABDEF
@@ -1629,14 +1898,18 @@ sub _config {
     #  and such from the umls - I don't really like how this is done but 
     #  it will be okay for right now. It would be nice to have them 
     #  completely seperate. Doing it this way though allows for the REL,
-    #  SAB, RELDEF and SABDEF to all be specified
+    #  SAB, RELDEF and SABDEF to all be specified - again order matters here.
     if($includerelkeys == 0 && $excluderelkeys == 0) {
 	$self->_setRelations($includereldefkeys, $excludereldefkeys, \%includereldef, \%excludereldef);
-    }
+    } 
     if($includesabkeys == 0 && $excludesabkeys == 0) {
 	$self->_setSabs($includesabdefkeys, $excludesabdefkeys, \%includesabdef, \%excludesabdef);
     }
-
+    if($includerelkeys == 0 && $excluderelkeys == 0) {
+	if($relations=~/(PAR|CHD|RB|RN)/) {
+	    $self->_setRelas($includereladefkeys, $excludereladefkeys, \%includereladef, \%excludereladef);
+	}
+    }
     
     if($debug) {
 	if($umlsall) { print STDERR "SOURCE   : UMLS_ALL\n"; }
@@ -2267,8 +2540,8 @@ sub _getAllTerms {
     return keys(%retHash);
 }
 
-#  method to map CUIs to a terms in the sources 
-#  specified in the configuration file by SAB
+#  method to map CUIs to a terms in the sources and the relations
+#  specified in the configuration file by SAB and REL
 #  input : $term  <- string containing a term
 #  output: @array <- array containing cuis
 sub _getConceptList {
@@ -2301,16 +2574,38 @@ sub _getConceptList {
     elsif($sources ne "") {
 	$arrRef = $db->selectcol_arrayref("select distinct CUI from MRCONSO where STR='$term' and ($sources)");
     }
-    elsif($sabdefsources ne "") {
-	$arrRef = $db->selectcol_arrayref("select distinct CUI from MRCONSO where STR='$term' and ($sabdefsources)");
-    }
     else {
 	$errorhandler->_error($pkg, $function, "Error with sources from configuration file.", 5);
     }
     #  check for database errors
     $errorhandler->_checkDbError($pkg, $function, $db);
     
-    return @{$arrRef};
+    #  make certain they are in the source and relations specified in the configuration file
+    my @returnarray = ();
+    foreach my $cui (@{$arrRef}) {
+	
+	#  get the number of times the CUI exists in the sources/relations
+	my $counts = "";
+	if($umlsall) {
+	    $counts = $db->selectcol_arrayref("select count(*) from MRREL where (CUI1='$cui' or CUI2='$cui') and ($relations)");
+	}
+	elsif($sources ne "") {
+	    $counts = $db->selectcol_arrayref("select count(*) from MRREL where (CUI1='$cui' or CUI2='$cui') and ($sources) and ($relations)");
+	}
+	else {
+	    $errorhandler->_error($pkg, $function, "Error with sources from configuration file.", 5);
+	}
+
+	#  check for database error
+	$errorhandler->_checkDbError($pkg, $function, $db);
+
+	#  if exists add to the return array
+	my $count = shift @{$counts};
+	if($count > 0) { push @returnarray, $cui; }
+    
+    }
+
+    return @returnarray;
 }
 
 #  method to map CUIs to a terms using the CUIs in the 
@@ -2910,7 +3205,7 @@ sub _getStDef {
     $errorhandler->_checkDbError($pkg, $function, $db);    
     
     return (shift @{$arrRef});
-} 
+}
 
 #  method that returns a list of concepts (@concepts) related 
 #  to a concept $concept through a relation $rel
@@ -2949,14 +3244,22 @@ sub _getExtendedRelated {
     my $db = $self->{'db'};
     if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
 
-    #  return all the relations 'rel' for cui 'concept'
-    my $arrRef = "";
-    if($sabdefsources ne "") {
-	$arrRef = $db->selectcol_arrayref("select distinct CUI2 from MRREL where CUI1='$concept' and REL='$rel' and ($sabdefsources) and CUI2!='$concept'");
+    #  check if sources are specified and it is not umlsall
+    my $optional = "";
+    if(!$umlsall) {
+	if($sabdefsources ne "") {
+	    $optional = " and ($sabdefsources)";
+	}
     }
-    else {
-	$arrRef = $db->selectcol_arrayref("select distinct CUI2 from MRREL where CUI1='$concept' and REL='$rel' and CUI2!='$concept'");
+    #  if the relations is either a parent or a child add the reladefparents if specified
+    if( ($rel=~/PAR|RB/) && ($reladefparents ne "") ) { 
+	$optional .= " and ($reladefparents)";
     }
+    if( ($rel=~/CHD|RN/) && ($reladefchildren ne "") ) { 
+	$optional .= " and ($reladefchildren)";
+    }
+    #  return all the relations 'rel' for cui 'concept'    
+    my $arrRef = $db->selectcol_arrayref("select distinct CUI2 from MRREL where CUI1='$concept' and REL='$rel' and CUI2!='$concept' $optional");
     
     #  check for errors
     $errorhandler->_checkDbError($pkg, $function, $db);
@@ -3398,7 +3701,9 @@ sub _getTableNameHuman {
     
     return $tableNameHuman;
 }
+
 1;
+
 __END__
 
 =head1 NAME

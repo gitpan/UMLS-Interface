@@ -8,7 +8,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 7;
+use Test::More tests => 5;
 
 use UMLS::Interface;
 use File::Spec;
@@ -88,27 +88,6 @@ else {
     ok(open KEY, ">$keyfile") || diag "Could not open $keyfile: $!";
     print KEY $output;
     close KEY;
-  SKIP: {
-      skip ("Generating key, no need to run test", 1);
-    }
-}
-#######################################################################################
-#  check --undirected option
-#######################################################################################
-$keyfile = File::Spec->catfile($keydir, 'findShortestPath.msh.undirected');
-$infile  = "t/tests/findShortestPath.msh.undirected";
-$output = `$perl $util_prg --undirected --realtime --infile $infile 2>&1`;
-
-if(-e $keyfile) {
-    ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";
-    my $key = "";
-    while(<KEY>) { $key .= $_; } close KEY;
-    cmp_ok($output, 'eq', $key);
-}
-else {
-    ok(open KEY, ">$keyfile") || diag "Could not open $keyfile: $!";
-    print KEY $output;
-    close KEY; 
   SKIP: {
       skip ("Generating key, no need to run test", 1);
     }

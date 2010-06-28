@@ -134,7 +134,7 @@ if($#spaths < 0) { print "no ok 19\n"; }
 else             { print "ok 19\n";    }
 
 #  check the findLeastCommonSubsumer() function
-$expected = "C0005898";
+$expected = "C0015385";
 my @lcses = $umls->findLeastCommonSubsumer("C0015385", "C0018563");
 my $lcs = join " ", @lcses;
 if($lcs=~/$expected/) { print "ok 20\n"; }

@@ -4,10 +4,10 @@ UMLS-Interface Configuration Information
   Sources (SAB):
     SNOMEDCT
   Relations (REL):
-    RN
     CHD
-    RB
     PAR
+    RB
+    RN
   Database: 
     umls (MMSYS-2009AA-20090325)
 

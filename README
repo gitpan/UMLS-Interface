@@ -12,60 +12,6 @@ NAME
     domain. The UMLS-Interface package is set up to access the Metathesaurus
     and the Semantic Network present in a MySQL database.
 
-  CONFIGURATION
-    UMLS-Interface allows information to be extracted from the UMLS given a
-    specified set of sources and relations through the use of a
-    configuration file. The format of the configuration file is as follows:
-
-      SAB :: include FMA, MSH
-      REL :: include PAR, CHD, RB, RN
-      SABDEF :: include MSH, SNOMEDCT
-      RELDEF :: include TERM, CUI, PAR, CHD, RB, RN, SIB, SYN
-
-    where SAB refers to the sources, REL refers to the relations, SABDEF
-    refers to the sources that should be included in the definition when
-    using getCuiDef or getExtendedCuiDef and RELDEF refers ot the relations
-    to include when using getExtendedCuiDef. Another example can be found in
-    the configuration file in the samples/ directory.
-
-    You can also replace 'include' with 'exclude' to specify which sources
-    or relations to exclude.
-
-    You can specify a single source, multiple sources or the entire UMLS
-    (using the UMLS_ALL option). Keep in mind that the greater the number of
-    sources the larger the search space so if you obtaining path information
-    about two concepts this will take longer. The names of the sources in
-    the configuration file are expected to be in the SAB (sourse
-    abbreviation) form. A listing of the sources and their SABs can be
-    found:
-
-    <http://www.nlm.nih.gov/research/umls/knowledge_sources/metathesaurus/re
-    lease/source_vocabularies.html>
-
-    You can specify any relations that exist in the specified set of sources
-    that you defined. The directional (hierarchical) relations though are
-    PAR/CHD and RB/RN. The other relations (such as RO and SIB) are not
-    directional which means when obtaining path information when using these
-    relations may take much longer than obtaining path information using the
-    directional relations. A listing of the different relations can be found
-    here (scroll down to the REL table):
-
-    <http://www.nlm.nih.gov/research/umls/knowledge_sources/metathesaurus/re
-    lease/abbreviations.html>
-
-    If you do plan on using a multiple sources or the entire UMLS, we would
-    advise you to use the --realtime option which is explained below, in the
-    Interface.pm documentation and the path programs in the utils/
-    directory. We also have a am UMLS_ALL option for this so you do not have
-    to specify each and every source. It would be as follows:
-
-      SAB :: include UMLS_ALL
-
-    The extended definition consists of an array containing the definition
-    of a concept and all of its relations definitions. We allow for those
-    relations to be specified in the config file. The default though is all
-    of them.
-
   INSTALL
     To install the module, run the following magic commands:
 
@@ -284,6 +230,209 @@ NAME
     UMLS::Similarity modules. The UMLS::Similarity modules require that any
     interface to a taxonomy provide the above methods.
 
+  CONFIGURATION
+    UMLS-Interface allows information to be extracted from the UMLS given a
+    specified set of sources and relations through the use of a
+    configuration file.
+
+    There are six configuration options: SAB, REL, RELA, SABDEF, RELDEF, and
+    RELADEF.
+
+    The SAB and REL options are used to determine which sources and
+    relations the path information is to be obtained from. The RELA option
+    narrows down the relation even further. The RELA will only be applied to
+    the PAR/CHD and RB/RN relations.
+
+    The SABDEF and RELDEF options are used to determine which sources and
+    relations to use when creating the EXTENDED DEFINITION. The RELA option
+    narrows down the relation even further. The RELADEF will only be applied
+    to the PAR/CHD and RB/RN relations.
+
+    You can specify a single source, multiple sources or the entire UMLS
+    (using the UMLS_ALL option). Keep in mind that the greater the number of
+    sources the larger the search space so if you obtaining path information
+    about two concepts this will take longer. The names of the sources in
+    the configuration file are expected to be in the SAB (source
+    abbreviation) form. A listing of the sources and their SABs can be
+    found:
+
+    <http://www.nlm.nih.gov/research/umls/knowledge_sources/metathesaurus/re
+    lease/source_vocabularies.html>
+
+    You can specify any relations that exist in the specified set of sources
+    that you defined. The directional (hierarchical) relations though are
+    PAR/CHD and RB/RN. The other relations (such as RO and SIB) are not
+    directional which means when obtaining path information when using these
+    relations may take much longer than obtaining path information using the
+    directional relations. A listing of the different relations can be found
+    here (scroll down to the REL table):
+
+    <http://www.nlm.nih.gov/research/umls/knowledge_sources/metathesaurus/re
+    lease/abbreviations.html>
+
+    If you do plan on using a multiple sources or the entire UMLS, we would
+    advise you to use the --realtime option which is explained below, in the
+    Interface.pm documentation and the path programs in the utils/
+    directory. We also have a am UMLS_ALL option for this so you do not have
+    to specify each and every source and relation.
+
+    The format of the configuration file is as follows:
+
+    SAB :: <include|exclude> <source1, source2, ... sourceN>
+
+    REL :: <include|exclude> <relation1, relation2, ... relationN>
+
+    RELA :: <include|exclude> <rela1, rela2, ... relaN>
+
+    For example, if we wanted to use the MSH vocabulary with only the RB/RN
+    relations, the configuration file would be:
+
+     SAB :: include MSH
+     REL :: include RB, RN
+
+    or
+
+     SAB :: include MSH
+     REL :: exclude PAR, CHD
+
+    If we wanted to use the SNOMEDCT vocabulary with only the PAR/CHD
+    relations that are is-a relations, the configuration file would be:
+
+     SAB :: include SNOMEDCT
+     REL :: include PAR, CHD 
+     RELA :: include isa, inverse_isa
+
+    The format for SABDEF and RELDEF is similar.
+
+    The SABDEF and RELDEF options are used to determine the sources and
+    relations the extended definition is to be obtained from.
+
+    The format of the configuration file is as follows:
+
+    SABDEF :: <include|exclude> <source1, source2, ... sourceN>
+
+    RELDEF :: <include|exclude> <relation1, relation2, ... relationN>
+
+    RELADEF :: <include|exclude> <rela1, rela2, ... relaN>
+
+    Note: RELDEF takes any of MRREL relations and two special 'relations':
+
+          1. CUI which refers to the CUIs definition
+
+          2. TERM which refers to the terms associated with the CUI
+
+    For example, if we wanted to use the definitions from MSH vocabulary and
+    we only wanted the definition of the CUI and the definitions of the CUIs
+    SIB relation, the configuration file would be:
+
+     SABDEF :: include MSH
+     RELDEF :: include CUI, SIB
+
+    If you wanted only the PAR/CHD definitions which are is-a relations.
+
+     SABDEF :: include MSH
+     RELDEF :: include PAR, CHD
+     RELADEF :: include isa, inverse_isa
+
+    For all of these options, there is an UMLS_ALL tag. If used with SAB or
+    SABDEF, it would include all of the UMLS sources. If used with the REL
+    or RELDEF, it would include all of the possible relations (as well as
+    CUI and TERM for RELDEF). If used with the RELA or RELADEF, it would
+    include all of the RELA relations including those with no RELA relation.
+    Note that this is also the default for this option which is why it is
+    optional. An example of using the UMLS_ALL option is as follows:
+
+     SAB :: include UMLS_ALL
+     REL :: include UMLS_ALL
+
+    and another is:
+
+     SABDEF :: include UMLS_ALL
+     RELDEF :: include UMLS_ALL
+
+    If you go to the configuration file directory, there will be example
+    configuration files for the different runs that you have performed.
+
+    For more information about the configuration options please see the
+    README.
+
+  PROPAGATION
+    The Information Content (IC) is defined as the negative log of the
+    probability of a concept. The probability of a concept, c, is determine
+    by summing the probability of the concept occurring in some text plus
+    the probability its descendants occurring in some text.
+
+    The following is an example of the method UMLS-Interface uses to
+    propagation counts to determine the probability of a concept in the
+    sources/relations specified in the configuration file. In this method,
+    we percolate the counts up the hierarchy, and in the case of multiple
+    inheritance, we send a full count up all the paths to the parent.
+
+    The icfrequency file contains the frequency of the following concepts
+    existing in some corpus. For example, our corpus consists of three
+    concepts, A B & C, each occurring five times:
+
+     SAB :: <sources>
+     N:15
+     A<>5
+     B<>5
+     C<>5
+
+    In this case, our sources and relations consist of the following
+    'graph': Notation....A->D means A is a child of D....
+
+     A->D
+     B->D
+     B->E
+     D->F
+     C->E
+     E->F
+
+    So A B and C are "leaf" nodes and F is the root.
+
+    Step 1: determine the descendants of each nodes
+
+     Descendants(A) = {}
+     Descendants(B) = {}
+     Descendants(C) = {}
+     Descendants(D) = {A, B}
+     Descendants(E) = {B, C}
+     Descendants(F) = {A, B, C, D, E, F}
+
+    Step 2: determine the probability of a concept, P(c), occurring by
+    summing the probability of each of descendants plus its probability.
+
+     P(A) = freq(A) / N = .33
+     P(B) = freq(B) / N = .33
+     P(C) = freq(C) / N = .33
+     P(D) = (freq(A)+freq(B)+freq(D)) / N = .66
+     P(E) = (freq(B)+freq(C)+freq(E)) / N = .66
+     P(F) = (freq(A)+freq(B)+freq(C)+freq(D)+freq(E)+freq(F)) / N = .99
+
+    Step 3: print the probability of the concept occurring, P(c), for each
+    node in the sources/relations defined in the configuration table.
+
+     SMOOTH :: 0 <- or 1 if smoothing was used
+     SAB :: <sources>
+     REL :: <relations>
+     RELA :: <relas>  <- if any are specified in the config
+     A<>.33
+     B<>.33
+     C<>.33
+     D<>.66
+     E<>.66
+     F<>.99
+
+    The information content for the nodes is then calculated by taking -log
+    of this probability.
+
+    We have an option that incorporates Laplace smoothing. Laplace smoothing
+    is where the frequency count of each of the concepts in the taxonomy is
+    incremented by one. The advantage of doing this is that it avoids having
+    a concept that has a probability of zero. The disadvantage is that it
+    can shift the overall probability mass of the concepts from what is
+    actually seen in the corpus.
+
   REFERENCING
         If you write a paper that has used UMLS-Interface in some way, we'd 
         certainly be grateful if you sent us a copy and referenced UMLS-Interface. 
@@ -297,7 +446,7 @@ NAME
                       Association (AMIA) Symposium},
            year={2009}, 
            month={November}, 
-           address={San Fransico, CA}
+           address={San Fransisco, CA}
         }
 
         This paper is also found in

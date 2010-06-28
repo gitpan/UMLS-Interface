@@ -1,6 +1,19 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.63 to 0.65
+    1. modified N in creating the probability of a concept for propagation
+
+    2. modified documentation
+
+    3. Added the RELADEF option
+
+    4. Added the UMLS_ALL parameter for RELADEF and RELDEF
+
+    5. put the shortest path back to what we had. The previous version
+    shortest path works but it isn't as fast as we would like. We are still
+    working on this.
+
   Changes from version 0.61 to 0.63
     1. updated the source and relation output for SABDEF/RELDEF and SAB/REl
 

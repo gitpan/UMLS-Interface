@@ -1,5 +1,5 @@
 # UMLS::Interface::ICFinder
-# (Last Updated $Id: ICFinder.pm,v 1.8 2010/06/08 15:35:11 btmcinnes Exp $)
+# (Last Updated $Id: ICFinder.pm,v 1.9 2010/06/25 17:53:04 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -291,18 +291,6 @@ sub _loadFrequencyHash {
     #  open the frequency file
     open(FILE, $frequencyFile) || die "Could not open file $frequencyFile\n";
 
-    #  the source  associated with the frequencyfile
-    my $sab = <FILE>; chomp $sab;
-
-    #  get the source in the config file (or the default)
-    my $configsab = $cuifinder->_getSabString();
-
-    #  check the source information is correct
-    if($sab ne $configsab)  {
-	my $str = "SAB information ($sab) does not match the config file ($configsab).";
-	$errorhandler->_error($pkg, $function, $str, 5);
-    }
-        
     #  obtain the frequency counts storing them in the frequency hash table
     while(<FILE>) { 
 	chomp;
@@ -399,6 +387,7 @@ sub _loadPropagationFreq {
 	$N+= $freq;
     }
     
+
     #  check if something has been set
     if($smooth == 1) { 
 	my $pkeys = keys %propagationFreq;
@@ -573,9 +562,8 @@ sub _tallyCounts {
     if(!defined $self || !ref $self) {
 	$errorhandler->_error($pkg, $function, "", 2);
     }
-
+    
     foreach my $cui (sort keys %propagationHash) {
-
 	my $set    = $propagationHash{$cui};
 	my $pcount = $propagationFreq{$cui};
 
@@ -587,7 +575,6 @@ sub _tallyCounts {
 		$hash{$c}++;
 	    }
 	}	
-
 	$propagationHash{$cui} = $pcount;
     }
 }

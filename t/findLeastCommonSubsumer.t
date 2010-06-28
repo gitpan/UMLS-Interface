@@ -55,8 +55,6 @@ $keyfile = File::Spec->catfile($keydir, 'findLeastCommonSubsumer.mth.rb-rn');
 $config  = File::Spec->catfile('t', 'config', 'config.mth.rb-rn');
 $infile  = "t/tests/findLeastCommonSubsumer.mth.rb-rn";
 
-print "perl $util_prg --config $config --realtime --infile $infile\n";
-
 $output = `$perl $util_prg --config $config --realtime --infile $infile 2>&1`;
 
 

@@ -1,5 +1,5 @@
 # UMLS::Interface::PathFinder
-# (Last Updated $Id: PathFinder.pm,v 1.14 2010/06/09 16:42:05 btmcinnes Exp $)
+# (Last Updated $Id: PathFinder.pm,v 1.15 2010/06/25 17:53:04 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -1012,12 +1012,12 @@ sub _findShortestPath {
     }    
 
     #  if realtime option is set find the shortest path in realtime 
-    if($option_realtime) {
-	return $self->_findShortestPathInRealTime($concept1, $concept2);
-    }
-    else {
-	return $self->_findShortestPathThroughLCS($concept1, $concept2);
-    }
+    #if($option_realtime) {
+    #return $self->_findShortestPathInRealTime($concept1, $concept2);
+    #}
+    #else {
+    return $self->_findShortestPathThroughLCS($concept1, $concept2);
+    #}
 }
 
 #  this function returns the shortest path between two concepts
@@ -1108,21 +1108,21 @@ sub _findLeastCommonSubsumer {
     my @lcses = (); 
 
     #  get the LCSes
-    if($option_realtime) {
-	@lcses = $self->_findLeastCommonSubsumerInRealTime($concept1, $concept2);
-    }
-    else {
+    #if($option_realtime) {
+    #@lcses = $self->_findLeastCommonSubsumerInRealTime($concept1, $concept2);
+    #}
+    #else {
 
-	my $hash = $self->_shortestPath($concept1, $concept2);
-	my %lcshash = ();
-	if(defined $hash) {
-	    foreach my $path (sort keys %{$hash}) { 
-		my $c = ${$hash}{$path};
-		if($c=~/C[0-9]+/) { $lcshash{$c}++; }
-	    }
+    my $hash = $self->_shortestPath($concept1, $concept2);
+    my %lcshash = ();
+    if(defined $hash) {
+	foreach my $path (sort keys %{$hash}) { 
+	    my $c = ${$hash}{$path};
+	    if($c=~/C[0-9]+/) { $lcshash{$c}++; }
 	}
-	foreach my $lcs (sort keys %lcshash) { push @lcses, $lcs; }
     }
+    foreach my $lcs (sort keys %lcshash) { push @lcses, $lcs; }
+    #}
     
     #  return the lcses
     return @lcses;

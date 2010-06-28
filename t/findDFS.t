@@ -56,6 +56,7 @@ $root    = "C0038454";
 $file    = "findDFS.mth.rb-rn.$root";
 $keyfile = File::Spec->catfile($keydir, $file);
 $config  = File::Spec->catfile('t', 'config', 'config.mth.rb-rn');
+
 $output = `$perl $util_prg $config --root $root 2>&1`;
 
 if(-e $keyfile) {
