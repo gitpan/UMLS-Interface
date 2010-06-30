@@ -1,5 +1,5 @@
 # UMLS::Interface::CuiFinder
-# (Last Updated $Id: CuiFinder.pm,v 1.21 2010/06/27 15:18:48 btmcinnes Exp $)
+# (Last Updated $Id: CuiFinder.pm,v 1.22 2010/06/29 15:10:01 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -1842,7 +1842,7 @@ sub _config {
 			      "The relations (REL) must be specified if using the rela relations (RELA).",
 			      5);
     }
-    if( ($includereldefkeys <= 0 || $excludereldefkeys <= 0) && 
+    if( ($includereldefkeys <= 0 && $excludereldefkeys <= 0) && 
 	($includereladefkeys > 0 || $excludereladefkeys > 0) ) {
 	$errorhandler->_error($pkg, 
 			      $function, 
@@ -1864,7 +1864,8 @@ sub _config {
 	$self->_setRelas($includerelakeys, $excluderelakeys, \%includerela, \%excluderela);
     }
     else {
-	if($includerelkeys > 0 || $excluderelkeys > 0) { 
+	if(($includerelkeys > 0  || $excluderelkeys > 0) &&
+	   ($includerelakeys > 0 || $excluderelakeys > 0) ) { 
 	    $errorhandler->_error($pkg, 
 				  $function, 
 				  "The rela relations (RELA) can only be used with the PAR/CHD or RB/RN relations (REL).",
@@ -1883,7 +1884,8 @@ sub _config {
 	$self->_setRelaDef($includereladefkeys, $excludereladefkeys, \%includereladef, \%excludereladef);
     }
     else {
-	if($includereldefkeys > 0 || $excludereldefkeys > 0) { 
+	if(($includereldefkeys > 0  || $excludereldefkeys > 0) &&
+	   ($includereladefkeys > 0 || $excludereladefkeys > 0) ) { 
 	    $errorhandler->_error($pkg, 
 				  $function, 
 				  "The rela relations (RELADEF) can only be used with the PAR/CHD or RB/RN relations (RELDEF).",
@@ -2580,32 +2582,7 @@ sub _getConceptList {
     #  check for database errors
     $errorhandler->_checkDbError($pkg, $function, $db);
     
-    #  make certain they are in the source and relations specified in the configuration file
-    my @returnarray = ();
-    foreach my $cui (@{$arrRef}) {
-	
-	#  get the number of times the CUI exists in the sources/relations
-	my $counts = "";
-	if($umlsall) {
-	    $counts = $db->selectcol_arrayref("select count(*) from MRREL where (CUI1='$cui' or CUI2='$cui') and ($relations)");
-	}
-	elsif($sources ne "") {
-	    $counts = $db->selectcol_arrayref("select count(*) from MRREL where (CUI1='$cui' or CUI2='$cui') and ($sources) and ($relations)");
-	}
-	else {
-	    $errorhandler->_error($pkg, $function, "Error with sources from configuration file.", 5);
-	}
-
-	#  check for database error
-	$errorhandler->_checkDbError($pkg, $function, $db);
-
-	#  if exists add to the return array
-	my $count = shift @{$counts};
-	if($count > 0) { push @returnarray, $cui; }
-    
-    }
-
-    return @returnarray;
+    return @{$arrRef};	
 }
 
 #  method to map CUIs to a terms using the CUIs in the 

@@ -1,5 +1,5 @@
 # UMLS::Interface::ICFinder
-# (Last Updated $Id: ICFinder.pm,v 1.9 2010/06/25 17:53:04 btmcinnes Exp $)
+# (Last Updated $Id: ICFinder.pm,v 1.13 2010/06/29 21:24:16 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -380,6 +380,8 @@ sub _loadPropagationFreq {
     #  loop through and set the frequency count
     my $N = 0;    
     foreach my $cui (sort keys %{$fhash}) {
+	if($cui=~/^\s*$/) { next; }
+	
 	my $freq = ${$fhash}{$cui};
 	if(exists $propagationFreq{$cui}) {
 	    $propagationFreq{$cui} += $freq;
@@ -400,6 +402,52 @@ sub _loadPropagationFreq {
     }
 }
 
+#  check that the parameters in config file match
+#  input : $string1 <- string containing parameter
+#          $string2 <- string containing configuratation parameter
+#  output: 0|1      <- true or false
+sub _checkParameters {
+    my $self = shift;
+    my $string1 = shift;
+    my $string2 = shift;
+
+    my $function = "_checkParameters";
+    &_debug($function);
+
+    if( ($string1=~/^\s*$/) && ($string2=~/^\s*$/) ) { return 1; }
+    if( ($string1=~/^\s*$/) && !($string2=~/^\s*$/) ) { return 0; }
+    if( !($string1=~/^\s*$/) && ($string2=~/^\s*$/) ) { return 0; }
+    
+	
+    $string1=~/([A-Z]+) :: (include|exclude) (.*?)$/;
+    my $option1 = $1;
+    my $type1   = $2;
+    my $param1  = $3;
+    
+    $string2=~/([A-Z]+) :: (include|exclude) (.*?)$/;
+    my $option2 = $1;
+    my $type2   = $2;
+    my $param2  = $3;
+
+    if($option1 ne $option2) { return 0; }
+    if($type1 ne $type2)     { return 0; }
+
+    my @array1 = split/\,/, $param1;
+    my @array2 = split/\,/, $param2;
+    
+
+    my %hash = ();
+
+    foreach my $element (@array1) { $element=~s/\s+//g; $hash{$element}++; }
+    foreach my $element (@array2) { $element=~s/\s+//g; $hash{$element}++; }
+    
+    foreach my $element (sort keys %hash) { 
+	if($hash{$element} != 2) { return 0; }
+    }    
+
+    return 1;
+
+}
 #  load the propagation hash
 #  input :
 #  output: 
@@ -427,19 +475,19 @@ sub _loadPropagationHash {
     #  get the source and relations from config file or the defaults
     my $configsab = $cuifinder->_getSabString();
     my $configrel = $cuifinder->_getRelString();
-
+        
     #  check the source information is correct
-    if($sab ne $configsab )  {
+    if(! ($self->_checkParameters($configsab, $sab)) ) {
 	my $str = "SAB information ($sab) does not match the config file ($configsab).";
-	$errorhandler->_error($pkg, $function, $str, 5);
-    }
+	$errorhandler->_error($pkg, $function, $str, 5);	
+       }
     
     #  check that that the relation information is correct
-    if($rel ne $configrel)  {
+    if(! ($self->_checkParameters($configrel, $rel)) ) { 
 	my $str = "REL information ($rel) does not match the config file ($configrel).";
 	$errorhandler->_error($pkg, $function, $str, 5);
     }
-
+    
     while(<FILE>) {
 	chomp;
 
@@ -448,10 +496,11 @@ sub _loadPropagationHash {
 
 	#  check if rela information was used
 	if($_=~/RELA/) {
-	    if($_ ne $cuifinder->_getRelaString()) {
+	    if(!($self->_checkParameters($_, $cuifinder->_getRelaString()))) {
 		my $str = "RELA information does not match the config file ($_).";
 		$errorhandler->_error($pkg, $function, $str, 5);
 	    }
+	    next; 
 	}
 	
 	#  get the cui and its frequency count
@@ -566,15 +615,17 @@ sub _tallyCounts {
     foreach my $cui (sort keys %propagationHash) {
 	my $set    = $propagationHash{$cui};
 	my $pcount = $propagationFreq{$cui};
-
-	my %hash = ();
-	while($set=~/(C[0-9][0-9][0-9][0-9][0-9][0-9][0-9])/g) {
-	    my $c = $1;
-	    if(! (exists $hash{$c}) ) {
-		$pcount += $propagationFreq{$c};
-		$hash{$c}++;
-	    }
-	}	
+	
+	if(defined $set) { 
+	    my %hash = ();
+	    while($set=~/(C[0-9][0-9][0-9][0-9][0-9][0-9][0-9])/g) {
+		my $c = $1;
+		if(! (exists $hash{$c}) ) {
+		    $pcount += $propagationFreq{$c};
+		    $hash{$c}++;
+		}
+	    }	
+	}
 	$propagationHash{$cui} = $pcount;
     }
 }
@@ -654,8 +705,10 @@ sub _propagation {
     }
     
     #  remove duplicates from the set
-    my $rset = _breduce($set);
-
+    my $rset;
+    if(defined $set) { 
+	$rset = _breduce($set); 
+    }
     #  store the set in the propagation hash
     $propagationHash{$concept} = $rset;
     

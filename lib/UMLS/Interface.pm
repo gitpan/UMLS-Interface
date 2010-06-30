@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.73 2010/06/27 15:50:00 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.75 2010/06/29 17:12:42 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -59,7 +59,7 @@ my $pkg = "UMLS::Interface";
 
 use vars qw($VERSION);
 
-$VERSION = '0.65';
+$VERSION = '0.67';
 
 my $debug = 0;
 
@@ -736,6 +736,18 @@ sub getPropagationCuis
 
     return $hash;
     
+}
+
+#  check that the parameters in config file match
+#  input : $string1 <- string containing parameter
+#          $string2 <- string containing configuratation parameter
+#  output: 0|1      <- true or false
+sub checkParameters {
+    my $self = shift;
+    my $string1 = shift;
+    my $string2 = shift;
+    
+    return $icfinder->_checkParameters($string1, $string2);
 }
 
 #  propagates the given frequency counts

@@ -1,6 +1,11 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.65 to 0.67
+    1. Fixed the RELADEF parameter
+
+    2. Added better parameter check for propagation
+
   Changes from version 0.63 to 0.65
     1. modified N in creating the probability of a concept for propagation
 
