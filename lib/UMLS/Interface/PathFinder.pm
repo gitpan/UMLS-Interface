@@ -1,5 +1,5 @@
 # UMLS::Interface::PathFinder
-# (Last Updated $Id: PathFinder.pm,v 1.15 2010/06/25 17:53:04 btmcinnes Exp $)
+# (Last Updated $Id: PathFinder.pm,v 1.20 2010/07/20 22:21:37 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -1012,12 +1012,12 @@ sub _findShortestPath {
     }    
 
     #  if realtime option is set find the shortest path in realtime 
-    #if($option_realtime) {
-    #return $self->_findShortestPathInRealTime($concept1, $concept2);
-    #}
-    #else {
-    return $self->_findShortestPathThroughLCS($concept1, $concept2);
-    #}
+    if($option_realtime) {
+	return $self->_findShortestPathInRealTime($concept1, $concept2);
+    }
+    else {
+	return $self->_findShortestPathThroughLCS($concept1, $concept2);
+    }
 }
 
 #  this function returns the shortest path between two concepts
@@ -1248,6 +1248,10 @@ sub _getLCSfromTrees {
     return undef;
 }
 
+#  method to find the shortest path between two concepts in realtime
+#  input : $concept1 <- first concept
+#          $concept2 <- second concept
+#  output: @paths    <- array containing the shortest paths
 sub _findShortestPathInRealTime {
     
     my $self = shift;
@@ -1277,11 +1281,299 @@ sub _findShortestPathInRealTime {
     if(! ($errorhandler->_validCui($concept2)) ) {
 	$errorhandler->_error($pkg, $function, "Concept ($concept2) in not valid.", 6);
     }    
+
+    #  get the length of the shortest path
+    my $length = $self->_findShortestPathLength($concept1, $concept2);
+    
+    my $split1 = int($length/2);    
+    my $split2 = $length - $split1;  $split2--; 
+    
+    #  initial the hash to hold the ends
+    my %ends = ();
+
+    #  get all the paths from concept1 of length split1
+    my @paths1 = $self->_findPathsToCenter($concept1, $split1, 1, \%ends );
+    
+    my $endkey = keys %ends;
+    
+    #  get all the paths from concept2 of length split2
+    my @paths2 = $self->_findPathsToCenter($concept2, $split2, 2, \%ends );
+    
+    #  join the two sets of paths to find all of the full paths
+    my @paths = $self->_joinPathsToCenter(\@paths1, \@paths2);
+    
+    return @paths;
+}
+
+#  method that takes two partial paths nad joins them
+#  input : $array1 <- reference to paths for first concept
+#          $arrat2 <- reference to paths for second concept
+#  output: @paths  <- array containing the combined paths
+sub _joinPathsToCenter {
+    my $self   = shift;
+    my $paths1 = shift;
+    my $paths2 = shift;
+
+    my $function = "_joinPathsToCenter";
+    &_debug($function);
+      
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    #  check parameter exists
+    if(!defined $paths1) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$paths1.", 4);
+    }
+  if(!defined $paths2) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$paths2.", 4);
+    }
+
+    my @shortestpaths = ();
+    foreach my $p1 (@{$paths1}) {
+	my @array1 = split/\s+/, $p1;
+	my $c1 = pop @array1;
+	
+	foreach my $p2 (@{$paths2}) {
+	    my @array2 = split/\s+/, $p2;
+	    my $c2 = $array2[$#array2];
+
+	    if($c1 eq $c2) { 
+		my @rarray2 = reverse @array2;
+		my @path = (@array1, @rarray2);
+		my $string = join " ", @path;
+		push @shortestpaths, $string;
+	    }
+	}
+    }
+     
+    return @shortestpaths;
+}
+    
+
+#  method that finds all the paths from a concept of a specified length
+#  input : $start  <- the concept
+#          $length <- the length of the path
+#  output: @paths  <- array containing the paths
+sub _findPathsToCenter {
+
+    my $self    = shift;
+    my $start   = shift;
+    my $length  = shift;
+    my $flag   = shift;
+    my $ends   = shift;
+    
+    my $function = "_findShortestPathsToCenter";
+    &_debug($function);
+      
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    #  check parameter exists
+    if(!defined $start) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$start.", 4);
+    }
+
+    #  check if valid concept
+    if(! ($errorhandler->_validCui($start)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($start) in not valid.", 6);
+    }    
     
     #  set the  storage
     my @path_storage= ();
-    my $path_length = 99999;
 
+    #  set the count
+    my %visited = ();
+    
+    #  set the stack with the parents because 
+    #  we want to start going up inorder to 
+    #  have an LCS
+    my @directions = ();
+    my @relations  = ();
+    my @paths      = ();
+    my @stack = $cuifinder->_getParents($start);
+
+    #  unless the undirected option is set then 
+    #  we require both
+    if($option_undirected) {
+	my @children = $cuifinder->_getChildren($start);
+	@stack = (@stack, @children);
+    }
+    foreach my $element (@stack) {
+	my @array      = (); 
+	push @paths, \@array;
+	push @directions, 0;
+	push @relations, "PAR";
+    }
+
+    #  now loop through the stack
+    while($#stack >= 0) {
+	
+	my $concept    = pop @stack;
+	my $path       = pop @paths;
+	my $direction  = pop @directions;
+	my $relation   = pop @relations;
+	
+        #  set up the new path
+	my @intermediate = @{$path};
+	my $series = join " ", @intermediate;
+	push @intermediate, $concept;
+	my $distance = $#intermediate + 1;
+
+	#  check if the distance is greater than what we 
+	#  already have - if so we are done
+	if($distance > $length) { 
+	    @stack = (); 
+	    next;
+	}
+
+	#  check that the concept is not one of the forbidden concepts
+	if($cuifinder->_forbiddenConcept($concept)) { next; }	
+
+        #  check if concept has been visited already through that path
+	my $v = "$concept : $series";
+	if(exists $visited{$v}) { next; }	
+	else { $visited{$v}++; }
+	
+        #  check if we have a path of approrpiate length
+	#  if so add it to the storage
+	if($distance == $length) { 
+	    my $element = $intermediate[$#intermediate];
+
+	    if($flag == 1) {
+		${$ends}{$element}++;
+		push @path_storage, \@intermediate;
+	    }
+	    elsif($flag == 2) { 
+		if(exists ${$ends}{$element}) {
+		    push @path_storage, \@intermediate;
+		}
+		
+	    }
+	}
+	
+        #  print information into the file if debugpath option is set
+	if($option_debugpath) { 
+	    my $d = $#intermediate+1;
+	    print DEBUG_FILE "$concept\t$d\t@intermediate\n"; 
+	}
+	
+
+	#  we are going to start with the parents here; the code 
+	#  for both is similar except for the relation/direction
+	#  which is why I have the seperate right now - currently 
+	
+	#  if the previous direction was a child we have a change in direction
+	my $dchange = $direction;
+      
+	#  if the undirected option is set the dchange doesn't matter
+	#  otherwise we need to check
+	if(!$option_undirected) { 
+	    if($relation eq "CHD") { $dchange = $direction + 1; }
+	}
+
+	#  if we have not had more than a single direction change
+	if($dchange < 2) {
+	    #  search through the parents
+	    my @parents  = $cuifinder->_getParents($concept);		
+	    foreach my $parent (@parents) {
+		
+		#  check if child cui has already in the path
+		my $flag = 0;
+		foreach my $cui (@intermediate) {
+		    if($cui eq $parent) { $flag = 1; }
+		}
+		
+		#  if it isn't add it to the stack
+		if($flag == 0) {
+		    unshift @stack, $parent;
+		    unshift @paths, \@intermediate;
+		    unshift @relations, "PAR";
+		    unshift @directions, $dchange;
+		}
+	    }
+	}
+	
+	#  now with the chilcren if the previous direction was a parent we have
+	#  have to change the direction
+	$dchange = $direction;
+	#  if the undirected option is set the dchange doesn't matter
+	#  otherwise we need to check
+	if(!$option_undirected) { 
+	    if($relation eq "PAR") { $dchange = $direction + 1; }
+	}
+
+	#  if we have not had more than a single direction change
+	if($dchange < 2) {
+	    #  now search through the children
+	    my @children = $cuifinder->_getChildren($concept);
+	    foreach my $child (@children) {
+		
+		#  check if child cui has already in the path
+		my $flag = 0;
+		foreach my $cui (@intermediate) {
+		    if($cui eq $child) { $flag = 1; }
+		}
+		
+		#  if it isn't add it to the stack
+		if($flag == 0) {
+		    unshift @stack, $child;
+		    unshift @paths, \@intermediate;
+		    unshift @relations, "CHD";
+		    unshift @directions, $dchange;
+		}
+	    }
+	}
+    }
+    
+    #  set the return
+    my @return_paths = ();
+    foreach my $p (@path_storage) {
+	unshift @{$p}, $start;
+	my $string = join " " , @{$p};
+	push @return_paths, $string;
+    }
+    return @return_paths;
+}
+    
+
+#  method that finds the length of the shortest path
+#  input : $concept1  <- the first concept
+#          $concept2  <- the second concept
+#  output: $length    <- the length of the shortest path between them
+sub _findShortestPathLength {
+
+    my $self = shift;
+    my $concept1 = shift;
+    my $concept2 = shift;
+    
+    my $function = "_findShortestPathLength";
+    &_debug($function);
+      
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    #  check parameter exists
+    if(!defined $concept1) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept1.", 4);
+    }
+    if(!defined $concept2) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept2.", 4);
+    }
+
+    #  check if valid concept
+    if(! ($errorhandler->_validCui($concept1)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($concept1) in not valid.", 6);
+    }    
+    if(! ($errorhandler->_validCui($concept2)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($concept2) in not valid.", 6);
+    }    
+    
     #  set the count
     my %visited = ();
     
@@ -1320,29 +1612,17 @@ sub _findShortestPathInRealTime {
 	push @intermediate, $concept;
 	my $distance = $#intermediate;
 
-	#  check if the distance is greater than what we 
-	#  already have
-	if($distance > $path_length) { next; }
-
 	#  check that the concept is not one of the forbidden concepts
 	if($cuifinder->_forbiddenConcept($concept)) { next; }	
 
         #  check if concept has been visited already through that path
-	my $v = "$concept : $series";
-	if(exists $visited{$v}) { next; }	
-	else { $visited{$v}++; }
+	if(exists $visited{$concept}) { next; }	
+	else { $visited{$concept}++; }
 	
         #  check if it is our concept2
 	if($concept eq $concept2) { 
-	    if($distance < $path_length) {
-		@path_storage = ();
-		push @path_storage, \@intermediate;
-		$path_length = $distance;
-
-	    }
-	    elsif($distance == $path_length) {
-		push @path_storage, \@intermediate;
-	    }
+	    my $path_length = $distance + 2;
+	    return $path_length;
 	}
 	
         #  print information into the file if debugpath option is set
@@ -1420,15 +1700,10 @@ sub _findShortestPathInRealTime {
 	}
     }
     
-    #  set the return
-    my @return_paths = ();
-    foreach my $p (@path_storage) {
-	unshift @{$p}, $concept1;
-	my $string = join " " , @{$p};
-	push @return_paths, $string;
-    }
-    return @return_paths;
+    #  no path was found return -1
+    return -1;
 }
+
 
 #  this function finds the shortest path between 
 #  two concepts and returns the path. in the process 
@@ -1535,11 +1810,13 @@ sub _shortestPath {
     foreach my $lcs (sort {$lcsLengths{$a} <=> $lcsLengths{$b}} keys(%lcsLengths)) {
 	if( ($prev_len == -1) or ($prev_len == $lcsLengths{$lcs}) ) {
 	    foreach my $pathref (@{$lcsPaths{$lcs}}) { 
-		my $path = join " ", @{$pathref};
-		$rhash{$path} = $lcs;
+		if( ($#{$pathref}+1) == $lcsLengths{$lcs}) {
+		    my $path = join " ", @{$pathref};
+		    $rhash{$path} = $lcs;
+		}
 	    }
 	}
-	else { next;; }
+	else { last; }
 	$prev_len = $lcsLengths{$lcs};
     }
     
@@ -1566,8 +1843,9 @@ documentation.
 
 =head1 SYNOPSIS
 
- use UMLS::Interface::CuiFinder;
+ #!/usr/bin/perl
 
+ use UMLS::Interface::CuiFinder;
  use UMLS::Interface::PathFinder;
 
  %params = ();
@@ -1575,11 +1853,9 @@ documentation.
  $params{'realtime'} = 1;
 
  $cuifinder = UMLS::Interface::CuiFinder->new(\%params);
-
  die "Unable to create UMLS::Interface::CuiFinder object.\n" if(!$cuifinder);
 
  $pathfinder = UMLS::Interface::PathFinder->new(\%params, $cuifinder); 
-
  die "Unable to create UMLS::Interface::PathFinder object.\n" if(!$pathfinder);
 
  $concept = "C0037303";

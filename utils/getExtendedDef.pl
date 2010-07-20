@@ -31,30 +31,40 @@ Language System (UMLS)
 This is the configuration file. The format of the configuration 
 file is as follows:
 
-SAB :: <include|exclude> <source1, source2, ... sourceN>
+SABDEF :: <include|exclude> <source1, source2, ... sourceN>
 
-REL :: <include|exclude> <relation1, relation2, ... relationN>
+RELDEF :: <include|exclude> <relation1, relation2, ... relationN>
 
-DEF :: <include> <relation1, relation2, ... relation N>
+SABDEF refers to the sources in which the definitions can come from.
+RELDEF refers to the relations in which the definitions can come from.
 
-For example, if we wanted to use the MSH vocabulary with only 
-the RB/RN relations and we only wanted to use the terms, the 
-CUIs definition and the CUIs parent definition as the extended 
-definition the configuration file would be:
+The possible relations that can be included in RELDEF are:
+  1. all of the possible relations in MRREL such as PAR, CHD, ...
+  2. CUI which refers the concepts definition
+  3. ST which refers to the concepts semantic types definition
+  4. TERM which refers to the concepts associated terms
 
-SAB :: include MSH
-REL :: include RB, RN
-DEF :: include TERM, CUI, PAR
+For example, if we wanted to use the MSH vocabulary and we 
+wanted to use the terms, the CUIs definition and the CUIs 
+parent definition and its semantic type definition as the 
+extended definition the configuration file would be:
 
+SABDEF :: include MSH
+RELDEF :: include TERM, CUI, PAR, ST
 or 
 
-SAB :: include MSH
-REL :: exclude PAR, CHD
+SABDEF :: include MSH
 
 If you go to the configuration file directory, there will 
 be example configuration files for the different runs that 
 you have performed.
 
+The default is:
+
+SABDEF :: include UMLS_ALL
+RELDEF :: include UMLS_ALL
+
+which uses all of the sources and all of the relations. 
 
 =head3 --debug
 
@@ -303,7 +313,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getExtendedDef.pl,v 1.7 2010/06/08 12:39:01 btmcinnes Exp $';
+    print '$Id: getExtendedDef.pl,v 1.8 2010/07/19 14:17:20 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

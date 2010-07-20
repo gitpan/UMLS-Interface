@@ -1,5 +1,5 @@
 # UMLS::Interface::CuiFinder
-# (Last Updated $Id: CuiFinder.pm,v 1.22 2010/06/29 15:10:01 btmcinnes Exp $)
+# (Last Updated $Id: CuiFinder.pm,v 1.25 2010/07/19 14:17:19 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -1113,7 +1113,6 @@ sub _setSabDef {
     #  get the sabs
     my $sabcount = 0; my @sabarray = ();
     foreach my $sab (@array) { 
-	    
 	$sabcount++;
 	    
 	#  if we are excluding check to see if this sab can be included
@@ -1124,10 +1123,11 @@ sub _setSabDef {
 
 	$sabDefHash{$sab}++;
     }
-    
-    my $string = join " or ", @sabarray;
-    
-    $sabdefsources = "( $string )";
+
+    if(!$umlsall) {
+	my $string = join " or ", @sabarray;
+	$sabdefsources = "( $string )";
+    }
 }
 
 #  sets the relations, parentRelations and childRelations
@@ -1206,13 +1206,15 @@ sub _setRelDef {
     if($includereldefkeys > 0) { 
 	if(exists ${$includereldef}{"TERM"}) { $relDefHash{"TERM"}++; }
 	if(exists ${$includereldef}{"CUI"})  { $relDefHash{"CUI"}++;  }
+	if(exists ${$includereldef}{"ST"})   { $relDefHash{"ST"}++;  }
     }
     elsif($excludereldefkeys > 0) { 
 	if(! exists ${$excludereldef}{"TERM"}) { $relDefHash{"TERM"}++; }
 	if(! exists ${$excludereldef}{"CUI"})  { $relDefHash{"CUI"}++;  }
+	if(! exists ${$excludereldef}{"ST"})  { $relDefHash{"ST"}++;  }
     }
     else {
-	$relDefHash{"TERM"}++; $relDefHash{"CUI"}++; 
+	$relDefHash{"TERM"}++; $relDefHash{"CUI"}++; $relDefHash{"ST"}++;
     }
 }
 
@@ -1711,7 +1713,7 @@ sub _config {
 	    #  if blank line skip
 	    if($_=~/^\s*$/) { next; }
 
-	    if($_=~/([A-Z]+)\s+\:\:\s+(include|exclude)\s+(.*)/) {
+	    if($_=~/([A-Z]+)\s*\:\:\s*(include|exclude)\s+(.*)/) {
 	    
 		my $type = $1; 
 		my $det  = $2;
@@ -2203,7 +2205,7 @@ sub _getCuis {
     my $sab  = shift;
     
     my $function = "_getCuis";
-    &_debug($function);
+    #&_debug($function);
     
     #  check self
     if(!defined $self || !ref $self) {
@@ -2258,7 +2260,7 @@ sub _getSabCui {
     if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
 
     #  if the sab is umls all 
-    if($umlsall) { 
+    if($sab eq "UMLS_ALL") {
 	return $umlsRoot;
     }
         
@@ -2340,6 +2342,9 @@ sub _exists {
     if(! ($errorhandler->_validCui($concept)) ) {
 	$errorhandler->_error($pkg, $function, "Concept ($concept) is not valid.", 6);
     }
+
+    #  check if root
+    if($concept eq $umlsRoot) { return 1; }
 
     #  set up database
     my $db = $self->{'db'};
@@ -2476,6 +2481,72 @@ sub _getTermList {
     #  return the strings
     return keys(%retHash);
 }
+
+#  method that maps terms to cuis in the sources specified in 
+#  in the configuration file by the user
+#  input : $concept <- string containing cui
+#  output: @array   <- array of terms and their sources (strings)
+sub _getTermSabList {
+    my $self = shift;
+    my $concept = shift;
+
+    my $function = "_getTermSabList";
+    &_debug($function);
+    
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+    
+    #  check parameter exists
+    if(!defined $concept) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept.", 4);
+    }
+
+    #  check if valid concept
+    if(! ($errorhandler->_validCui($concept)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($concept) is not valid.", 6);
+    }
+ 
+    #  initialize the return hash
+    my %retHash = ();
+
+    #  if the concept is the root return the root string
+    if($concept eq $umlsRoot) {
+	$retHash{"**UMLS ROOT**"}++;
+	return keys(%retHash);    
+    }
+
+    #  otherwise, set up the db
+    my $db = $self->{'db'};
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
+    #  get all of the strings with their corresponding sab
+    my %strhash = (); my $sql = "";
+    if($umlsall) {
+	$sql = qq{ select STR, SAB from MRCONSO where CUI='$concept' };
+    }
+    else { 
+	$sql = qq{select STR, SAB from MRCONSO where CUI='$concept' and ($sources or SAB='SRC') };
+    }
+    my $sth = $db->prepare( $sql );
+    $sth->execute();
+    my($str, $sab);
+    $sth->bind_columns( undef, \$str, \$sab );
+    while( $sth->fetch() ) {
+	$str =~ s/^\s+//;
+	$str =~ s/\s+$//;
+        $str =~ s/\s+/ /g;
+	$str = lc($str);
+	my $item = "$sab : $str";
+	$retHash{$item}++;
+    } 
+    
+    $errorhandler->_checkDbError($pkg, $function, $sth);
+    $sth->finish();
+
+    return keys(%retHash);
+}
+
 
 #  method to map terms to any concept in the umls
 #  input : $concept <- string containing cui
@@ -3281,6 +3352,15 @@ sub _getExtendedDefinition {
     
     my $dkeys = keys %relDefHash;
 
+    if( ($dkeys <= 0) or (exists $relDefHash{"ST"}) ) {
+	my @sts = $self->_getSt($concept);
+	foreach my $st (@sts) { 
+	    my $abr = $self->_getStAbr($st);
+	    my $def = $self->_getStDef($abr);
+	    my $str = "$concept ST $abr STDEF : $def";
+	    push @defs, $str;
+	}
+    }
     if( ($dkeys <= 0) or (exists $relDefHash{"PAR"}) ) {
 	my @parents   = $self->_getExtendedRelated($concept, "PAR");
 	foreach my $parent (@parents) {
@@ -3375,9 +3455,12 @@ sub _getExtendedDefinition {
 	}
     }
     if( ($dkeys <= 0) or (exists $relDefHash{"TERM"}) ) {
-	my @odefs = $self->_getTermList($concept);
-	my $def = "$concept TERM $concept nosab : " . (join " ", @odefs);
-	push @defs, $def;
+	my @odefs = $self->_getTermSabList($concept);
+	foreach my $item (@odefs) { 
+	    my ($sab, $term) = split/\s*\:\s*/, $item;
+	    my $def = "$concept TERM $concept $sab : $term";
+	    push @defs, $def;
+	}
     }
     
     if($debug) {
@@ -3421,7 +3504,6 @@ sub _getCuiDef {
     my $sql = "";
 
     if($sabdefsources ne "") { 
-	
 	$sql = qq{ SELECT DEF, SAB FROM MRDEF WHERE CUI=\'$concept\' and ($sabdefsources) };
     }
     else {
@@ -3705,6 +3787,8 @@ documentation.
 
  %params = ();
 
+ $params{"realtime"} = 1;
+
  $cuifinder = UMLS::Interface::CuiFinder->new(\%params); 
  die "Unable to create UMLS::Interface::CuiFinder object.\n" if(!$cuifinder);
 
@@ -3713,23 +3797,17 @@ documentation.
  $version = $cuifinder->_version();
 
  $concept = "C0018563"; $rel = "PAR";
-
  @array = $cuifinder->_getRelated($concept, $rel);
-
  @array = $cuifinder->_getTermList($concept);
-
  @array = $cuifinder->_getAllTerms($concept);
 
  $term = shift @array;
-
  @array = $cuifinder->_getConceptList($term);
-
  @array = $cuifinder ->_getAllConcepts($term);
 
  $hash = $cuifinder->_getCuiList();
 
  $sab = "MSH";
-
  $array = $cuifinder->_getCuisFromSource($sab);
 
  @array = $cuifinder->_getSab($concept);
@@ -3747,11 +3825,9 @@ documentation.
  @array = $cuifinder->_getSt($concept);
 
  $abr = "bpoc";
-
  $string = $cuifinder->_getStString($abr);
 
  $tui = "T12";
-
  $string = $cuifinder->_getStAbr($tui);
 
  $definition = $cuifinder->_getStDef($abr);
@@ -3763,10 +3839,6 @@ documentation.
  $bool = $cuifinder->_exists($concept);
 
  $hash = $cuifinder->_returnTableNames();
-
- $cuifinder->_dropConfigTable();
-
- $cuifinder->_removeConfigFiles();
 
 =head1 INSTALL
 

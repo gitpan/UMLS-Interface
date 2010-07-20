@@ -13,105 +13,107 @@ UMLS-Interface Configuration Information
 
 
 The definition(s) of  (C0018563):
-100
-  1. C0018563 PAR C1140618 MSH : The region of the upper limb in animals, extending from the deltoid region to the HAND, and including the ARM; AXILLA; and SHOULDER.
-  2. C0018563 PAR C1140618 CSP : part of the upper extremity between the shoulder and wrist; includes forearm and upper arm.
-  3. C0018563 PAR C1140618 NCI : Technically the part of the superior limb between the shoulder and the elbow but commonly used to refer to the whole superior limb.
-  4. C0018563 PAR C0817635 FMA : Free limb, which is distal to the pectoral girdle and demarcated by the plane of the surface of the glenoid fossa from the pectoral girdle; together with the pectoral girdle, it constitutes the upper limb. Examples: There are only two instances, right and left free upper limbs.
-  5. C0018563 PAR C0817635 UWDA : Free limb, which is distal to the pectoral girdle and demarcated by the plane of the surface of the glenoid fossa from the pectoral girdle; together with the pectoral girdle, it constitutes the upper limb. Examples: There are only two instances, right and left free upper limbs.
-  6. C0018563 PAR C0229962 UWDA : Anatomical structure, which consists of a maximal set of diverse subclasses of organ and organ part spatially associated with either the skull, a segment of the vertebral column or a complete set of bones of the appendicular skeleton; it is partially surrounded by skin and forms a distinct morphological subdivision of the body; together with all other body parts, a body part constitutes the human body. Examples: Canonical instances are limited to head, neck, trunk, and the limbs.
-  7. C0018563 PAR C0229962 FMA : Anatomical structure, which has as its direct parts instances of anatomical sets of organs and cardinal organ parts spatially associated with either the skull, vertebral column, or the skeleton of a limb; in their aggregate are surrounded by a part of the skin Examples: Head, body proper, right upper limb.
-  8. C0018563 PAR C0229962 NCI : Any part of an organism.
-  9. C0018563 PAR C0229962 MSH : Parts of the human body viewed from a philosophical or social perspective.
-  10. C0018563 CHD C0016129 UWDA : Subdivision of the hand demarcated from the hand proper by the skin crease in line with the distal edge of finger webs. Examples: thumb, right middle finger, left little finger.
-  11. C0018563 CHD C0016129 CSP : one of the five digits of the hand.
-  12. C0018563 CHD C0016129 FMA : Subdivision of the hand demarcated from the hand proper by the skin crease in line with the distal edge of finger webs. Examples: thumb, right middle finger, left little finger.
-  13. C0018563 CHD C0016129 NCI : Any of the digits of the hand.
-  14. C0018563 CHD C0043262 MSH : The region of the upper limb between the metacarpus and the FOREARM.
-  15. C0018563 CHD C0043262 CSP : region of the upper limb between the forearm and the hand.
-  16. C0018563 CHD C1578693 MSH : The region of the HAND between the WRIST and the FINGERS.
-  17. C0018563 CHD C0003706 MSH : An abnormal bone development that is characterized by extra long and slender hands and fingers, such that the clenched thumb extends beyond the ulnar side of the hand. Arachnodactyly can include feet and toes. Arachnodactyly has been associated with several gene mutations and syndromes.
-  18. C0018563 CHD C0003862 MSH : Pain in the joint.
-  19. C0018563 CHD C0003862 NCI : Pain in a joint.
+102
+  1. C0018563 ST bpoc STDEF : A collection of cells and tissues which are localized to a specific area or combine and carry out one or more specialized functions of an organism.  This ranges from gross structures to small components of complex organs.  These structures are relatively localized in comparison to tissues.
+  2. C0018563 PAR C1140618 MSH : The region of the upper limb in animals, extending from the deltoid region to the HAND, and including the ARM; AXILLA; and SHOULDER.
+  3. C0018563 PAR C1140618 CSP : part of the upper extremity between the shoulder and wrist; includes forearm and upper arm.
+  4. C0018563 PAR C1140618 NCI : Technically the part of the superior limb between the shoulder and the elbow but commonly used to refer to the whole superior limb.
+  5. C0018563 PAR C0817635 FMA : Free limb, which is distal to the pectoral girdle and demarcated by the plane of the surface of the glenoid fossa from the pectoral girdle; together with the pectoral girdle, it constitutes the upper limb. Examples: There are only two instances, right and left free upper limbs.
+  6. C0018563 PAR C0817635 UWDA : Free limb, which is distal to the pectoral girdle and demarcated by the plane of the surface of the glenoid fossa from the pectoral girdle; together with the pectoral girdle, it constitutes the upper limb. Examples: There are only two instances, right and left free upper limbs.
+  7. C0018563 PAR C0229962 UWDA : Anatomical structure, which consists of a maximal set of diverse subclasses of organ and organ part spatially associated with either the skull, a segment of the vertebral column or a complete set of bones of the appendicular skeleton; it is partially surrounded by skin and forms a distinct morphological subdivision of the body; together with all other body parts, a body part constitutes the human body. Examples: Canonical instances are limited to head, neck, trunk, and the limbs.
+  8. C0018563 PAR C0229962 FMA : Anatomical structure, which has as its direct parts instances of anatomical sets of organs and cardinal organ parts spatially associated with either the skull, vertebral column, or the skeleton of a limb; in their aggregate are surrounded by a part of the skin Examples: Head, body proper, right upper limb.
+  9. C0018563 PAR C0229962 NCI : Any part of an organism.
+  10. C0018563 PAR C0229962 MSH : Parts of the human body viewed from a philosophical or social perspective.
+  11. C0018563 CHD C0016129 UWDA : Subdivision of the hand demarcated from the hand proper by the skin crease in line with the distal edge of finger webs. Examples: thumb, right middle finger, left little finger.
+  12. C0018563 CHD C0016129 CSP : one of the five digits of the hand.
+  13. C0018563 CHD C0016129 FMA : Subdivision of the hand demarcated from the hand proper by the skin crease in line with the distal edge of finger webs. Examples: thumb, right middle finger, left little finger.
+  14. C0018563 CHD C0016129 NCI : Any of the digits of the hand.
+  15. C0018563 CHD C0043262 MSH : The region of the upper limb between the metacarpus and the FOREARM.
+  16. C0018563 CHD C0043262 CSP : region of the upper limb between the forearm and the hand.
+  17. C0018563 CHD C1578693 MSH : The region of the HAND between the WRIST and the FINGERS.
+  18. C0018563 CHD C0003706 MSH : An abnormal bone development that is characterized by extra long and slender hands and fingers, such that the clenched thumb extends beyond the ulnar side of the hand. Arachnodactyly can include feet and toes. Arachnodactyly has been associated with several gene mutations and syndromes.
+  19. C0018563 CHD C0003862 MSH : Pain in the joint.
   20. C0018563 CHD C0003862 NCI : Pain in a joint.
-  21. C0018563 CHD C0007286 MSH : Entrapment of the MEDIAN NERVE in the carpal tunnel, which is formed by the flexor retinaculum and the CARPAL BONES. This syndrome may be associated with repetitive occupational trauma (CUMULATIVE TRAUMA DISORDERS); wrist injuries; AMYLOID NEUROPATHIES; rheumatoid arthritis (see ARTHRITIS, RHEUMATOID); ACROMEGALY; PREGNANCY; and other conditions. Symptoms include burning pain and paresthesias involving the ventral surface of the hand and fingers which may radiate proximally. Impairment of sensation in the distribution of the median nerve and thenar muscle atrophy may occur. (Joynt, Clinical Neurology, 1995, Ch51, p45)
-  22. C0018563 CHD C0007286 CSP : entrapment of the median nerve in the carpal tunnel, which is formed by the flexor retinaculum and the carpal bones; this syndrome may be associated with repetitive occupational trauma, wrist injuries, amyloid neuropathies, rheumatoid arthritis, acromegaly, pregnancy, and other conditions; symptoms include burning pain and paresthesias involving the ventral surface of the hand and fingers which may radiate proximally; impairment of sensation in the distribution of the median nerve and thenar muscle atrophy may occur.
-  23. C0018563 CHD C0018564 MSH : Alterations or deviations from normal shape or size which result in a disfigurement of the hand.
-  24. C0018563 CHD C0026846 MSH : Derangement in size and number of muscle fibers occurring with aging, reduction in blood supply, or following immobilization, prolonged weightlessness, malnutrition, and particularly in denervation.
-  25. C0018563 CHD C0026846 GO : A process, occurring in the muscle, that is characterized by a decrease in protein content, fibre diameter, force production and fatigue resistance in response to different conditions such as starvation, aging and disuse. [GOC:mtg_muscle]
-  26. C0018563 CHD C0039075 MSH : A congenital anomaly of the hand or foot, marked by the webbing between adjacent fingers or toes. Syndactylies are classified as complete or incomplete by the degree of joining. Syndactylies can also be simple or complex. Simple syndactyly indicates joining of only skin or soft tissue; complex syndactyly marks joining of bony elements.
-  27. C0018563 CHD C0039520 MSH : Inflammation of the synovial lining of a tendon sheath. Causes include trauma, tendon stress, bacterial disease (gonorrhea, tuberculosis), rheumatic disease, and gout. Common sites are the hand, wrist, shoulder capsule, hip capsule, hamstring muscles, and Achilles tendon. The tendon sheaths become inflamed and painful, and accumulate fluid. Joint mobility is usually reduced.
-  28. C0018563 CHD C0152427 MSH : A congenital anomaly of the hand or foot, marked by the presence of supernumerary digits.
-  29. C0018563 CHD C0162298 CSP : rigidity, resistance or inflexibility of the joints.
-  30. C0018563 CHD C0917990 MSH : A condition with congenital and acquired forms causing recurrent ulcers in the fingers and toes. The congenital form exhibits autosomal dominant inheritance; the acquired form is found in workers who handle VINYL CHLORIDE. When acro-osteolysis is accompanied by generalized OSTEOPOROSIS and skull deformations, it is called HAJDU-CHENEY SYNDROME.
-  31. C0018563 SIB C0004454 NCI : (AK-sil-air-ee) Pertaining to the armpit area, including the lymph nodes that are located there.
-  32. C0018563 SIB C0004454 NCI : The underside concavity where the arm and the shoulder are joined.
-  33. C0018563 SIB C0013769 CSP : hinge joint between the forearm and upper arm and the corresponding joint in the forelimb.
-  34. C0018563 SIB C0016536 NCI : The structure on the upper limb, between the elbow and the wrist.
-  35. C0018563 SIB C0037004 CSP : junction of the arm and trunk; also that part of the trunk which is bounded at the back by the scapula.
-  36. C0018563 SIB C0037004 NCI : The region of the body between the neck and the upper arm.
-  37. C0018563 SIB C0446516 MSH : The superior part of the upper extremity between the SHOULDER and the ELBOW.
-  38. C0018563 SIB C0043262 MSH : The region of the upper limb between the metacarpus and the FOREARM.
-  39. C0018563 SIB C0043262 CSP : region of the upper limb between the forearm and the hand.
-  40. C0018563 SIB C1140618 MSH : The region of the upper limb in animals, extending from the deltoid region to the HAND, and including the ARM; AXILLA; and SHOULDER.
-  41. C0018563 SIB C1140618 CSP : part of the upper extremity between the shoulder and wrist; includes forearm and upper arm.
-  42. C0018563 SIB C1140618 NCI : Technically the part of the superior limb between the shoulder and the elbow but commonly used to refer to the whole superior limb.
-  43. C0018563 SIB C0016504 MSH : The distal extremity of the leg in vertebrates, consisting of the tarsus (ANKLE), METATARSUS, phalanges, and the soft tissues surrounding these bones.
-  44. C0018563 SIB C0016504 CSP : distal portion of the leg upon which one stands and walks; in humans it consists of the tarsus, metatarsus, and phalanges and the tissues encompassing them.
-  45. C0018563 SIB C0016504 NCI : The structure found below the ankle joint required for locomotion.
-  46. C0018563 RB C0817635 FMA : Free limb, which is distal to the pectoral girdle and demarcated by the plane of the surface of the glenoid fossa from the pectoral girdle; together with the pectoral girdle, it constitutes the upper limb. Examples: There are only two instances, right and left free upper limbs.
-  47. C0018563 RB C0817635 UWDA : Free limb, which is distal to the pectoral girdle and demarcated by the plane of the surface of the glenoid fossa from the pectoral girdle; together with the pectoral girdle, it constitutes the upper limb. Examples: There are only two instances, right and left free upper limbs.
-  48. C0018563 RB C1140618 MSH : The region of the upper limb in animals, extending from the deltoid region to the HAND, and including the ARM; AXILLA; and SHOULDER.
-  49. C0018563 RB C1140618 CSP : part of the upper extremity between the shoulder and wrist; includes forearm and upper arm.
-  50. C0018563 RB C1140618 NCI : Technically the part of the superior limb between the shoulder and the elbow but commonly used to refer to the whole superior limb.
-  51. C0018563 RB C0026860 MSH : The MUSCLES, bones (BONE AND BONES), and CARTILAGE of the body.
-  52. C0018563 RB C0026860 CSP : all of the muscles, the bones, and the cartilages of the body.
-  53. C0018563 RB C0026860 NCI : The system of muscles, tendons, ligaments, bones, joints and associated tissues that move the body and maintain its form.
-  54. C0018563 RB C0037253 CSP : bones and cartilages of the body, including the joints.
-  55. C0018563 RB C0037253 NCI : The framework that supports the soft tissues of vertebrate animals and protects many of their internal organs. The skeletons of vertebrates are made of bone and/or cartilage.
-  56. C0018563 RB C0037253 NCI : Having to do with the skeleton (boney part of the body).
-  57. C0018563 RB C0037253 FMA : Organ system subdivision which consists of the skeleton and the articular system.
-  58. C0018563 RB C0446516 MSH : The superior part of the upper extremity between the SHOULDER and the ELBOW.
-  59. C0018563 RN C0016129 UWDA : Subdivision of the hand demarcated from the hand proper by the skin crease in line with the distal edge of finger webs. Examples: thumb, right middle finger, left little finger.
-  60. C0018563 RN C0016129 CSP : one of the five digits of the hand.
-  61. C0018563 RN C0016129 FMA : Subdivision of the hand demarcated from the hand proper by the skin crease in line with the distal edge of finger webs. Examples: thumb, right middle finger, left little finger.
-  62. C0018563 RN C0016129 NCI : Any of the digits of the hand.
-  63. C0018563 RN C0025526 MSH : The five cylindrical bones of the METACARPUS, articulating with the CARPAL BONES proximally and the PHALANGES OF FINGERS distally.
-  64. C0018563 RN C0223792 NCI : Bone of the hand.
-  65. C0018563 RN C0223792 MSH : Bones that make up the SKELETON of the FINGERS, consisting of two for the THUMB, and three for each of the other fingers.
-  66. C0018563 RN C0448064 MSH : The CARPAL BONES; METACARPAL BONES; and FINGER PHALANGES. In each hand there are eight carpal bones, five metacarpal bones, and 14 phalanges.
-  67. C0018563 RN C0459470 MSH : The articulations extending from the WRIST distally to the FINGERS. These include the WRIST JOINT; CARPAL JOINTS; METACARPOPHALANGEAL JOINT; and FINGER JOINT.
-  68. C0018563 RO C0018566 MSH : Alterations or deviations from normal shape or size which result in a disfigurement of the hand occurring at or before birth.
-  69. C0018563 RO C0018571 MSH : General or unspecified injuries to the hand.
-  70. C0018563 RO C0025526 MSH : The five cylindrical bones of the METACARPUS, articulating with the CARPAL BONES proximally and the PHALANGES OF FINGERS distally.
-  71. C0018563 RO C0223792 NCI : Bone of the hand.
-  72. C0018563 RO C0223792 MSH : Bones that make up the SKELETON of the FINGERS, consisting of two for the THUMB, and three for each of the other fingers.
-  73. C0018563 RO C0448064 MSH : The CARPAL BONES; METACARPAL BONES; and FINGER PHALANGES. In each hand there are eight carpal bones, five metacarpal bones, and 14 phalanges.
-  74. C0018563 RO C0817635 FMA : Free limb, which is distal to the pectoral girdle and demarcated by the plane of the surface of the glenoid fossa from the pectoral girdle; together with the pectoral girdle, it constitutes the upper limb. Examples: There are only two instances, right and left free upper limbs.
-  75. C0018563 RO C0817635 UWDA : Free limb, which is distal to the pectoral girdle and demarcated by the plane of the surface of the glenoid fossa from the pectoral girdle; together with the pectoral girdle, it constitutes the upper limb. Examples: There are only two instances, right and left free upper limbs.
-  76. C0018563 RO C0014736 MSH : Infections with bacteria of the genus ERYSIPELOTHRIX.
-  77. C0018563 RO C0018564 MSH : Alterations or deviations from normal shape or size which result in a disfigurement of the hand.
-  78. C0018563 RO C0018565 MSH : Deformities of the hand, or a part of the hand, acquired after birth as the result of injury or disease.
-  79. C0018563 RO C0034735 AIR : WHAT: Raynaud's phenomenon. Raynaud's Phenomenon: the paroxysmal constriction of the small arteries and arterioles of the hands or feet, usually precipitated by cold or emotional upset, resulting in pallor and cyanosis of the fingers or toes following a characteristic pattern. WHY: Raynaud's phenomenon may occur in mixed connective tissue disease, systemic lupus erythematosus, progressive systemic sclerosis, poly- myositis/dermatomyositis, and rheumatoid arthritis associated with Sjogren's syndrome. HOW: In Raynaud's phenomenon there are three classic color changes of the fingers or toes. First, vasoconstriction results in a white blanching of the fingertips. Second, vasodilatation with sludging of vascular flow follows and results in blue, cyanotic digits. Finally, with recovery, there is increased blood flow with resulting erythema of the fingers. With observation of two of the three color changes, Raynaud's phenomenon is considered present. Local body cooling (by placing the hands in ice cold water) may demonstrate Raynaud's phenomenon, but some cases require general body cooling before the characteristic color phases occur. Permanent tissue damage can be induced by this testing, which therefore must be done only when absolutely necessary. If the digits show persistent cyanosis or there is evidence of pre-existing necrosis, performing this test is especially hazardous. One or more digits may be involved in Raynaud's phenomenon, and this involvement may be unilateral. REFS: 1) Spittell, JA: "Raynaud's phenomenon and allied vasospastic disorders". In Juergens, JL et al. (eds.): Peripheral Vascular Diseases, pp. 555-83. Philadelphia: W.B. Saunders Co., 1980. 2) Porter, JM; Snider, RL; Bardana, EJ; Rosch, J and Eidemiller, LR: The diagnosis and treatment of Raynaud's phenomenon. Surgery 77:11, 1975. DN19300-3.
-  80. C0018563 RO C0034735 NCI : Intermittent bilateral attacks of ischemia of the fingers or toes and sometimes of the ears or nose, marked by severe pallor, and often accompanied by paresthesia and pain.
-  81. C0018563 RO C0034735 NCI : A set of symptoms characteristic of peripheral vascular disease, namely caused by an inappropriate response of the peripheral arteries in reaction to environmental stimuli, usually to the cold. The term is used when an underlying disease (mostly connective tissue/autoimmune disorders such as lupus, scleroderma, rheumatoid arthritis, etc.) is primarily causative and a range of symptoms including the peripheral vascular spasm is secondary. The term does not refer to the primary Raynauds or Raynauds disease.
-  82. C0018563 RO C0206138 MSH : A mild form of LIMITED SCLERODERMA, a multi-system disorder. Its features include symptoms of CALCINOSIS; RAYNAUD DISEASE; ESOPHAGEAL MOTILITY DISORDERS; sclerodactyly, and TELANGIECTASIS. When the defect in esophageal function is not prominent, it is known as CRST syndrome.
-  83. C0018563 RO C0206138 NCI : A variant of systemic sclerosis characterized by calcinosis, Raynaud phenomenon, esophageal motility disorders, sclerodactyly, and telangiectasia.
-  84. C0018563 RO C0277843 AIR : WHAT: Tinel's sign. Tinel's Sign: a clinical test in which percussion of the median nerve at the volar aspect of the wrist produces a tingling sensation in the fingers supplied by the median nerve. WHY: The test helps in diagnosing those patients with carpal tunnel syndrome. HOW: The test is performed by lightly percussing the median nerve at the volar aspect of the wrist, just radial to the palmaris longus tendon. The test is considered positive if the patient experiences a tingling sensation in the thumb, index, middle or radial half of the ring finger or in the radial half of the palm. REFS: Phalen, GS: The carpal tunnel syndrome: seventeen years' experience in diagnosis and treatment of 654 hands. J Bone Joint Surg 48A:211, 1966. DN19301-1.
-  85. C0018563 RO C0441987 NCI : One of the two lateral margins or surfaces of a body, midway between the front and back.
-  86. C0018563 RO C1276801 MSH : An infection caused by Erysipelothrix rhusiopathiae that is almost wholly restricted to persons who in their occupation handle infected fish, shellfish, poultry, or meat. Three forms of this condition exist: a mild localized form manifested by local swelling and redness of the skin; a diffuse form that might present with fever; and a rare systemic form associated with endocarditis.
-  87. C0018563 RO C1562620 AOT : Impaired or altered function of the hand.
-  88. C0018563 RO C0022682 MSH : Osteonecrosis of the lunate.
-  89. C0018563 RO C0016129 UWDA : Subdivision of the hand demarcated from the hand proper by the skin crease in line with the distal edge of finger webs. Examples: thumb, right middle finger, left little finger.
-  90. C0018563 RO C0016129 CSP : one of the five digits of the hand.
-  91. C0018563 RO C0016129 FMA : Subdivision of the hand demarcated from the hand proper by the skin crease in line with the distal edge of finger webs. Examples: thumb, right middle finger, left little finger.
-  92. C0018563 RO C0016129 NCI : Any of the digits of the hand.
-  93. C0018563 RO C1140618 MSH : The region of the upper limb in animals, extending from the deltoid region to the HAND, and including the ARM; AXILLA; and SHOULDER.
-  94. C0018563 RO C1140618 CSP : part of the upper extremity between the shoulder and wrist; includes forearm and upper arm.
-  95. C0018563 RO C1140618 NCI : Technically the part of the superior limb between the shoulder and the elbow but commonly used to refer to the whole superior limb.
-  96. C0018563 RO C0016539 MSH : The forepart of the foot including the metatarsals and the TOES.
-  97. C0018563 RO C0043262 MSH : The region of the upper limb between the metacarpus and the FOREARM.
-  98. C0018563 RO C0043262 CSP : region of the upper limb between the forearm and the hand.
-  99. C0018563 CUI C0018563 CSP : part of the upper limb distal to the wrist including carpus, metacarpus and fingers.
-  100. C0018563 CUI C0018563 NCI : The distal portion of the upper extremity. It consists of the carpus, metacarpus, and digits.
-  101. C0018563 TERM C0018563 nosab : hand hands
+  21. C0018563 CHD C0003862 NCI : Pain in a joint.
+  22. C0018563 CHD C0007286 MSH : Entrapment of the MEDIAN NERVE in the carpal tunnel, which is formed by the flexor retinaculum and the CARPAL BONES. This syndrome may be associated with repetitive occupational trauma (CUMULATIVE TRAUMA DISORDERS); wrist injuries; AMYLOID NEUROPATHIES; rheumatoid arthritis (see ARTHRITIS, RHEUMATOID); ACROMEGALY; PREGNANCY; and other conditions. Symptoms include burning pain and paresthesias involving the ventral surface of the hand and fingers which may radiate proximally. Impairment of sensation in the distribution of the median nerve and thenar muscle atrophy may occur. (Joynt, Clinical Neurology, 1995, Ch51, p45)
+  23. C0018563 CHD C0007286 CSP : entrapment of the median nerve in the carpal tunnel, which is formed by the flexor retinaculum and the carpal bones; this syndrome may be associated with repetitive occupational trauma, wrist injuries, amyloid neuropathies, rheumatoid arthritis, acromegaly, pregnancy, and other conditions; symptoms include burning pain and paresthesias involving the ventral surface of the hand and fingers which may radiate proximally; impairment of sensation in the distribution of the median nerve and thenar muscle atrophy may occur.
+  24. C0018563 CHD C0018564 MSH : Alterations or deviations from normal shape or size which result in a disfigurement of the hand.
+  25. C0018563 CHD C0026846 MSH : Derangement in size and number of muscle fibers occurring with aging, reduction in blood supply, or following immobilization, prolonged weightlessness, malnutrition, and particularly in denervation.
+  26. C0018563 CHD C0026846 GO : A process, occurring in the muscle, that is characterized by a decrease in protein content, fibre diameter, force production and fatigue resistance in response to different conditions such as starvation, aging and disuse. [GOC:mtg_muscle]
+  27. C0018563 CHD C0039075 MSH : A congenital anomaly of the hand or foot, marked by the webbing between adjacent fingers or toes. Syndactylies are classified as complete or incomplete by the degree of joining. Syndactylies can also be simple or complex. Simple syndactyly indicates joining of only skin or soft tissue; complex syndactyly marks joining of bony elements.
+  28. C0018563 CHD C0039520 MSH : Inflammation of the synovial lining of a tendon sheath. Causes include trauma, tendon stress, bacterial disease (gonorrhea, tuberculosis), rheumatic disease, and gout. Common sites are the hand, wrist, shoulder capsule, hip capsule, hamstring muscles, and Achilles tendon. The tendon sheaths become inflamed and painful, and accumulate fluid. Joint mobility is usually reduced.
+  29. C0018563 CHD C0152427 MSH : A congenital anomaly of the hand or foot, marked by the presence of supernumerary digits.
+  30. C0018563 CHD C0162298 CSP : rigidity, resistance or inflexibility of the joints.
+  31. C0018563 CHD C0917990 MSH : A condition with congenital and acquired forms causing recurrent ulcers in the fingers and toes. The congenital form exhibits autosomal dominant inheritance; the acquired form is found in workers who handle VINYL CHLORIDE. When acro-osteolysis is accompanied by generalized OSTEOPOROSIS and skull deformations, it is called HAJDU-CHENEY SYNDROME.
+  32. C0018563 SIB C0004454 NCI : (AK-sil-air-ee) Pertaining to the armpit area, including the lymph nodes that are located there.
+  33. C0018563 SIB C0004454 NCI : The underside concavity where the arm and the shoulder are joined.
+  34. C0018563 SIB C0013769 CSP : hinge joint between the forearm and upper arm and the corresponding joint in the forelimb.
+  35. C0018563 SIB C0016536 NCI : The structure on the upper limb, between the elbow and the wrist.
+  36. C0018563 SIB C0037004 CSP : junction of the arm and trunk; also that part of the trunk which is bounded at the back by the scapula.
+  37. C0018563 SIB C0037004 NCI : The region of the body between the neck and the upper arm.
+  38. C0018563 SIB C0446516 MSH : The superior part of the upper extremity between the SHOULDER and the ELBOW.
+  39. C0018563 SIB C0043262 MSH : The region of the upper limb between the metacarpus and the FOREARM.
+  40. C0018563 SIB C0043262 CSP : region of the upper limb between the forearm and the hand.
+  41. C0018563 SIB C1140618 MSH : The region of the upper limb in animals, extending from the deltoid region to the HAND, and including the ARM; AXILLA; and SHOULDER.
+  42. C0018563 SIB C1140618 CSP : part of the upper extremity between the shoulder and wrist; includes forearm and upper arm.
+  43. C0018563 SIB C1140618 NCI : Technically the part of the superior limb between the shoulder and the elbow but commonly used to refer to the whole superior limb.
+  44. C0018563 SIB C0016504 MSH : The distal extremity of the leg in vertebrates, consisting of the tarsus (ANKLE), METATARSUS, phalanges, and the soft tissues surrounding these bones.
+  45. C0018563 SIB C0016504 CSP : distal portion of the leg upon which one stands and walks; in humans it consists of the tarsus, metatarsus, and phalanges and the tissues encompassing them.
+  46. C0018563 SIB C0016504 NCI : The structure found below the ankle joint required for locomotion.
+  47. C0018563 RB C0817635 FMA : Free limb, which is distal to the pectoral girdle and demarcated by the plane of the surface of the glenoid fossa from the pectoral girdle; together with the pectoral girdle, it constitutes the upper limb. Examples: There are only two instances, right and left free upper limbs.
+  48. C0018563 RB C0817635 UWDA : Free limb, which is distal to the pectoral girdle and demarcated by the plane of the surface of the glenoid fossa from the pectoral girdle; together with the pectoral girdle, it constitutes the upper limb. Examples: There are only two instances, right and left free upper limbs.
+  49. C0018563 RB C1140618 MSH : The region of the upper limb in animals, extending from the deltoid region to the HAND, and including the ARM; AXILLA; and SHOULDER.
+  50. C0018563 RB C1140618 CSP : part of the upper extremity between the shoulder and wrist; includes forearm and upper arm.
+  51. C0018563 RB C1140618 NCI : Technically the part of the superior limb between the shoulder and the elbow but commonly used to refer to the whole superior limb.
+  52. C0018563 RB C0026860 MSH : The MUSCLES, bones (BONE AND BONES), and CARTILAGE of the body.
+  53. C0018563 RB C0026860 CSP : all of the muscles, the bones, and the cartilages of the body.
+  54. C0018563 RB C0026860 NCI : The system of muscles, tendons, ligaments, bones, joints and associated tissues that move the body and maintain its form.
+  55. C0018563 RB C0037253 CSP : bones and cartilages of the body, including the joints.
+  56. C0018563 RB C0037253 NCI : The framework that supports the soft tissues of vertebrate animals and protects many of their internal organs. The skeletons of vertebrates are made of bone and/or cartilage.
+  57. C0018563 RB C0037253 NCI : Having to do with the skeleton (boney part of the body).
+  58. C0018563 RB C0037253 FMA : Organ system subdivision which consists of the skeleton and the articular system.
+  59. C0018563 RB C0446516 MSH : The superior part of the upper extremity between the SHOULDER and the ELBOW.
+  60. C0018563 RN C0016129 UWDA : Subdivision of the hand demarcated from the hand proper by the skin crease in line with the distal edge of finger webs. Examples: thumb, right middle finger, left little finger.
+  61. C0018563 RN C0016129 CSP : one of the five digits of the hand.
+  62. C0018563 RN C0016129 FMA : Subdivision of the hand demarcated from the hand proper by the skin crease in line with the distal edge of finger webs. Examples: thumb, right middle finger, left little finger.
+  63. C0018563 RN C0016129 NCI : Any of the digits of the hand.
+  64. C0018563 RN C0025526 MSH : The five cylindrical bones of the METACARPUS, articulating with the CARPAL BONES proximally and the PHALANGES OF FINGERS distally.
+  65. C0018563 RN C0223792 NCI : Bone of the hand.
+  66. C0018563 RN C0223792 MSH : Bones that make up the SKELETON of the FINGERS, consisting of two for the THUMB, and three for each of the other fingers.
+  67. C0018563 RN C0448064 MSH : The CARPAL BONES; METACARPAL BONES; and FINGER PHALANGES. In each hand there are eight carpal bones, five metacarpal bones, and 14 phalanges.
+  68. C0018563 RN C0459470 MSH : The articulations extending from the WRIST distally to the FINGERS. These include the WRIST JOINT; CARPAL JOINTS; METACARPOPHALANGEAL JOINT; and FINGER JOINT.
+  69. C0018563 RO C0018566 MSH : Alterations or deviations from normal shape or size which result in a disfigurement of the hand occurring at or before birth.
+  70. C0018563 RO C0018571 MSH : General or unspecified injuries to the hand.
+  71. C0018563 RO C0025526 MSH : The five cylindrical bones of the METACARPUS, articulating with the CARPAL BONES proximally and the PHALANGES OF FINGERS distally.
+  72. C0018563 RO C0223792 NCI : Bone of the hand.
+  73. C0018563 RO C0223792 MSH : Bones that make up the SKELETON of the FINGERS, consisting of two for the THUMB, and three for each of the other fingers.
+  74. C0018563 RO C0448064 MSH : The CARPAL BONES; METACARPAL BONES; and FINGER PHALANGES. In each hand there are eight carpal bones, five metacarpal bones, and 14 phalanges.
+  75. C0018563 RO C0817635 FMA : Free limb, which is distal to the pectoral girdle and demarcated by the plane of the surface of the glenoid fossa from the pectoral girdle; together with the pectoral girdle, it constitutes the upper limb. Examples: There are only two instances, right and left free upper limbs.
+  76. C0018563 RO C0817635 UWDA : Free limb, which is distal to the pectoral girdle and demarcated by the plane of the surface of the glenoid fossa from the pectoral girdle; together with the pectoral girdle, it constitutes the upper limb. Examples: There are only two instances, right and left free upper limbs.
+  77. C0018563 RO C0014736 MSH : Infections with bacteria of the genus ERYSIPELOTHRIX.
+  78. C0018563 RO C0018564 MSH : Alterations or deviations from normal shape or size which result in a disfigurement of the hand.
+  79. C0018563 RO C0018565 MSH : Deformities of the hand, or a part of the hand, acquired after birth as the result of injury or disease.
+  80. C0018563 RO C0034735 AIR : WHAT: Raynaud's phenomenon. Raynaud's Phenomenon: the paroxysmal constriction of the small arteries and arterioles of the hands or feet, usually precipitated by cold or emotional upset, resulting in pallor and cyanosis of the fingers or toes following a characteristic pattern. WHY: Raynaud's phenomenon may occur in mixed connective tissue disease, systemic lupus erythematosus, progressive systemic sclerosis, poly- myositis/dermatomyositis, and rheumatoid arthritis associated with Sjogren's syndrome. HOW: In Raynaud's phenomenon there are three classic color changes of the fingers or toes. First, vasoconstriction results in a white blanching of the fingertips. Second, vasodilatation with sludging of vascular flow follows and results in blue, cyanotic digits. Finally, with recovery, there is increased blood flow with resulting erythema of the fingers. With observation of two of the three color changes, Raynaud's phenomenon is considered present. Local body cooling (by placing the hands in ice cold water) may demonstrate Raynaud's phenomenon, but some cases require general body cooling before the characteristic color phases occur. Permanent tissue damage can be induced by this testing, which therefore must be done only when absolutely necessary. If the digits show persistent cyanosis or there is evidence of pre-existing necrosis, performing this test is especially hazardous. One or more digits may be involved in Raynaud's phenomenon, and this involvement may be unilateral. REFS: 1) Spittell, JA: "Raynaud's phenomenon and allied vasospastic disorders". In Juergens, JL et al. (eds.): Peripheral Vascular Diseases, pp. 555-83. Philadelphia: W.B. Saunders Co., 1980. 2) Porter, JM; Snider, RL; Bardana, EJ; Rosch, J and Eidemiller, LR: The diagnosis and treatment of Raynaud's phenomenon. Surgery 77:11, 1975. DN19300-3.
+  81. C0018563 RO C0034735 NCI : Intermittent bilateral attacks of ischemia of the fingers or toes and sometimes of the ears or nose, marked by severe pallor, and often accompanied by paresthesia and pain.
+  82. C0018563 RO C0034735 NCI : A set of symptoms characteristic of peripheral vascular disease, namely caused by an inappropriate response of the peripheral arteries in reaction to environmental stimuli, usually to the cold. The term is used when an underlying disease (mostly connective tissue/autoimmune disorders such as lupus, scleroderma, rheumatoid arthritis, etc.) is primarily causative and a range of symptoms including the peripheral vascular spasm is secondary. The term does not refer to the primary Raynauds or Raynauds disease.
+  83. C0018563 RO C0206138 MSH : A mild form of LIMITED SCLERODERMA, a multi-system disorder. Its features include symptoms of CALCINOSIS; RAYNAUD DISEASE; ESOPHAGEAL MOTILITY DISORDERS; sclerodactyly, and TELANGIECTASIS. When the defect in esophageal function is not prominent, it is known as CRST syndrome.
+  84. C0018563 RO C0206138 NCI : A variant of systemic sclerosis characterized by calcinosis, Raynaud phenomenon, esophageal motility disorders, sclerodactyly, and telangiectasia.
+  85. C0018563 RO C0277843 AIR : WHAT: Tinel's sign. Tinel's Sign: a clinical test in which percussion of the median nerve at the volar aspect of the wrist produces a tingling sensation in the fingers supplied by the median nerve. WHY: The test helps in diagnosing those patients with carpal tunnel syndrome. HOW: The test is performed by lightly percussing the median nerve at the volar aspect of the wrist, just radial to the palmaris longus tendon. The test is considered positive if the patient experiences a tingling sensation in the thumb, index, middle or radial half of the ring finger or in the radial half of the palm. REFS: Phalen, GS: The carpal tunnel syndrome: seventeen years' experience in diagnosis and treatment of 654 hands. J Bone Joint Surg 48A:211, 1966. DN19301-1.
+  86. C0018563 RO C0441987 NCI : One of the two lateral margins or surfaces of a body, midway between the front and back.
+  87. C0018563 RO C1276801 MSH : An infection caused by Erysipelothrix rhusiopathiae that is almost wholly restricted to persons who in their occupation handle infected fish, shellfish, poultry, or meat. Three forms of this condition exist: a mild localized form manifested by local swelling and redness of the skin; a diffuse form that might present with fever; and a rare systemic form associated with endocarditis.
+  88. C0018563 RO C1562620 AOT : Impaired or altered function of the hand.
+  89. C0018563 RO C0022682 MSH : Osteonecrosis of the lunate.
+  90. C0018563 RO C0016129 UWDA : Subdivision of the hand demarcated from the hand proper by the skin crease in line with the distal edge of finger webs. Examples: thumb, right middle finger, left little finger.
+  91. C0018563 RO C0016129 CSP : one of the five digits of the hand.
+  92. C0018563 RO C0016129 FMA : Subdivision of the hand demarcated from the hand proper by the skin crease in line with the distal edge of finger webs. Examples: thumb, right middle finger, left little finger.
+  93. C0018563 RO C0016129 NCI : Any of the digits of the hand.
+  94. C0018563 RO C1140618 MSH : The region of the upper limb in animals, extending from the deltoid region to the HAND, and including the ARM; AXILLA; and SHOULDER.
+  95. C0018563 RO C1140618 CSP : part of the upper extremity between the shoulder and wrist; includes forearm and upper arm.
+  96. C0018563 RO C1140618 NCI : Technically the part of the superior limb between the shoulder and the elbow but commonly used to refer to the whole superior limb.
+  97. C0018563 RO C0016539 MSH : The forepart of the foot including the metatarsals and the TOES.
+  98. C0018563 RO C0043262 MSH : The region of the upper limb between the metacarpus and the FOREARM.
+  99. C0018563 RO C0043262 CSP : region of the upper limb between the forearm and the hand.
+  100. C0018563 CUI C0018563 CSP : part of the upper limb distal to the wrist including carpus, metacarpus and fingers.
+  101. C0018563 CUI C0018563 NCI : The distal portion of the upper extremity. It consists of the carpus, metacarpus, and digits.
+  102. C0018563 TERM C0018563 MSH : hands
+  103. C0018563 TERM C0018563 MSH : hand

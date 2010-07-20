@@ -1,5 +1,5 @@
 # UMLS::Interface::ErrorHandler
-# (Last Updated $Id: ErrorHandler.pm,v 1.6 2010/05/26 00:49:23 btmcinnes Exp $)
+# (Last Updated $Id: ErrorHandler.pm,v 1.7 2010/07/15 22:05:41 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -57,6 +57,7 @@ my $e7  = "UMLS Database Content Error (Error Code 7).";
 my $e8  = "UMLS Package Error (Error Code 8).";
 my $e9  = "Index Error (Error Code 9).";
 my $e10 = "Option Error (Error Code 10).";
+my $e11 = "Unsupported Option Error (Error Code 11).";
 
 #  throws an error and exits the program
 #  input : $pkg       <- package the error originated
@@ -84,6 +85,7 @@ sub _error {
     if($errorcode eq 8)  { $errorstring = $e8;  }
     if($errorcode eq 9)  { $errorstring = $e9;  }
     if($errorcode eq 10) { $errorstring = $e10; }
+    if($errorcode eq 11) { $errorstring = $e11; }
 
     print STDERR "ERROR: $pkg->$function\n";
     print STDERR "$errorstring\n";

@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.75 2010/06/29 17:12:42 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.77 2010/07/16 18:24:41 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -59,7 +59,7 @@ my $pkg = "UMLS::Interface";
 
 use vars qw($VERSION);
 
-$VERSION = '0.67';
+$VERSION = '0.69';
 
 my $debug = 0;
 
@@ -724,6 +724,29 @@ sub getIC {
     return $ic;    
 }
 
+#  returns the total number of CUIs (N)
+#  input : $concept <- string containing a cui
+#  output: $double  <- double containing frequency
+sub getN {
+    my $self     = shift;
+    
+    my $n = $icfinder->_getN();
+
+    return $n;
+}
+
+#  returns the propagation count (frequency) of a given cui
+#  input : $concept <- string containing a cui
+#  output: $double  <- double containing its frequency
+sub getFrequency {
+    my $self     = shift;
+    my $concept  = shift;
+    
+    my $ic = $icfinder->_getFrequency($concept);
+
+    return $ic;    
+}
+
 #  returns all of the cuis to be propagated given the sources
 #  and relations specified by the user in the configuration file
 #  input :
@@ -748,6 +771,16 @@ sub checkParameters {
     my $string2 = shift;
     
     return $icfinder->_checkParameters($string1, $string2);
+}
+
+#  check that the parameters in config file match
+#  input : $string <- string containing relation configuration parameter
+#  output: 0|1      <- true or false
+sub checkHierarchicalRelations {
+    my $self   = shift;
+    my $string = shift;
+    
+    return $icfinder->_checkHierarchicalRelations($string);
 }
 
 #  propagates the given frequency counts
@@ -777,13 +810,13 @@ __END__
 UMLS::Interface - Perl interface to the Unified Medical Language System (UMLS)
 
 =head1 SYNOPSIS
-
  #!/usr/bin/perl
 
  use UMLS::Interface;
 
  $umls = UMLS::Interface->new(); 
- if(!$umls) die "Unable to create UMLS::Interface object.\n";
+
+ die "Unable to create UMLS::Interface object.\n" if(!$umls); 
 
  my $root = $umls->root();
 
@@ -887,7 +920,6 @@ UMLS::Interface - Perl interface to the Unified Medical Language System (UMLS)
  $umls->removeConfigFiles();
 
  $umls->dropConfigTable();
-
 
 =head1 ABSTRACT
 

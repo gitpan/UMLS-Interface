@@ -1,6 +1,32 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.67 to 0.69
+    1. Updated configuration file reading for spaces
+
+    2. Updated icfrequency and icpropagation files to include the total
+    number of concepts - I call this N
+
+    3. Added getFrequency() function which returns the frequency of a
+    concept - after propagation
+
+    4. Modified documentation - hope it is clearer
+
+    5. Added a getN() function which returns the total number of concepts in
+    the icpropgation or icfrequency file
+
+    6. Updated getExtendedDefinition to include the source in which the term
+    originates
+
+    7. Updated getExtendedDefinition to allow include the defintiion of the
+    concepts semantic type
+
+    8. Allowed the definitions to come from all the sources in the MRDEF
+    table when using UMLS_ALL rather than all the sources in the MRREL
+    table.
+
+    9. Added the new shortest path measure
+
   Changes from version 0.65 to 0.67
     1. Fixed the RELADEF parameter
 

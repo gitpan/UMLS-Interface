@@ -1,5 +1,5 @@
 # UMLS::Interface::ICFinder
-# (Last Updated $Id: ICFinder.pm,v 1.13 2010/06/29 21:24:16 btmcinnes Exp $)
+# (Last Updated $Id: ICFinder.pm,v 1.15 2010/07/16 18:24:41 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -65,9 +65,9 @@ my %frequencyHash = ();
 
 my $option_icpropagation = 0;
 my $option_icfrequency   = 0;
-my $option_t           = 0;
-
-my $smooth             = 0;
+my $option_t             = 0;
+my $smooth               = 0;
+my $configN              = 0;
 
 my $errorhandler = "";
 my $cuifinder    = "";
@@ -85,11 +85,11 @@ sub new {
     
     # initialize error handler
     $errorhandler = UMLS::Interface::ErrorHandler->new();
-        if(! defined $errorhandler) {
+    if(! defined $errorhandler) {
 	print STDERR "The error handler did not get passed properly.\n";
 	exit;
     }
-
+    
     #  initialize the cuifinder
     $cuifinder = $handler;
     if(! (defined $handler)) { 
@@ -218,6 +218,17 @@ sub _setOptions
     }    
 }
 
+#  returns the configN - the total number of CUIs
+sub _getN
+{
+    my $self = shift;
+
+    my $function = "_getN";
+    &_debug($function);
+
+    return $configN;
+}
+
  
 #  returns the information content (IC) of a cui
 #  input : $concept <- string containing a cui
@@ -271,6 +282,58 @@ sub _getIC
     if(!defined $prob) { return 0; }
 
     return ($prob > 0 and $prob < 1) ? -log($prob) : 0;
+}
+
+#  returns the propagation count (frequency)  of a cui
+#  input : $concept <- string containing a cui
+#  output: $double  <- frequency
+sub _getFrequency
+{
+    my $self     = shift;
+    my $concept  = shift;
+
+    my $function = "_getFrequency";
+    &_debug($function);
+
+     #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+     
+    #  check concept was obtained
+    if(!$concept) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept.", 4);
+    }
+    
+    #  check if valid concept
+    if(! ($errorhandler->_validCui($concept)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($concept) in not valid.", 6);
+    }    
+       
+    #  if option frequency then the propagation hash 
+    #  hash has not been loaded and we should determine
+    #  the information content of the concept using the
+    #  frequency information in the file in realtime
+    if($option_icfrequency) { 
+	
+  	#  initialize the propagation hash
+	$self->_initializePropagationHash();
+	
+	#  load the propagation frequency hash
+	$self->_loadPropagationFreq(\%frequencyHash);
+	
+	#  propogate the counts
+	&_debug("_propagation");
+	my @array = ();
+	$self->_propagation($concept, \@array);
+	
+	#  tally up the propagation counts
+	$self->_tallyCounts();
+    }
+
+    my $freq = int($propagationHash{$concept} * $configN);
+
+    return $freq;
 }
 
 #  this method obtains the CUIs in the sources which 
@@ -386,19 +449,22 @@ sub _loadPropagationFreq {
 	if(exists $propagationFreq{$cui}) {
 	    $propagationFreq{$cui} += $freq;
 	}
-	$N+= $freq;
+	$N = $N + $freq;
     }
     
-
     #  check if something has been set
     if($smooth == 1) { 
 	my $pkeys = keys %propagationFreq;
 	$N += $pkeys;
     }
     
+    #  set N for the config file
+    $configN = $N;
+
     #  loop through again and set the probability
     foreach my $cui (sort keys %propagationFreq) { 
 	$propagationFreq{$cui} = ($propagationFreq{$cui}) / $N;
+	
     }
 }
 
@@ -414,11 +480,12 @@ sub _checkParameters {
     my $function = "_checkParameters";
     &_debug($function);
 
+    if( !(defined $string1) && !(defined $string2) ) { return 1; }
     if( ($string1=~/^\s*$/) && ($string2=~/^\s*$/) ) { return 1; }
     if( ($string1=~/^\s*$/) && !($string2=~/^\s*$/) ) { return 0; }
     if( !($string1=~/^\s*$/) && ($string2=~/^\s*$/) ) { return 0; }
-    
-	
+
+    	
     $string1=~/([A-Z]+) :: (include|exclude) (.*?)$/;
     my $option1 = $1;
     my $type1   = $2;
@@ -446,8 +513,38 @@ sub _checkParameters {
     }    
 
     return 1;
-
 }
+
+#  check that the relations used are only RB/RN and/or PAR/CHD relations
+#  input : string  <- contain the relation line from config file
+#  output: 1|0     <- indicating if the string contains relations other 
+#                     than RB/RN or PAR/CHD relations
+sub _checkHierarchicalRelations {
+    
+    my $self = shift;
+    my $string  = shift;
+
+    my $function = "_checkHierarchicalRelations";
+    &_debug($function);
+
+    $string=~/([A-Z]+) :: (include|exclude) (.*?)$/;
+    my $option = $1;
+    my $type   = $2;
+    my $param  = $3;
+    
+    $param=~s/\s+//g;
+
+    my @rels = split/\s*\,\s*/, $param; 
+    
+    foreach my $rel (@rels) { 
+	if( !($rel=~/(PAR|CHD|RB|RN)/) ) { 
+	    return 0;
+	}
+    }
+    
+    return 1;
+}
+
 #  load the propagation hash
 #  input :
 #  output: 
@@ -468,14 +565,29 @@ sub _loadPropagationHash {
     #  check if smoothing was set
     my $psmooth = <FILE>;
     
-    #  the source and relations associated with the propagation file
-    my $sab = <FILE>; chomp $sab;
-    my $rel = <FILE>; chomp $rel;
+    #  get the source and relations associated with the propagation file
+    my $sab  = <FILE>; chomp $sab;
+    my $rel  = <FILE>; chomp $rel;
+
+    #  get the rela realtions associated with the propagation file if one exists
+    my $rela = <FILE>; chomp $rela;
+
+    #  if it does exist in then get N otherwise we got N already.
+    my $ninfo = $rela;
+    if($rela=~/RELA/) { 
+	$ninfo = <FILE>; chomp $ninfo; 
+    }
+    else { 
+	$rela = "";
+    }
+
+    $ninfo=~/N\s*\:\:\s*([0-9]+)/;
+    $configN = $1;
 
     #  get the source and relations from config file or the defaults
     my $configsab = $cuifinder->_getSabString();
     my $configrel = $cuifinder->_getRelString();
-        
+    
     #  check the source information is correct
     if(! ($self->_checkParameters($configsab, $sab)) ) {
 	my $str = "SAB information ($sab) does not match the config file ($configsab).";
@@ -488,20 +600,27 @@ sub _loadPropagationHash {
 	$errorhandler->_error($pkg, $function, $str, 5);
     }
     
+    #  check if rela information was used
+    if($rela ne "") { 
+	if(!($self->_checkParameters($_, $cuifinder->_getRelaString()))) {
+	    my $str = "RELA information does not match the config file ($_).";
+	    $errorhandler->_error($pkg, $function, $str, 5);
+	}
+    }
+    #  check that the relations used are acceptable for propagation
+    #  the only acceptable relations are RB/RN and PAR/CHD
+    if(! ($self->_checkHierarchicalRelations ($configrel)) ) { 
+	my $str = "REL information ($rel) contains relations other than RB/RN and PAR/CHD.";
+	$errorhandler->_error($pkg, $function, $str, 11);
+    }
+    
     while(<FILE>) {
 	chomp;
-
+	
 	#  if blank line move on
 	if($_=~/^\s*$/) { next; }
+	
 
-	#  check if rela information was used
-	if($_=~/RELA/) {
-	    if(!($self->_checkParameters($_, $cuifinder->_getRelaString()))) {
-		my $str = "RELA information does not match the config file ($_).";
-		$errorhandler->_error($pkg, $function, $str, 5);
-	    }
-	    next; 
-	}
 	
 	#  get the cui and its frequency count
 	my ($cui, $freq) = split/<>/;
@@ -514,6 +633,7 @@ sub _loadPropagationHash {
     }
 }
 
+#  DEBUNKED FUNCTION? CHECK
 #  get the propagation count for a given cui
 #  input : $concept   <- string containing the cui
 #  output: $double|-1 <- the propagation count otherwise
@@ -541,7 +661,7 @@ sub _getPropagationCount {
 	$errorhandler->_error($pkg, $function, "Concept ($concept) in not valid.", 6);
     }
 
-    #  propagate teh counts
+    #  propagate the counts
     $self->_propagateCounts();
 
     #  if the concept exists in the propagation hash 
@@ -662,7 +782,7 @@ sub _propagation {
     
     #  if the concept is inactive
     if($cuifinder->_forbiddenConcept($concept)) { return; }
-    
+
     #  set up the new path
     my @intermediate = @{$array};
     push @intermediate, $concept;
@@ -683,7 +803,7 @@ sub _propagation {
 
     #  get all the children
     my @children = $cuifinder->_getChildren($concept);
-    
+
     #  search through the children   
     foreach my $child (@children) {
 
@@ -755,20 +875,19 @@ documentation.
  #!/usr/bin/perl
 
  use UMLS::Interface::CuiFinder;
-
  use UMLS::Interface::ICFinder;
 
  %params = ();
 
- $cuifinder = UMLS::Interface::CuiFinder->new(\%params); 
+ $params{"realtime"} = 1;
 
+ $cuifinder = UMLS::Interface::CuiFinder->new(\%params); 
  die "Unable to create UMLS::Interface::CuiFinder object.\n" if(!$cuifinder);
 
  $icfinder = UMLS::Interface::ICFinder->new(\%params, $cuifinder); 
-
  die "Unable to create UMLS::Interface::ICFinder object.\n" if(!$icfinder);
 
-  $concept = "C0037303";
+ $concept = "C0037303";
 
  $ic = $icfinder->_getIC($concept);
 

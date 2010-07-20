@@ -439,6 +439,20 @@ Stage 5 - Load UMLS into MySQL, if already installed go to Stage 6
     do something else until sometime late tomorrow (yes, unfortunately,
     tomorrow) evening ...
 
+    Note: different distributions set up mysql just a bit differently, and
+    one area that seems to matter to UMLS is whether or not "load local
+    infile" is enabled. I think normally it is, but openSuse does not enable
+    that by default. So, statement 15 in mysql_tables.sql was
+    failing...which caused the populate script to end immediately...
+
+    To overcome this, modify the my.cnf file to include
+
+    [client] loose-local-infile=1
+
+    This information comes from the following:
+
+    <http://dev.mysql.com/doc/refman/5.1/en/load-data-local.html>
+
    Step D: Find the MySQL load script for the Semantic Network
     Go to your Destination directory that you typed in Step C (this is where
     I said my source and destination directory were the same)
