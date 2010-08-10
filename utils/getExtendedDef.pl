@@ -250,7 +250,6 @@ foreach my $cui (@c) {
     if($#defs >= 0) {
 	print "The definition(s) of $term ($cui):\n";
 	my $i = 1;
-	print "$#defs\n";
 	foreach $def (@defs) {
 	    print "  $i. $def\n"; $i++;
 	}
@@ -313,7 +312,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getExtendedDef.pl,v 1.8 2010/07/19 14:17:20 btmcinnes Exp $';
+    print '$Id: getExtendedDef.pl,v 1.9 2010/08/04 13:56:07 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

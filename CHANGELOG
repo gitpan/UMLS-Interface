@@ -1,6 +1,63 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.69 to 0.71
+    1. There are two functions that currently exist:
+
+            getTermList()    -> returns CUIs terms that exist in the sources
+                                specified in the configuration file
+            getAllTermList() -> returns CUIs terms from the entire UMLS
+
+     I added to new functions:
+
+            getPreferredTerm() -> returns the CUIs preferred term if it exists
+                                  in the sources specified in the
+                                  configuration file
+
+            getAllPreferredTerm()-> returns the CUIs preferred term
+
+    2. For the getAssociatedTerms.pl program , there is an additional option
+    called:
+
+            --preferred
+
+     Here are the options:
+
+
+     1. --config FILE
+            returns the cuis associated terms from the sources specified in
+            the configuration file
+
+     2. --preferred --config FILE
+            returns the cuis preferred term from the sources specified in
+            the configuration file
+
+     3. --preferred
+            returns the cuis preferred term
+
+     4. no config and no preferred option
+            returns the cuis associated terms from the entire UMLS
+
+     5. removed added white space in the config file parameters 
+        - this was causing an error sometimes
+
+     6. made certain that the parent/children information is only
+        being obtained if in the configuration file. There was a 
+        problem with this using RELDEF :: include and a single 
+        option such as CHD.
+
+     7. restrict util programs to heirarchical relations - PAR/CHD and RB/RN
+          - findCuiDepth
+          - findDFS
+          - findLeastCommonSubsumer
+          - findPathToRoot
+
+     8. modified the default source and relation output
+
+     9. added an --infile option to getAssociatedTerms.pl
+
+     10. modified the getMinimumCuiDepth to speed up the process
+
   Changes from version 0.67 to 0.69
     1. Updated configuration file reading for spaces
 

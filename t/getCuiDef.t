@@ -5,7 +5,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 17;
+use Test::More tests => 15;
 
 use UMLS::Interface;
 use File::Spec;
@@ -196,29 +196,6 @@ $file    = "getCuiDef.msh.par-chd.$cui";
 $keyfile = File::Spec->catfile($keydir, $file);
 $config  = File::Spec->catfile('t', 'config', 'config.msh.par-chd');
 $output = `$perl $util_prg --config $config $cui 2>&1`;
-
-if(-e $keyfile) {
-    ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";
-    my $key = "";
-    while(<KEY>) { $key .= $_; } close KEY;
-    cmp_ok($output, 'eq', $key);
-}
-else {
-    ok(open KEY, ">$keyfile") || diag "Could not open $keyfile: $!";
-    print KEY $output;
-    close KEY;
-  SKIP: {
-      skip ("Generating key, no need to run test", 1);
-    }
-}
-
-#######################################################################################
-#  check with no config for cui
-#######################################################################################
-$cui    = "C0018563";
-$file    = "getCuiDef.msh.par-chd.$cui";
-$keyfile = File::Spec->catfile($keydir, $file);
-$output = `$perl $util_prg $cui 2>&1`;
 
 if(-e $keyfile) {
     ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";

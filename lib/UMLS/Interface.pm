@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.77 2010/07/16 18:24:41 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.79 2010/08/02 15:05:44 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -59,7 +59,7 @@ my $pkg = "UMLS::Interface";
 
 use vars qw($VERSION);
 
-$VERSION = '0.69';
+$VERSION = '0.71';
 
 my $debug = 0;
 
@@ -297,13 +297,35 @@ sub getRelated {
     return @array;
 }
 
+#  method that returns the preferred term of a cui from 
+#  the sources specified in the configuration file
+#  input : $concept <- string containing cui
+#  output: $term    <- string containing the preferred term
+sub getPreferredTerm {
+    my $self    = shift;
+    my $concept = shift;
+    
+    return $cuifinder->_getPreferredTerm($concept);
+}
+
+
+#  method that returns the preferred term of a cui from entire umls
+#  input : $concept <- string containing cui
+#  output: $term    <- string containing the preferred term
+sub getAllPreferredTerm {
+    my $self    = shift;
+    my $concept = shift;
+    
+    return $cuifinder->_getAllPreferredTerm($concept);
+}
+
 #  method to map terms to a given cui from the sources 
 #  specified in the configuration file
 #  input : $concept <- string containing cui
 #  output: @array   <- array of terms (strings)
 sub getTermList {
 
-    my $self = shift;
+    my $self    = shift;
     my $concept = shift;
     
     my @array = $cuifinder->_getTermList($concept);

@@ -1,5 +1,5 @@
 # UMLS::Interface::PathFinder
-# (Last Updated $Id: PathFinder.pm,v 1.20 2010/07/20 22:21:37 btmcinnes Exp $)
+# (Last Updated $Id: PathFinder.pm,v 1.23 2010/08/09 15:02:09 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -341,6 +341,20 @@ sub _pathsToRoot {
     if(! ($errorhandler->_validCui($concept)) ) {
 	$errorhandler->_error($pkg, $function, "Concept ($concept) in not valid.", 6);
     }
+
+    #  get the relations from the configuration file
+    my $configrel = $cuifinder->_getRelString();
+    $configrel=~/(REL) (\:\:) (include|exclude) (.*?)$/;
+    my $relationstring = $4; 
+
+    #  check to make certain the configuration file only contains
+    #  heirarchical relations (PAR/CHD or RB/RN).
+    my @relations = split/\s*\,\s*/, $relationstring; 
+    foreach my $rel (@relations) { 
+	if(! ($rel=~/(PAR|CHD|RB|RN)/) ) { 
+	    $errorhandler->_error($pkg, $function, "Method only supports heirarhical relations (PAR/CHD or RB/RN).", 10);
+	} 
+    }
          
     #  if the realtime option is set get the paths otherwise 
     #  they are or should be stored in the database 
@@ -639,7 +653,7 @@ sub _getPathsToRootInRealtime {
 
     return () if(!defined $self || !ref $self);
 
-    my $function = "_getPathsToRootInRealtime";
+    my $function = "_getPathsToRootInRealtime($concept)";
     &_debug($function);
     
     #  check self
@@ -885,16 +899,9 @@ sub _findMinimumDepth {
     #  if it is in the parent taxonomy 
     if($cuifinder->_inParentTaxonomy($cui)) { return 1; }
     
-    my $min = 9999;
-    
+    my $min = 0;
     if($option_realtime) {
-	my $paths = $self->_getPathsToRootInRealtime($cui);
-	
-	# get the minimum depth
-	foreach my $p (@{$paths}) { 
-	    my @array = split/\s+/, $p;
-	    if( ($#array+1) < $min) { $min = $#array + 1; }
-	}
+	$min = $self->_findMinimumDepthInRealTime($cui); 
     }
     else {
 	
@@ -1106,6 +1113,20 @@ sub _findLeastCommonSubsumer {
     
     #  initialize the array that will contain the lcses
     my @lcses = (); 
+
+    #  get the relations from the configuration file
+    my $configrel = $cuifinder->_getRelString();
+    $configrel=~/(REL) (\:\:) (include|exclude) (.*?)$/;
+    my $relationstring = $4; 
+
+    #  check to make certain the configuration file only contains
+    #  heirarchical relations (PAR/CHD or RB/RN).
+    my @relations = split/\s*\,\s*/, $relationstring; 
+    foreach my $rel (@relations) { 
+	if(! ($rel=~/(PAR|CHD|RB|RN)/) ) { 
+	    $errorhandler->_error($pkg, $function, "Method only supports heirarhical relations (PAR/CHD or RB/RN).", 10);
+	} 
+    }
 
     #  get the LCSes
     #if($option_realtime) {
@@ -1539,6 +1560,88 @@ sub _findPathsToCenter {
     return @return_paths;
 }
     
+
+#  method that finds the minimum depth
+#  input : $concept  <- the first concept
+#  output: $length    <- the minimum depth
+sub _findMinimumDepthInRealTime {
+
+    my $self = shift;
+    my $concept = shift;
+    
+    my $function = "_findMinimumDepthInRealTime";
+    &_debug($function);
+      
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    #  check parameter exists
+    if(!defined $concept) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept.", 4);
+    }
+    #  check if valid concept
+    if(! ($errorhandler->_validCui($concept)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($concept) in not valid.", 6);
+    }    
+       
+    #  set the count
+    my %visited = ();
+    
+    #  set the stack with the roots children
+    my @paths      = ();
+    my @stack = $cuifinder->_getChildren($root);
+    
+    foreach my $element (@stack) {
+	my @array      = (); 
+	push @paths, \@array;
+    }
+
+    #  now loop through the stack
+    while($#stack >= 0) {
+	
+	my $cui    = pop @stack;
+	my $path   = pop @paths;
+	
+        #  set up the new path
+	my @intermediate = @{$path};
+	my $series = join " ", @intermediate;
+	push @intermediate, $cui;
+	my $distance = $#intermediate;
+
+	#  check that the concept is not one of the forbidden concepts
+	if($cuifinder->_forbiddenConcept($cui)) { next; }	
+
+        #  check if concept has been visited already through that path
+	if(exists $visited{$cui}) { next; }	
+	else { $visited{$cui}++; }
+	
+        #  check if it is our concept2
+	if($cui eq $concept) { 
+	    my $path_length = $distance + 2;
+	    return $path_length;
+	}
+	
+	#  now search through the children
+	my @children = $cuifinder->_getChildren($cui);
+	foreach my $child (@children) {
+	    #  check if child cui has already in the path
+	    my $flag = 0;
+	    foreach my $c (@intermediate) {
+		if($c eq $child) { $flag = 1; }
+	    }
+	    
+	    #  if it isn't add it to the stack
+	    if($flag == 0) {
+		unshift @stack, $child;
+		unshift @paths, \@intermediate;
+	    }
+	}
+    }
+    #  no path was found return -1
+    return -1;
+}
 
 #  method that finds the length of the shortest path
 #  input : $concept1  <- the first concept

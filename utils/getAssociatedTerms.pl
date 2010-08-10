@@ -25,6 +25,18 @@ Language System (UMLS)
 
 =head2 Optional Arguments:
 
+=head3 --infile FILE
+
+FILE is the name of a file containing a list of CUIs. The expected 
+format is one CUI per line for example:
+
+    C0036319
+    C0036330
+    C0015230
+    C1533692
+    C0014792
+
+
 =head3 --config FILE
 
 This is the configuration file. The format of the configuration 
@@ -51,6 +63,29 @@ REL :: exclude PAR, CHD
 If you go to the configuration file directory, there will 
 be example configuration files for the different runs that 
 you have performed.
+
+=head3 --preferred
+
+Return only the preferred term of the CUI. When used with --config option
+the preferred term must be in the sources specified in the configuration 
+file otherwise it will not return anything. Without the --config option
+the preferred term will be returned.
+
+To be clear, here are the options:
+
+1. --config FILE
+        returns the cuis associated terms from the sources specified in
+        the configuration file
+
+2. --preferred --config FILE
+        returns the cuis preferred term from the sources specified in
+        the configuration file
+
+3. --preferred
+        returns the cuis preferred term
+
+4. no config and no preferred option
+        returns the cuis associated terms from the entire UMLS
 
 =head3 --debug
 
@@ -149,7 +184,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-eval(GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s")) or die ("Please check the above mentioned option(s).\n");
+eval(GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "preferred", "infile=s")) or die ("Please check the above mentioned option(s).\n");
 
 
 #  if help is defined, print out help
@@ -166,8 +201,9 @@ if( defined $opt_version ) {
     exit;
 }
 
-# At least 1 CUI should be given on the command line.
-if(scalar(@ARGV) < 1) {
+#  At least 1 CUI should be given on the command line unless 
+#  the --infile option is being used
+if( !(defined $opt_infile) && (scalar(@ARGV) < 1) ) { 
     print STDERR "No CUI was specified on the command line\n";
     &minimalUsageNotes();
     exit;
@@ -214,24 +250,44 @@ if(defined $opt_socket) {
 $umls = UMLS::Interface->new(\%option_hash); 
 die "Unable to create UMLS::Interface object.\n" if(!$umls);
 
-my $cui = shift;
-
-my @terms = ();
-if(defined $opt_config) {
-    @terms = $umls->getTermList($cui); 
+my @cuis;
+if(defined $opt_infile) { 
+    open(FILE, $opt_infile) || die "Could not open infile: $opt_infile\n";
+    while(<FILE>) { chomp; push @cuis, $_; }
 }
 else {
-    @terms = $umls->getAllTerms($cui);
+    my $cui = shift;
+    push @cuis, $cui;
 }
 
-if($#terms < 0) {
-    print "There are no terms associated with $cui\n";
-}
-else {
-    print "The terms for CUI ($cui) are :\n";
-    my $i = 1;
-    foreach $term (@terms) {
-	print "$i. $term\n"; $i++;
+foreach my $cui (@cuis) { 
+    my @terms = ();
+    if(defined $opt_config) {
+	if(defined $opt_preferred) { 
+	    my $t = $umls->getPreferredTerm($cui); push @terms, $t;
+	}
+	else {
+	    @terms = $umls->getTermList($cui); 
+	}
+    }
+    else {
+	if(defined $opt_preferred) { 
+	    my $t = $umls->getAllPreferredTerm($cui); push @terms, $t;
+	}
+	else {
+	    @terms = $umls->getAllTerms($cui);
+	}
+    }
+    
+    if($#terms < 0) {
+	print "There are no terms associated with $cui\n";
+    }
+    else {
+	print "The terms for CUI ($cui) are :\n";
+	my $i = 1;
+	foreach $term (@terms) {
+	    print "$i. $term\n"; $i++;
+	}
     }
 }
 
@@ -258,6 +314,8 @@ sub showHelp() {
 
     print "Options:\n\n";
     
+    print "--preferred              Return only the preferred term of the CUI\n";
+
     print "--debug                  Sets the debug flag for testing\n\n";
 
     print "--username STRING        Username required to access mysql\n\n";
@@ -272,6 +330,9 @@ sub showHelp() {
 
     print "--config FILE            Configuration file\n\n";
 
+    print "--infile FILE            FILE is the name of a file containing\n";
+    print "                         a list of CUIs. \n\n";
+
     print "--version                Prints the version number\n\n";
  
     print "--help                   Prints this help message.\n\n";
@@ -281,7 +342,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getAssociatedTerms.pl,v 1.8 2010/05/24 17:57:16 btmcinnes Exp $';
+    print '$Id: getAssociatedTerms.pl,v 1.11 2010/08/09 15:02:09 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

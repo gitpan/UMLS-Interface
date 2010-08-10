@@ -1,5 +1,5 @@
 # UMLS::Interface::CuiFinder
-# (Last Updated $Id: CuiFinder.pm,v 1.25 2010/07/19 14:17:19 btmcinnes Exp $)
+# (Last Updated $Id: CuiFinder.pm,v 1.32 2010/08/09 15:02:09 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -108,6 +108,7 @@ my $umlsall            = 0;
 my $option_verbose     = 0;
 my $option_cuilist     = 0;
 my $option_t           = 0;
+my $option_config      = 0;
 
 #  definition containers
 my $sabdefsources      = "";
@@ -305,13 +306,17 @@ sub _createUpperLevelTaxonomy {
 	my $allCuis = $self->_getCuis($sab);
 	
 	#  select all the CUI1s from MRREL that have a parent link
-	my $parCuis = $db->selectcol_arrayref("select CUI1 from MRREL where ($parentRelations) and (SAB=\'$sab\')");
-	$errorhandler->_checkDbError($pkg, $function, $db);
-
-	#  load the cuis that have a parent into a temporary hash
+	#  if a parent relation exists
+	my $parCuis = "";
 	my %parCuisHash = ();
-	foreach my $cui (@{$parCuis}) { $parCuisHash{$cui}++; }
-    
+	if( !($parentRelations=~/\(\)/) ) {
+	    $parCuis = $db->selectcol_arrayref("select CUI1 from MRREL where ($parentRelations) and (SAB=\'$sab\')");
+	    $errorhandler->_checkDbError($pkg, $function, $db);
+	    
+	    #  load the cuis that have a parent into a temporary hash
+	    foreach my $cui (@{$parCuis}) { $parCuisHash{$cui}++; }
+    	}
+
 	#  load the cuis that do not have a parent into the parent 
 	#  and chilren taxonomy for the upper level
 	foreach my $cui (@{$allCuis}) {
@@ -790,23 +795,25 @@ sub _setConfigurationFile {
     else {
 	$output .= "  Sources (SAB):\n";
     }
-
-    foreach my $sab (sort keys %sabnamesHash) {
-	$tableFile  .= "_$sab";
-	$childFile  .= "_$sab";
-	$parentFile .= "_$sab";
-	
-	$configFile .= "_$sab";
-	$tableName  .= "_$sab";
-	$parentTable.= "_$sab";
-	$childTable .= "_$sab";
-	$propTable  .= "_$sab";
-	
-	$output .= "    $sab\n"; 	
-    }
+    
+    my $saboutput = "";
+    foreach my $sab (sort keys %sabnamesHash) { 
+        $tableFile  .= "_$sab";
+	$childFile  .= "_$sab";     
+        $parentFile .= "_$sab";
+	$configFile .= "_$sab";       
+        $tableName  .= "_$sab";   
+        $parentTable.= "_$sab";     
+        $childTable .= "_$sab";  
+        $propTable  .= "_$sab";  
+	$saboutput .= "    $sab\n";
+    }                     
     
     if($umlsall) { 
 	$output .= "    UMLS_ALL\n";
+    }
+    else { 
+	$output .= $saboutput;
     }
     
     #  seperate the RELs and the RELAs from $relations
@@ -889,7 +896,22 @@ sub _setConfigurationFile {
     $output .= "    $database ($version)\n\n";
     
     if($option_t == 0) {
-	print STDERR "$output\n";
+	if($option_config) { 
+	    print STDERR "$output\n";
+	}
+	else {
+	    print STDERR "UMLS-Interface Configuration Information:\n";
+	    print STDERR "(Default Information - no config file)\n\n";
+	    print STDERR "  Sources (SAB):\n";
+	    print STDERR "     MSH\n";
+	    print STDERR "  Relations (REL):\n";
+	    print STDERR "     PAR\n";
+	    print STDERR "     CHD\n\n";
+	    print STDERR "  Sources (SABDEF):\n";
+	    print STDERR "     UMLS_ALL\n";
+	    print STDERR "  Relations (RELDEF):\n";
+	    print STDERR "     UMLS_ALL\n";
+	}
     }
 }
 
@@ -1727,6 +1749,7 @@ sub _config {
 	
 		my @array = split/\s*\,\s*/, $list;
 		foreach my $element (@array) {
+		    $element=~s/^\s+//g; $element=~s/\s+$//g;
 		    if(   $type eq "SAB"    and $det eq "include") { $includesab{$element}++;  
 								     $sabstring  = $_; 
 								     $parameters{"SAB"}++; 
@@ -2078,7 +2101,8 @@ sub _setOptions  {
     my $cuilist      = $params->{'cuilist'};
     my $t            = $params->{'t'};
     my $debugoption  = $params->{'debug'};
-    
+    my $config       = $params->{'config'};
+
     if(defined $t) {
 	$option_t = 1;
     }
@@ -2106,6 +2130,12 @@ sub _setOptions  {
     if(defined $cuilist) {
 	$option_cuilist = 1;
     	$output .= "   --cuilist option set\n";
+    }
+
+    #  check if the config file is set
+    if(defined $config) { 
+	$option_config = 1;
+	$output .= "   --config option set\n";
     }
 
     if($option_t == 0) {
@@ -2419,6 +2449,127 @@ sub _getRelated {
     
     return @{$arrRef};
 }
+
+#  method that returns the preferred term of a cui from the UMLS
+#  input : $concept <- string containing cui
+#  output: $term    <- string containing the preferred term
+sub _getAllPreferredTerm {
+    my $self = shift;
+    my $concept = shift;
+
+    my $function = "_getPreferredTerm";
+    
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+    
+     #  check parameter exists
+    if(!defined $concept) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept.", 4);
+    }
+
+    #  check if valid concept
+    if(! ($errorhandler->_validCui($concept)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($concept) is not valid.", 6);
+    }
+ 
+    #  set the return hash
+    my %retHash = ();
+
+    #  if the concept is the root return the root string
+    if($concept eq $umlsRoot) {
+	$retHash{"**UMLS ROOT**"}++;
+	return keys(%retHash);    
+    }
+
+    #  set the database
+    my $db = $self->{'db'};
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
+
+    #  get the strings associated to the CUI
+    my $arrRef = $db->selectcol_arrayref("select distinct STR from MRCONSO where CUI='$concept' and TS='P' and LAT='ENG'");
+    
+    #  check the database for errors
+    $errorhandler->_checkDbError($pkg, $function, $db);
+
+    #  clean up the strings a bit and lower case them
+    my $term = "";
+    foreach my $tr (@{$arrRef}) {
+        $tr =~ s/^\s+//;
+        $tr =~ s/\s+$//;
+        $tr =~ s/\s+/ /g;
+	$term = $tr;
+    }
+    
+    #  return the strings
+    return $term;
+}
+
+#  method that returns the preferred term of a cui from 
+#  sources specified in the configuration file
+#  input : $concept <- string containing cui
+#  output: $term    <- string containing the preferred term
+sub _getPreferredTerm {
+    my $self = shift;
+    my $concept = shift;
+
+    my $function = "_getPreferredTerm";
+    
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+    
+     #  check parameter exists
+    if(!defined $concept) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept.", 4);
+    }
+
+    #  check if valid concept
+    if(! ($errorhandler->_validCui($concept)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($concept) is not valid.", 6);
+    }
+ 
+    #  set the return hash
+    my %retHash = ();
+
+    #  if the concept is the root return the root string
+    if($concept eq $umlsRoot) {
+	$retHash{"**UMLS ROOT**"}++;
+	return keys(%retHash);    
+    }
+
+    #  set the database
+    my $db = $self->{'db'};
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
+
+    #  get the strings associated to the CUI
+    my $arrRef = "";    
+    if($umlsall) {
+	$arrRef = $db->selectcol_arrayref("select distinct STR from MRCONSO where CUI='$concept' and TS='P' and LAT='ENG'");
+    }
+    else {
+	$arrRef = $db->selectcol_arrayref("select distinct STR from MRCONSO where CUI='$concept' and TS='P' and ($sources or SAB='SRC') and LAT='ENG'");
+    }
+
+    #  check the database for errors
+    $errorhandler->_checkDbError($pkg, $function, $db);
+
+
+    #  clean up the strings a bit and lower case them
+    my $term = "";
+    foreach my $tr (@{$arrRef}) {
+        $tr =~ s/^\s+//;
+        $tr =~ s/\s+$//;
+        $tr =~ s/\s+/ /g;
+	$term = $tr;
+    }
+    #  return the strings
+    return $term;
+}
+
+
 
 #  method that maps terms to cuis in the sources specified in 
 #  in the configuration file by the user
@@ -3463,10 +3614,6 @@ sub _getExtendedDefinition {
 	}
     }
     
-    if($debug) {
-	print "SABDEF: $sabdefstring\n";
-	print "RELDEF: $reldefstring\n";
-    }
     return \@defs;
 }
 

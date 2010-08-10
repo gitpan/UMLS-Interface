@@ -1,3 +1,4 @@
+   --config option set
 
 
 UMLS-Interface Configuration Information
@@ -15,7 +16,6 @@ UMLS-Interface Configuration Information
 
 
 The definition(s) of  (C1281583):
-24
   1. C1281583 ST bpoc STDEF : A collection of cells and tissues which are localized to a specific area or combine and carry out one or more specialized functions of an organism.  This ranges from gross structures to small components of complex organs.  These structures are relatively localized in comparison to tissues.
   2. C1281583 PAR C0018563 CSP : part of the upper limb distal to the wrist including carpus, metacarpus and fingers.
   3. C1281583 PAR C0018563 NCI : The distal portion of the upper extremity. It consists of the carpus, metacarpus, and digits.

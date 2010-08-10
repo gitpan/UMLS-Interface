@@ -302,6 +302,22 @@ if(defined $opt_socket) {
 $umls = UMLS::Interface->new(\%option_hash); 
 die "Unable to create UMLS::Interface object.\n" if(!$umls);
 
+#  get the relations from the configuration file
+my $configrel = $umls->getRelString();
+$configrel=~/(REL) (\:\:) (include|exclude) (.*?)$/;
+my $relationstring = $4; 
+
+#  check to make certain the configuration file only contains
+#  heirarchical relations (PAR/CHD or RB/RN).
+my @relations = split/\s*\,\s*/, $relationstring; 
+foreach my $rel (@relations) { 
+  if(! ($rel=~/(PAR|CHD|RB|RN)/) ) { 
+    print STDERR "The findCuiDepth.pl program only supports heirarchical relations (PAR/CHD or RB/RN).\n";
+    &minimalUsageNotes();
+    exit;
+  } 
+}
+
 my @inputarray = ();
 
 if(defined $opt_infile) {
@@ -443,7 +459,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findCuiDepth.pl,v 1.11 2010/05/24 17:57:16 btmcinnes Exp $';
+    print '$Id: findCuiDepth.pl,v 1.12 2010/08/02 21:12:05 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 
