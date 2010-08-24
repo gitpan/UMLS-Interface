@@ -1,3 +1,5 @@
+
+CuiFinder User Options: 
    --config option set
 
 
@@ -18,7 +20,10 @@ PathFinder User Options:
 
 
 The shortest path between brain tissue structure (C0459385) and infratentorial brain structure (C0228067):
-  => C0459385 (brain tissue structure) C0445620 (brain part (body structure)) C0228067 (infratentorial brain structure) 
+  => C0459385 (Brain tissue) C1284114 (Entire infratentorial brain) C0228067 (Infratentorial brain structure) 
+
+The shortest path between brain tissue structure (C0459385) and infratentorial brain structure (C0228067):
+  => C0459385 (Brain tissue) C0445620 (Part of brain) C0228067 (Infratentorial brain structure) 
 
 There is not a path between C0175895 and C0009814
 given the current view of the UMLS.

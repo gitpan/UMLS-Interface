@@ -1,5 +1,5 @@
 # UMLS::Interface::PathFinder
-# (Last Updated $Id: PathFinder.pm,v 1.23 2010/08/09 15:02:09 btmcinnes Exp $)
+# (Last Updated $Id: PathFinder.pm,v 1.32 2010/08/22 20:15:33 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -45,14 +45,11 @@ use strict;
 use warnings;
 use bytes;
 
-use UMLS::Interface::CuiFinder;
-use UMLS::Interface::ErrorHandler;
-
 my $pkg = "UMLS::Interface::PathFinder";
 
 my $debug = 0;
 
-my $max_depth = 0;
+my $max_depth = -1;
 
 my $root = "";
 
@@ -66,6 +63,8 @@ my $option_undirected  = 0;
 
 my $errorhandler = "";
 my $cuifinder    = "";
+
+my %maximumDepths = ();
 
 local(*DEBUG_FILE);
 
@@ -239,14 +238,70 @@ sub _depth {
     }
 
     #  get the depth and set the path information
+    if($max_depth >= 0) { 
+	return $max_depth;
+    }
+
+    #  check if it is in the info table and if it is return 
+    #  that otherwise we need to find the maximum depth and
+    #  then store it here
+
+    #  get the info table name
+    my $infoTableName = $cuifinder->_getInfoTableName();
+    
+    #  set the index DB handler
+    my $sdb = $self->{'sdb'};
+    if(!$sdb) { $errorhandler->_error($pkg, $function, "Error with sdb.", 3); }
+
+    #  get maximum depth from the info table
+    my $arrRef = $sdb->selectcol_arrayref("select INFO from $infoTableName where ITEM=\'DEPTH\'");
+    $errorhandler->_checkDbError($pkg, $function, $sdb);
+
+    #  get the depth from the array
+    my $depth = shift @{$arrRef};
+
+    #  if the depth was there set the maximum depth and return it
+    #  otherwise we are off to find it either in realtime or through
+    #  the database depending on the user options
+    if(defined $depth) { 
+	$max_depth = $depth; 
+	return $max_depth;
+    }
+
+    #  find the depth in realtime
     if($option_realtime) {
 	my @array = ();
-      	$self->_getMaxDepth($root, 0, \@array);
+	my %visited = ();
+      	$self->_getMaxDepth($root, 0, \@array, \%visited);
+	
+	#  the _getMaxDepth method does a DFS over the entire 
+	#  heirarchy - I am not certain a way around this yet 
+	#  but while we were add I stored the maximum depth 
+	#  of each of the CUIs in a hash since there is not a 
+	#  quick way of determining this in realtime as of yet
+	
+	#  we are going to store them in the info table. This is 
+	#  hopefully a temporary solution until I can figure out 
+	#  a way to speed up getMaximumDepthInRealTime - if we 
+	#  run out of room with this, I will just keep the hash 
+	#  and then have to go through the
+	foreach my $cui (sort keys %maximumDepths) { 
+	    my $d = $maximumDepths{$cui};
+	    $sdb->do("INSERT INTO $infoTableName (ITEM, INFO) VALUES ('$cui', '$d')");
+	    $errorhandler->_checkDbError($pkg, $function, $sdb);
+	}
     }
+    #  otherwise find it in the database
     else {
 	$self->_setIndex();
     }
-    
+
+    #  at this point we have the max depth and the variable has been set
+    #  so we are going to insert this into the info table and then return it
+    $sdb->do("INSERT INTO $infoTableName (ITEM, INFO) VALUES ('DEPTH', '$max_depth')");
+    $errorhandler->_checkDbError($pkg, $function, $sdb);
+
+    #  return the maximum depth
     return $max_depth;
 }
 
@@ -263,9 +318,9 @@ sub _getMaxDepth {
     my $concept = shift;
     my $d       = shift;
     my $array   = shift;
+    my $hash    = shift;
 
     my $function = "_getMaxDepth";
-    &_debug($function);
 
     #  check self
     if(!defined $self || !ref $self) {
@@ -282,12 +337,6 @@ sub _getMaxDepth {
 	$errorhandler->_error($pkg, $function, "Concept ($concept) in not valid.", 6);
     }
 
-    #  increment the depth
-    $d++;
-    
-    #  check to see if it is the max depth
-    if(($d) > $max_depth) { $max_depth = $d; }
-
     #  check that the concept is not a forbidden concept
     if($cuifinder->_forbiddenConcept($concept) == 1) { return; }
 
@@ -295,6 +344,27 @@ sub _getMaxDepth {
     my @path = @{$array};
     push @path, $concept;
     my $series = join " ", @path;
+
+    #  if have already been here -  leave
+    if(exists ${$hash}{$concept}{$series}) { return; }
+    else { ${$hash}{$concept}{$series}++; }
+
+    #  increment the depth
+    $d++;
+    
+    #  check to see if it is the max depth
+    if(($d) > $max_depth) { $max_depth = $d; }
+
+    #  add to the depths array - if we are going to go through the trouble 
+    #  of having to do a depth first search - we might as well find the 
+    #  the maximum depths of all the cuis and store these in the database
+    #  I am going to see if I can store them in a hash and then dump the 
+    #  hash in the database when I am finished. This way we don't have
+    #  to continually access the database which is really not an acceptable
+    #  solution
+    if(! (exists $maximumDepths{$concept}) ) { $maximumDepths{$concept} = $d; }
+    elsif($maximumDepths{$concept} < $d)     { $maximumDepths{$concept} = $d; }
+
     
     #  get all the children
     my @children = $cuifinder->_getChildren($concept);
@@ -303,15 +373,11 @@ sub _getMaxDepth {
     foreach my $child (@children) {
 	
 	#  check if child cui has already in the path
-	my $flag = 0;
-	foreach my $cui (@path) {
-	    if($cui eq $child) { $flag = 1; }
-	}
+	if($series=~/$child/)  { next; }
+	if($child eq $concept) { next; }
 	
 	#  if it isn't continue on with the depth first search
-	if($flag == 0) {
-	    $self->_getMaxDepth($child, $d, \@path);
-	}
+	$self->_getMaxDepth($child, $d, \@path, $hash);
     }
 }
 
@@ -378,7 +444,7 @@ sub _getPathsToRootFromIndex {
     my $self    = shift;
     my $concept = shift;
 
-    my $function = "_getPathToRootFromIndex";
+    my $function = "_getPathsToRootFromIndex";
   
     #  check self
     if(!defined $self || !ref $self) {
@@ -694,15 +760,9 @@ sub _getPathsToRootInRealtime {
 
 	#  set up the new path
 	my @intermediate = @{$path};
-	my $series = join " ", @intermediate;
 	push @intermediate, $concept;
-	
-        #  print information into the file if debugpath option is set
-	if($option_debugpath) { 
-	    my $d = $#intermediate+1;
-	    print DEBUG_FILE "$concept\t$d\t@intermediate\n"; 
-	}
-        
+	my $series = join " ", @intermediate;
+	        
 	#  check that the concept is not one of the forbidden concepts
 	if($cuifinder->_forbiddenConcept($concept)) { 
 	    pop @stack; pop @paths;
@@ -710,27 +770,25 @@ sub _getPathsToRootInRealtime {
 	}
 
 	#  check if concept has been visited already
-	my $found = 0;
-	if(exists $visited{$concept}) { 
-	    foreach my $s (sort keys %{$visited{$concept}}) {
-		if($series eq $s) {
-		    $found = 1;
-		}
-	    }
-	}
-	
-	if($found == 1) {
+	if(exists $visited{$series}) { 
 	    pop @stack; pop @paths;
 	    next; 
 	}
-	else { $visited{$concept}{$series}++; }
-		
+	else { $visited{$series}++; }
+	
+	#  print information into the file if debugpath option is set
+	if($option_debugpath) { 
+	    my $d = $#intermediate+1;
+	    print DEBUG_FILE "$concept\t$d\t@intermediate\n"; 
+	}
+	
 	#  if the concept is the umls root - we are done
 	if($concept eq $root) { 
 	    #  this is a complete path to the root so push it on the paths 
 	    my @reversed = reverse(@intermediate);
 	    my $rseries  = join " ", @reversed;
 	    push @path_storage, $rseries;
+	    next;
 	}
 	
 	#  get all the parents
@@ -745,19 +803,15 @@ sub _getPathsToRootInRealtime {
 	#  search through the children
 	my $stackflag = 0;
 	foreach my $parent (@parents) {
-	
-	    #  check if child cui has already in the path
-	    my $flag = 0;
-	    foreach my $cui (@intermediate) {
-		if($cui eq $parent) { $flag = 1; }
-	    }
+	    
+	    #  check if concept is already in the path
+	    if($series=~/$parent/)  { next; }
+	    if($concept eq $parent) { next; }
 
 	    #  if it isn't continue on with the depth first search
-	    if($flag == 0) {
-		push @stack, $parent;
-		push @paths, \@intermediate;
-		$stackflag++;
-	    }
+	    push @stack, $parent;
+	    push @paths, \@intermediate;
+	    $stackflag++;
 	}
 	
 	#  check to make certain there were actually children
@@ -854,15 +908,11 @@ sub _depthFirstSearch {
     foreach my $child (@children) {
 	
 	#  check if child cui has already in the path
-	my $flag = 0;
-	foreach my $cui (@path) {
-	    if($cui eq $child) { $flag = 1; }
-	}
+	if($series=~/$child/)  { next; }
+	if($child eq $concept) { next; }
 
 	#  if it isn't continue on with the depth first search
-	if($flag == 0) {
-	    $self->_depthFirstSearch($child, $d, \@path,*F);
-	}
+	$self->_depthFirstSearch($child, $d, \@path,*F);
     }
 }
 
@@ -956,12 +1006,34 @@ sub _findMaximumDepth {
     my $max = 0;
     #  if realtime option is set
     if($option_realtime) {
-	my $paths = $self->_getPathsToRootInRealtime($cui);
-	
-	# get the maximum depth
-	foreach my $p (@{$paths}) { 
-	    my @array = split/\s+/, $p;
-	    if( ($#array+1) > $max) { $max = $#array + 1; }
+	#  get the info table name
+	my $infoTableName = $cuifinder->_getInfoTableName();
+    
+	#  set the index DB handler
+	my $sdb = $self->{'sdb'};
+	if(!$sdb) { $errorhandler->_error($pkg, $function, "Error with sdb.", 3); }
+
+	#  get maximum depth from the info table
+	my $arrRef = $sdb->selectcol_arrayref("select INFO from $infoTableName where ITEM=\'$cui\'");
+	$errorhandler->_checkDbError($pkg, $function, $sdb);
+
+	#  get the depth from the array
+	my $depth = shift @{$arrRef};
+
+	if(defined $depth) { 
+	    $max = $depth;
+	}
+	else {
+	    #  get the maximum depth
+	    $max = $self->_findMaximumDepthInRealTime($cui); 
+	    
+	    #  insert it in the info table - this is caching over multipe runs of 
+	    #  the program. I don't really like this solution but until I can 
+	    #  figure out how to speed up findMaximumDepthInRealTime then 
+	    #  this is going to have to do. 
+	    $sdb->do("INSERT INTO $infoTableName (ITEM, INFO) VALUES ('$cui', '$max')");
+	    $errorhandler->_checkDbError($pkg, $function, $sdb);
+
 	}
     }
     
@@ -1129,21 +1201,22 @@ sub _findLeastCommonSubsumer {
     }
 
     #  get the LCSes
-    #if($option_realtime) {
-    #@lcses = $self->_findLeastCommonSubsumerInRealTime($concept1, $concept2);
-    #}
-    #else {
-
-    my $hash = $self->_shortestPath($concept1, $concept2);
-    my %lcshash = ();
-    if(defined $hash) {
-	foreach my $path (sort keys %{$hash}) { 
-	    my $c = ${$hash}{$path};
-	    if($c=~/C[0-9]+/) { $lcshash{$c}++; }
-	}
+    if($option_realtime) {
+	@lcses = $self->_findLeastCommonSubsumerInRealTime($concept1, $concept2);
     }
-    foreach my $lcs (sort keys %lcshash) { push @lcses, $lcs; }
-    #}
+    else {
+
+	my $hash = $self->_shortestPath($concept1, $concept2);
+	if($debug) { print STDERR "done with _shortestPath\n"; }
+	my %lcshash = ();
+	if(defined $hash) {
+	    foreach my $path (sort keys %{$hash}) { 
+		my $c = ${$hash}{$path};
+		if($c=~/C[0-9]+/) { $lcshash{$c}++; }
+	    }
+	}
+	foreach my $lcs (sort keys %lcshash) { push @lcses, $lcs; }
+	}
     
     #  return the lcses
     return @lcses;
@@ -1198,22 +1271,41 @@ sub _findLeastCommonSubsumerInRealTime {
 	my @path     = split/\s+/, $p;
 	my $concept1 = shift @path;
 	my $flag     = 0;
+	my $counter  = 0;
+	my $children = 0;
+	my $parent   = 0;
+	my @lcsarray = ();
 	
+	my $firstconcept = $concept1;
+
 	#  loop through the rest of the concepts looking for the first child relation
 	foreach my $concept2 (@path) {
 	    my @relations = $cuifinder->_getRelationsBetweenCuis($concept1, $concept2);
 	    foreach my $item (@relations) {
-		$item=~/([A-Z]+) \([A-Z]+\)/;
+		$item=~/([A-Z]+) \([A-Z0-9\.]+\)/;
 		my $rel = $1;
-		#  if the relation is a child we have the LCS - it is concept1
+
+		#  if the relation is a child we have the LCS - it is concept1 
+		#  this is for the typical case
 		if($childstring=~/($rel)/ && $flag == 0) {
-		    $lcses{$concept1}++; $flag++;
+		    push @lcsarray, $concept1; $flag++; 
 		}
+		
+		if($childstring=~/($rel)/) { $children++; }
+		else                       { $parent++;   }
+		$counter++;
 	    }
 	    $concept1 = $concept2;
 	}
-    }
-
+	
+	#  string of children
+	if($counter == $children)  { $lcses{$firstconcept}++; }
+	#  string of parents
+	elsif($counter == $parent) { $lcses{$concept1}++; }
+	#  typical case
+	else { foreach my $l (@lcsarray) { $lcses{$l}++; } }
+}
+    
     #  get the unique lcses - note a single lcs may have more than one path
     my @unique = ();
     foreach my $lcs (sort keys %lcses) { push @unique, $lcs; }
@@ -1305,24 +1397,43 @@ sub _findShortestPathInRealTime {
 
     #  get the length of the shortest path
     my $length = $self->_findShortestPathLength($concept1, $concept2);
+   
+    #  initialize the paths array that will be returned
+    my @paths = ();
     
-    my $split1 = int($length/2);    
-    my $split2 = $length - $split1;  $split2--; 
-    
-    #  initial the hash to hold the ends
-    my %ends = ();
+    #  if the length is two then the cuis are related in some way
+    #  so just return them
+    if($length == 2) {
+	push @paths, "$concept1 $concept2";
+    }
+    else {
 
-    #  get all the paths from concept1 of length split1
-    my @paths1 = $self->_findPathsToCenter($concept1, $split1, 1, \%ends );
-    
-    my $endkey = keys %ends;
-    
-    #  get all the paths from concept2 of length split2
-    my @paths2 = $self->_findPathsToCenter($concept2, $split2, 2, \%ends );
-    
-    #  join the two sets of paths to find all of the full paths
-    my @paths = $self->_joinPathsToCenter(\@paths1, \@paths2);
-    
+	#  set split to get the beginning paths
+	my $split1 = int($length/2) - 1; 
+
+	#  we need the cui itself so, if the split is zero setting the
+	#  split to one will just return the cuis
+	if($split1 == 0) { $split1 = 1; }
+
+	#  set split to get the last set of paths
+	my $split2 = $length - $split1;  $split2--; 
+	
+	#  initial the hash to hold the ends
+	my %ends = ();
+	
+	#  get all the paths from concept1 of length split1
+	my @paths1 = $self->_findPathsToCenter($concept1, $split1, 1, \%ends );
+	
+	my $endkey = keys %ends;
+	
+	#  get all the paths from concept2 of length split2
+	my @paths2 = $self->_findPathsToCenter($concept2, $split2, 2, \%ends );
+	
+	#  join the two sets of paths to find all of the full paths
+	@paths = $self->_joinPathsToCenter(\@paths1, \@paths2);
+    }
+
+     
     return @paths;
 }
 
@@ -1351,20 +1462,81 @@ sub _joinPathsToCenter {
 	$errorhandler->_error($pkg, $function, "Error with input variable \$paths2.", 4);
     }
 
+    my $childstring  = $cuifinder->_getChildRelations();
+    my $parentstring = $cuifinder->_getParentRelations();
+    
     my @shortestpaths = ();
     foreach my $p1 (@{$paths1}) {
-	my @array1 = split/\s+/, $p1;
-	my $c1 = pop @array1;
 	
-	foreach my $p2 (@{$paths2}) {
-	    my @array2 = split/\s+/, $p2;
-	    my $c2 = $array2[$#array2];
+	#  get the path to the center, the center and the number
+	#  of direction changes that existed in the path
+	my @array1 = split/\s+/, $p1;
+	my $dchange1 = pop @array1;
+	my $c1       = pop @array1;
+	
+	#  get the relation between the last cui and the center
+	my @c1relations = $cuifinder->_getRelationsBetweenCuis($c1, $array1[$#array1]);
+	
+	#  determine whether that relation is a parent or a child relation
+	my $c1flag = 0;
+	foreach my $item (@c1relations) {
+	    $item=~/([A-Z]+) \([A-Z0-9\.]+\)/;
+	    my $rel = $1;
+	    if($childstring=~/($rel)/)  { $c1flag = 1; }
+	    if($parentstring=~/($rel)/) { $c1flag = 2; }
+	}
 
+	foreach my $p2 (@{$paths2}) {
+
+	    #  now get the paths to the center coming from the other direction, 
+	    #  its direction changes and the center
+	    my @array2 = split/\s+/, $p2;	    
+
+	    my $dchange2 = pop @array2;
+	    my $c2       = $array2[$#array2];
+	    
+
+	    #  if the two centers are equal we have path
 	    if($c1 eq $c2) { 
+
+		#  if undirected makke certain that their is at 
+		#  most one direction change
+		if(!($option_undirected)) { 
+		    
+		    #  get the relationships between the last concept in this direction and the parent
+		    my @c2relations = $cuifinder->_getRelationsBetweenCuis($c2, $array2[$#array2-1]);
+		    
+		    #  determine whether that relation is a parent or a child relation
+		    my $c2flag = 0;
+		    foreach my $item (@c2relations) {
+			$item=~/([A-Z]+) \([A-Z0-9\.]+\)/;
+			my $rel = $1;
+			if($childstring=~/($rel)/)  { $c2flag = 1; }
+			if($parentstring=~/($rel)/) { $c2flag = 2; }
+		    }
+		    
+		    #  if we have parent changing to a child
+		    if($c1flag == 2 && $c2flag == 1) { $dchange1++; }
+		    if($c2flag == 2 && $c1flag == 1) { $dchange2++; }
+		    
+		    my $totalchanges = $dchange1 + $dchange2;
+
+		    if($dchange1 > 0 && $dchange2 > 0)  {		
+			next;
+		    }		    
+		}
+
+
+		#  we have one or less changes if the undirectoption
+		#  was not set so we can add the path to the shortest
+		#  path array
 		my @rarray2 = reverse @array2;
 		my @path = (@array1, @rarray2);
 		my $string = join " ", @path;
+
 		push @shortestpaths, $string;
+
+
 	    }
 	}
     }
@@ -1416,13 +1588,6 @@ sub _findPathsToCenter {
     my @relations  = ();
     my @paths      = ();
     my @stack = $cuifinder->_getParents($start);
-
-    #  unless the undirected option is set then 
-    #  we require both
-    if($option_undirected) {
-	my @children = $cuifinder->_getChildren($start);
-	@stack = (@stack, @children);
-    }
     foreach my $element (@stack) {
 	my @array      = (); 
 	push @paths, \@array;
@@ -1430,6 +1595,15 @@ sub _findPathsToCenter {
 	push @relations, "PAR";
     }
 
+    my @childrenstack = $cuifinder->_getChildren($start);
+    @stack = (@stack, @childrenstack);
+    foreach my $element (@childrenstack) {
+	my @array      = (); 
+	push @paths, \@array;
+	push @directions, 0;
+	push @relations, "CHD";
+    }
+    
     #  now loop through the stack
     while($#stack >= 0) {
 	
@@ -1463,6 +1637,8 @@ sub _findPathsToCenter {
 	#  if so add it to the storage
 	if($distance == $length) { 
 	    my $element = $intermediate[$#intermediate];
+	    
+	    push @intermediate, $direction;
 
 	    if($flag == 1) {
 		${$ends}{$element}++;
@@ -1474,6 +1650,7 @@ sub _findPathsToCenter {
 		}
 		
 	    }
+	    next;
 	}
 	
         #  print information into the file if debugpath option is set
@@ -1502,19 +1679,15 @@ sub _findPathsToCenter {
 	    my @parents  = $cuifinder->_getParents($concept);		
 	    foreach my $parent (@parents) {
 		
-		#  check if child cui has already in the path
-		my $flag = 0;
-		foreach my $cui (@intermediate) {
-		    if($cui eq $parent) { $flag = 1; }
-		}
+		#  check if concept is already in the path
+		if($series=~/$parent/)  { next; }
+		if($parent eq $concept) { next; }
 		
 		#  if it isn't add it to the stack
-		if($flag == 0) {
-		    unshift @stack, $parent;
-		    unshift @paths, \@intermediate;
-		    unshift @relations, "PAR";
-		    unshift @directions, $dchange;
-		}
+		unshift @stack, $parent;
+		unshift @paths, \@intermediate;
+		unshift @relations, "PAR";
+		unshift @directions, $dchange;
 	    }
 	}
 	
@@ -1534,29 +1707,25 @@ sub _findPathsToCenter {
 	    foreach my $child (@children) {
 		
 		#  check if child cui has already in the path
-		my $flag = 0;
-		foreach my $cui (@intermediate) {
-		    if($cui eq $child) { $flag = 1; }
-		}
-		
+		if($series=~/$child/)  { next; }
+		if($child eq $concept) { next; }
+
 		#  if it isn't add it to the stack
-		if($flag == 0) {
-		    unshift @stack, $child;
-		    unshift @paths, \@intermediate;
-		    unshift @relations, "CHD";
-		    unshift @directions, $dchange;
-		}
+		unshift @stack, $child;
+		unshift @paths, \@intermediate;
+		unshift @relations, "CHD";
+		unshift @directions, $dchange;
 	    }
 	}
     }
-    
-    #  set the return
+        #  set the return
     my @return_paths = ();
     foreach my $p (@path_storage) {
 	unshift @{$p}, $start;
 	my $string = join " " , @{$p};
 	push @return_paths, $string;
     }
+
     return @return_paths;
 }
     
@@ -1627,21 +1796,116 @@ sub _findMinimumDepthInRealTime {
 	my @children = $cuifinder->_getChildren($cui);
 	foreach my $child (@children) {
 	    #  check if child cui has already in the path
-	    my $flag = 0;
-	    foreach my $c (@intermediate) {
-		if($c eq $child) { $flag = 1; }
-	    }
-	    
+	    if($series=~/$child/)  { next; }
+	    if($child eq $cui) { next; }
+
 	    #  if it isn't add it to the stack
-	    if($flag == 0) {
-		unshift @stack, $child;
-		unshift @paths, \@intermediate;
-	    }
+	    unshift @stack, $child;
+	    unshift @paths, \@intermediate;
 	}
     }
     #  no path was found return -1
     return -1;
 }
+
+
+#  method that finds the maximum depth
+#  input : $concept  <- the first concept
+#  output: $length    <- the minimum depth
+sub _findMaximumDepthInRealTime {
+
+    my $self    = shift;
+    my $concept = shift;
+
+    return () if(!defined $self || !ref $self);
+
+    my $function = "_findMaximumDepthInRealtime($concept)";
+    &_debug($function);
+    
+    #  set the  storage
+    my $maximum_path_length = -1;
+
+    #  set the stack
+    my @stack = ();
+    push @stack, $concept;
+
+    #  set the count
+    my %visited = ();
+
+    #  set the paths
+    my @paths = ();
+    my @empty = ();
+    push @paths, \@empty;
+
+    #  now loop through the stack
+    while($#stack >= 0) {
+	
+	my $cui = $stack[$#stack];
+	my $path    = $paths[$#paths];
+
+	#  set up the new path
+	my @intermediate = @{$path};
+	my $series = join " ", @intermediate;
+	push @intermediate, $cui;
+	
+        #  print information into the file if debugpath option is set
+	if($option_debugpath) { 
+	    my $d = $#intermediate+1;
+	    print DEBUG_FILE "$cui\t$d\t@intermediate\n"; 
+	}
+        
+	#  check that the cui is not one of the forbidden concepts
+	if($cuifinder->_forbiddenConcept($cui)) { 
+	    pop @stack; pop @paths;
+	    next;
+	}
+
+	#  check if concept has been visited already
+	if(exists $visited{$cui}{$series}) { 
+	    pop @stack; pop @paths;
+	    next;
+	}
+	else { $visited{$cui}{$series}++; }
+	
+	#  if the concept is the umls root - we are done
+	if($cui eq $root) { 
+	    my $length = $#intermediate + 1;
+	    if($length > $maximum_path_length) { 
+		$maximum_path_length = $length;
+	    }
+	    next;
+	}
+	
+	#  get all the parents
+	my @parents = $cuifinder->_getParents($cui);
+
+	#  if there are no children we are finished with this concept
+	if($#parents < 0) {
+	    pop @stack; pop @paths;
+	    next;
+	}
+
+	#  search through the children
+	my $stackflag = 0;
+	foreach my $parent (@parents) {
+	
+	    #  check if concept has already in the path
+	    if($series=~/$parent/)  { next; }
+	    if($cui eq $parent) { next; }
+
+	    #  if it isn't continue on with the depth first search
+	    push @stack, $parent;
+	    push @paths, \@intermediate;
+	    $stackflag++;
+	}
+	
+	#  check to make certain there were actually children
+	if($stackflag == 0) { pop @stack; pop @paths; }
+    }
+
+    return $maximum_path_length;
+}
+
 
 #  method that finds the length of the shortest path
 #  input : $concept1  <- the first concept
@@ -1680,27 +1944,27 @@ sub _findShortestPathLength {
     #  set the count
     my %visited = ();
     
-    #  set the stack with the parents because 
-    #  we want to start going up inorder to 
-    #  have an LCS
+    #  get the children and parents 
     my @directions = ();
     my @relations  = ();
     my @paths      = ();
     my @stack = $cuifinder->_getParents($concept1);
-
-    #  unless the undirected option is set then 
-    #  we require both
-    if($option_undirected) {
-	my @children = $cuifinder->_getChildren($concept1);
-	@stack = (@stack, @children);
-    }
     foreach my $element (@stack) {
 	my @array      = (); 
 	push @paths, \@array;
 	push @directions, 0;
 	push @relations, "PAR";
     }
-
+    
+    my @childrenstack = $cuifinder->_getChildren($concept1);
+    @stack = (@stack, @childrenstack);
+    foreach my $element (@childrenstack) {
+	my @array      = (); 
+	push @paths, \@array;
+	push @directions, 0;
+	push @relations, "CHD";
+    }
+    
     #  now loop through the stack
     while($#stack >= 0) {
 	
@@ -1733,13 +1997,7 @@ sub _findShortestPathLength {
 	    my $d = $#intermediate+1;
 	    print DEBUG_FILE "$concept\t$d\t@intermediate\n"; 
 	}
-	
-
-	#  we are going to start with the parents here; the code 
-	#  for both is similar except for the relation/direction
-	#  which is why I have the seperate right now - currently 
-	
-
+		
 	#  if the previous direction was a child we have a change in direction
 	my $dchange = $direction;
       
@@ -1755,19 +2013,14 @@ sub _findShortestPathLength {
 	    my @parents  = $cuifinder->_getParents($concept);		
 	    foreach my $parent (@parents) {
 		
-		#  check if child cui has already in the path
-		my $flag = 0;
-		foreach my $cui (@intermediate) {
-		    if($cui eq $parent) { $flag = 1; }
-		}
-		
-		#  if it isn't add it to the stack
-		if($flag == 0) {
-		    unshift @stack, $parent;
-		    unshift @paths, \@intermediate;
-		    unshift @relations, "PAR";
-		    unshift @directions, $dchange;
-		}
+		#  check if concept has already in the path
+		if($series=~/$parent/) { next; }
+		if($parent eq $concept) { next; }
+
+		unshift @stack, $parent;
+		unshift @paths, \@intermediate;
+		unshift @relations, "PAR";
+		unshift @directions, $dchange;
 	    }
 	}
 	
@@ -1787,18 +2040,14 @@ sub _findShortestPathLength {
 	    foreach my $child (@children) {
 		
 		#  check if child cui has already in the path
-		my $flag = 0;
-		foreach my $cui (@intermediate) {
-		    if($cui eq $child) { $flag = 1; }
-		}
-		
-		#  if it isn't add it to the stack
-		if($flag == 0) {
-		    unshift @stack, $child;
-		    unshift @paths, \@intermediate;
-		    unshift @relations, "CHD";
-		    unshift @directions, $dchange;
-		}
+		if($series=~/$child/)  { next; }
+		if($child eq $concept) { next; }
+
+		#  if not continue 
+		unshift @stack, $child;
+		unshift @paths, \@intermediate;
+		unshift @relations, "CHD";
+		unshift @directions, $dchange;
 	    }
 	}
     }
@@ -1973,7 +2222,9 @@ documentation.
 
  $concept1 = "C0037303"; $concept2 = "C0018563";
 
- @array = $pathfinder->_findShortestPath($concept1, $concept2);
+ $length = $pathfinder->_findShortestPathLength($concept1, $concept2);
+
+ @array  = $pathfinder->_findShortestPath($concept1, $concept2);
 
  @array = $pathfinder->_findLeastCommonSubsumer($concept1, $concept2);
 

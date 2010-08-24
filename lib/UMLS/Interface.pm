@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.79 2010/08/02 15:05:44 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.82 2010/08/22 14:01:54 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -49,6 +49,7 @@ use bytes;
 use UMLS::Interface::CuiFinder;
 use UMLS::Interface::PathFinder;
 use UMLS::Interface::ICFinder;
+use UMLS::Interface::ErrorHandler;
 
 my $cuifinder    = "";
 my $pathfinder   = "";
@@ -59,7 +60,7 @@ my $pkg = "UMLS::Interface";
 
 use vars qw($VERSION);
 
-$VERSION = '0.71';
+$VERSION = '0.73';
 
 my $debug = 0;
 
@@ -697,6 +698,22 @@ sub findMaximumDepth {
 
     return $depth;
 }    
+
+
+#  method that finds the length of the shortest path
+#  input : $concept1  <- the first concept
+#          $concept2  <- the second concept
+#  output: $length    <- the length of the shortest path between them
+sub findShortestPathLength {
+
+    my $self = shift;
+    my $concept1 = shift;
+    my $concept2 = shift;
+    
+    my $length = $pathfinder->_findShortestPathLength($concept1, $concept2);
+    
+    return $length;
+}
 
 #  returns the shortest path between two concepts given the 
 #  sources and relations specified in the configuration file

@@ -1,3 +1,5 @@
+
+CuiFinder User Options: 
    --config option set
 
 

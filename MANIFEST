@@ -44,7 +44,6 @@ t/getRelations.t
 t/getStDef.t
 t/getSts.t
 t/key/MMSYS-2009AA-20090325/findCuiDepth.msh.par-chd
-t/key/MMSYS-2009AA-20090325/findCuiDepth.mth.rb-rn
 t/key/MMSYS-2009AA-20090325/findCuiDepth.snomedct.par-chd
 t/key/MMSYS-2009AA-20090325/findDFS.icd9cm.par-chd.5
 t/key/MMSYS-2009AA-20090325/findDFS.mth.rb-rn.C0038454
@@ -54,7 +53,6 @@ t/key/MMSYS-2009AA-20090325/findLeastCommonSubsumer.snomedct.par-chd
 t/key/MMSYS-2009AA-20090325/findPathToRoot.msh.par-chd
 t/key/MMSYS-2009AA-20090325/findPathToRoot.mth.rb-rn
 t/key/MMSYS-2009AA-20090325/findPathToRoot.snomedct.par-chd
-t/key/MMSYS-2009AA-20090325/findShortestPath.msh.undirected
 t/key/MMSYS-2009AA-20090325/findShortestPath.mth.rb-rn
 t/key/MMSYS-2009AA-20090325/findShortestPath.snomedct.par-chd
 t/key/MMSYS-2009AA-20090325/getAssociatedCuis.msh.par-chd.hand

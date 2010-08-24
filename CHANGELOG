@@ -1,6 +1,22 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.71 to 0.73
+    1. modified the shortest path - there was a problem with the directed
+    paths - I was getting some undirected ones mixed in there. This should
+    not have affected the length of the shortest path just the paths
+    themselves.
+
+    2. modified utils programs to return the preferred term of a concept
+    rather than just any term.
+
+    3. modified the depth() function to obtain the maximum cui depth of the
+    concepts in the view when called - these are stored in a database
+    currently
+
+    4. modified the findMaximumDepth function to cache the maximum depth of
+    cuis when found (storing them in the same database as mentioned above).
+
   Changes from version 0.69 to 0.71
     1. There are two functions that currently exist:
 

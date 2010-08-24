@@ -1,3 +1,5 @@
+
+CuiFinder User Options: 
    --config option set
 
 
@@ -18,4 +20,4 @@ PathFinder User Options:
 
 
 The shortest path between elbow (C0013769) and hand (C0018563):
-  => C0013769 (elbow) C0446516 (upper arm) C0018563 (hand) 
+  => C0013769 (Elbow(s)) C0446516 (Upper arm) C0018563 (Hand, NOS) 

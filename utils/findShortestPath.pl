@@ -391,7 +391,7 @@ foreach my $element (@fileArray) {
 		    my $concept = $shortestpath[$i];
 		
 		    #  get one of the terms associated with the concept
-		    my ($t) = $umls->getTermList($concept); 
+		    my $t = $umls->getAllPreferredTerm($concept); 
 		    #  print out the concept
 		    print "$concept ($t) "; 
 		    
@@ -500,7 +500,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findShortestPath.pl,v 1.20 2010/06/09 16:07:00 btmcinnes Exp $';
+    print '$Id: findShortestPath.pl,v 1.21 2010/08/16 21:29:21 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

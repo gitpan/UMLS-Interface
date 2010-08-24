@@ -56,11 +56,10 @@ you have performed.
 
 This sets the debug flag for testing
 
-=head3 --infile
+=head3 --infile FILE
 
-This option takes a list of CUIs or TERMs and returns 
-their depth. Note one CUI or TERM per line is the expected 
-format.
+This option takes a list of CUIs or TERMs and returns their 
+depth. Note one CUI or TERM per line is the expected format.
 
 =head3 --minimum
 
@@ -208,7 +207,7 @@ this program; if not, write to:
  The Free Software Foundation, Inc.,
  59 Temple Place - Suite 330,
  Boston, MA  02111-1307, USA.
-
+ 
 =cut
 
 ###############################################################################
@@ -336,8 +335,10 @@ else {
 
 foreach my $input (@inputarray) {
 
+    if($input=~/^\s*$/) { next; }
+
     my $term  = $input;
-    
+
     my @c = ();
     if($input=~/C[0-9]+/) {
 	push @c, $input;
@@ -374,7 +375,7 @@ foreach my $input (@inputarray) {
 	    print "The maximum depth of $term ($cui) is $max\n";
 	}
 	
-	$printFlag = 1;
+	$printFlag = 1; 
     }
     
     if(! ($printFlag) ) {
@@ -459,7 +460,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findCuiDepth.pl,v 1.12 2010/08/02 21:12:05 btmcinnes Exp $';
+    print '$Id: findCuiDepth.pl,v 1.13 2010/08/22 20:15:36 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

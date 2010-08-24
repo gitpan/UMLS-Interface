@@ -340,11 +340,11 @@ foreach my $element (@fileArray) {
 	    my $t2 = $input2;
 	    
 	    if($t1=~/C[0-9]+/) { 
-		($t1) = $umls->getTermList($cui1); 
+		($t1) = $umls->getAllPreferredTerm($cui1); 
 	    }
 	    
 	    if($t2=~/C[0-9]+/) { 
-		($t2) = $umls->getTermList($cui2); 
+		($t2) = $umls->getAllPreferredTerm($cui2); 
 	    }
 
 	    if(($umls->exists($cui1) == 0) or
@@ -352,7 +352,7 @@ foreach my $element (@fileArray) {
 	    
 	    if($cui1 eq $cui2) { 
 		print "\nThe least common subsumer between $t1 ($cui1) and $t2 ($cui2) is $t1 ($cui1) ";
-		if(defined $opt_depth) {
+		if(defined $opt_depth) { 
 		    my $min = $umls->findMinimumDepth($cui1);
 		    my $max = $umls->findMaximumDepth($cui1);
 		    print "with a min and max depth of $min and $max ";
@@ -372,7 +372,7 @@ foreach my $element (@fileArray) {
 	    	    
 	    foreach my $lcs (@lcses) {
 		
-		my ($t) = $umls->getTermList($lcs);
+		my ($t) = $umls->getAllPreferredTerm($lcs);
 		
 		print "\nThe least common subsumer between $t1 ($cui1) and $t2 ($cui2) is $t ($lcs) ";
 		if(defined $opt_depth) {
@@ -469,7 +469,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findLeastCommonSubsumer.pl,v 1.18 2010/05/24 17:57:16 btmcinnes Exp $';
+    print '$Id: findLeastCommonSubsumer.pl,v 1.19 2010/08/16 21:29:21 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

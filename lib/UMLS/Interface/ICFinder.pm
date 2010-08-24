@@ -1,5 +1,5 @@
 # UMLS::Interface::ICFinder
-# (Last Updated $Id: ICFinder.pm,v 1.15 2010/07/16 18:24:41 btmcinnes Exp $)
+# (Last Updated $Id: ICFinder.pm,v 1.16 2010/08/22 14:01:54 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -45,9 +45,6 @@ use strict;
 use warnings;
 use DBI;
 use bytes;
-
-use UMLS::Interface::CuiFinder;
-use UMLS::Interface::ErrorHandler;
 
 my $pkg = "UMLS::Interface::ICFinder";
 

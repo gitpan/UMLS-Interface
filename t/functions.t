@@ -137,8 +137,9 @@ else             { print "ok 19\n";    }
 $expected = "C0015385";
 my @lcses = $umls->findLeastCommonSubsumer("C0015385", "C0018563");
 my $lcs = join " ", @lcses;
+print "STDERR : $lcs ($expected)\n";
 if($lcs=~/$expected/) { print "ok 20\n"; }
-else                  { print "not ok 20\n";    }
+else                  { print "no ok 20\n";    }
 
 
 #  check the exists() function

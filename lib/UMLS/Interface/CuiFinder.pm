@@ -1,5 +1,5 @@
 # UMLS::Interface::CuiFinder
-# (Last Updated $Id: CuiFinder.pm,v 1.32 2010/08/09 15:02:09 btmcinnes Exp $)
+# (Last Updated $Id: CuiFinder.pm,v 1.38 2010/08/22 20:15:33 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -46,8 +46,6 @@ use warnings;
 use DBI;
 use bytes;
 
-use UMLS::Interface::ErrorHandler;
-
 use Digest::SHA1  qw(sha1 sha1_hex sha1_base64);
 
 #  error handling variables
@@ -61,7 +59,6 @@ local(*DEBUG_FILE);
 my $debug     = 0;
 my $umlsRoot  = "C0000000";
 my $version   = "";
-my $max_depth = 0;
 
 #  list of allowable sources 
 my $sources      = "";
@@ -100,8 +97,8 @@ my $tableNameHuman  = "";
 my $configFile      = "";
 my $childFile       = "";
 my $parentFile      = "";
-my $propTable       = "";
-my $propTableHuman  = "";
+my $infoTable       = "";
+my $infoTableHuman  = "";
 
 #  flags and options
 my $umlsall            = 0;
@@ -172,6 +169,7 @@ sub _initialize {
     my $config       = $params->{'config'};
     my $cuilist      = $params->{'cuilist'};
     my $database     = $params->{'database'};
+    
     
     #  to store the database object
     my $db = $self->_setDatabase($params);	
@@ -406,6 +404,10 @@ sub _createTaxonomyTables {
     #  create child table
     $sdb->do("CREATE TABLE IF NOT EXISTS $childTable (CUI1 char(8), CUI2 char(8))");
     $errorhandler->_checkDbError($pkg, $function, $sdb);
+
+    #  create info table
+    $sdb->do("CREATE TABLE IF NOT EXISTS $infoTable (ITEM char(8), INFO char(8))");
+    $errorhandler->_checkDbError($pkg, $function, $sdb);
     
     #  create the index table if it doesn't already exist
     $sdb->do("CREATE TABLE IF NOT EXISTS tableindex (TABLENAME blob(1000000), HEX char(41))");
@@ -415,6 +417,8 @@ sub _createTaxonomyTables {
     $sdb->do("INSERT INTO tableindex (TABLENAME, HEX) VALUES ('$parentTableHuman', '$parentTable')");
     $errorhandler->_checkDbError($pkg, $function, $sdb);
     $sdb->do("INSERT INTO tableindex (TABLENAME, HEX) VALUES ('$childTableHuman', '$childTable')");
+    $errorhandler->_checkDbError($pkg, $function, $sdb);
+    $sdb->do("INSERT INTO tableindex (TABLENAME, HEX) VALUES ('$infoTableHuman', '$infoTable')");
     $errorhandler->_checkDbError($pkg, $function, $sdb);
 }
 
@@ -783,7 +787,7 @@ sub _setConfigurationFile {
     $tableName  = "$ver";
     $parentTable= "$ver";
     $childTable = "$ver";
-    $propTable  = "$ver";
+    $infoTable  = "$ver";
     
     my $output = "";
     $output .= "UMLS-Interface Configuration Information\n";
@@ -805,7 +809,7 @@ sub _setConfigurationFile {
         $tableName  .= "_$sab";   
         $parentTable.= "_$sab";     
         $childTable .= "_$sab";  
-        $propTable  .= "_$sab";  
+        $infoTable  .= "_$sab";  
 	$saboutput .= "    $sab\n";
     }                     
     
@@ -839,7 +843,7 @@ sub _setConfigurationFile {
 	$tableName  .= "_$rel";	
 	$parentTable.= "_$rel";
 	$childTable .= "_$rel";
-	$propTable  .= "_$rel";
+	$infoTable  .= "_$rel";
 	
 	$output .= "    $rel\n";
     }
@@ -861,7 +865,7 @@ sub _setConfigurationFile {
 	$tableName  .= "_$rel";	
 	$parentTable.= "_$rel";
 	$childTable .= "_$rel";
-	$propTable  .= "_$rel";
+	$infoTable  .= "_$rel";
 	
 	$output .= "    $rel\n";
     }
@@ -873,19 +877,19 @@ sub _setConfigurationFile {
     $tableName  .= "_table";
     $parentTable.= "_parent";
     $childTable .= "_child";
-    $propTable .= "_prop";
+    $infoTable .= "_info";
 
     #  convert the databases to the hex name
     #  and store the human readable form 
     $tableNameHuman   = $tableName;
     $childTableHuman  = $childTable;
     $parentTableHuman = $parentTable;
-    $propTableHuman   = $propTable;
+    $infoTableHuman   = $infoTable;
 
     $tableName   = "a" . sha1_hex($tableNameHuman);
     $childTable  = "a" . sha1_hex($childTableHuman);
     $parentTable = "a" . sha1_hex($parentTableHuman);
-    $propTable   = "a" . sha1_hex($propTableHuman);
+    $infoTable   = "a" . sha1_hex($infoTableHuman);
 
     if($option_verbose) {
 	$output .= "  Configuration file:\n";
@@ -1297,7 +1301,8 @@ sub _setSabs {
        !(defined $includesab)     || !(defined $excludesab)) {
 	$errorhandler->_error($pkg, $function, "SAB variables not defined.", 4);
     }
-
+    
+    $sources = "";
 
     if($includesabkeys <= 0 && $excludesabkeys <=0) { return; }
 
@@ -2109,7 +2114,8 @@ sub _setOptions  {
 
     my $output = "";
     
-    if(defined $verbose || defined $cuilist || defined $debugoption)  {
+    if(defined $verbose || defined $cuilist || 
+       defined $debugoption || defined $config)  {
 	$output  .= "\nCuiFinder User Options: \n";
     }
 
@@ -2457,7 +2463,7 @@ sub _getAllPreferredTerm {
     my $self = shift;
     my $concept = shift;
 
-    my $function = "_getPreferredTerm";
+    my $function = "_getAllPreferredTerm";
     
     #  check self
     if(!defined $self || !ref $self) {
@@ -3742,8 +3748,8 @@ sub _dropConfigTable {
 	$sdb->do("drop table $tableName");
 	$errorhandler->_checkDbError($pkg, $function, $sdb);
     }
-    if(exists $tables{$propTable}) {
-	$sdb->do("drop table $propTable");
+    if(exists $tables{$infoTable}) {
+	$sdb->do("drop table $infoTable");
 	$errorhandler->_checkDbError($pkg, $function, $sdb);
     }
     if(exists $tables{"tableindex"}) {	
@@ -3757,7 +3763,7 @@ sub _dropConfigTable {
 	$sdb->do("delete from tableindex where HEX='$tableName'");
 	$errorhandler->_checkDbError($pkg, $function, $sdb);
 	
-	$sdb->do("delete from tableindex where HEX='$propTable'");
+	$sdb->do("delete from tableindex where HEX='$infoTable'");
 	$errorhandler->_checkDbError($pkg, $function, $sdb);
     }
 }
@@ -3908,6 +3914,13 @@ sub _getTableNameHuman {
     return $tableNameHuman;
 }
 
+sub _getInfoTableName {
+    return $infoTable;
+}
+
+sub _getInfoTableNameHuman {
+    return $infoTableHuman;
+}
 1;
 
 __END__
