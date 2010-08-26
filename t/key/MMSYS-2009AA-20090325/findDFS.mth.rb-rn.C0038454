@@ -16,6 +16,8 @@ UMLS-Interface Configuration Information
 
 
 max_depth : 3
+avg_depth : 1.85714285714286
+sd_depth  : 0.914732033918978
 paths_to_root : 13
 sources : MTH
 max_branch : 6

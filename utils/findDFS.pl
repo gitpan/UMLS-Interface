@@ -305,6 +305,7 @@ foreach my $child (@children) {
     my @array = (); 
     push @array, $root;
     my $path  = \@array;
+    my $d = 0;
     &_depthFirstSearch($child, $d, $path,*TABLEFILE);
 }
 
@@ -333,11 +334,25 @@ $avg_branch = $avg_branch / $branch_counter;
 #  set the node and leaf counts
 my $leaf_count = keys %leafs;
 my $node_count = keys %nodes;
+my $total_count = $leaf_count + $node_count;
 
+#  get the average depth
+my $avg_depth = 0; 
+foreach my $c (sort keys %leafs) { $avg_depth+=$leafs{$c}; }
+foreach my $c (sort keys %nodes) { $avg_depth+=$nodes{$c}; }
+$avg_depth = $avg_depth / $total_count;
 
+#  get the average depth
+my $avg_sd = 0;
+foreach my $c (sort keys %leafs) { $avg_sd += ($leafs{$c}-$avg_depth)**2; }
+foreach my $c (sort keys %nodes) { $avg_sd += ($nodes{$c}-$avg_depth)**2; }
+$avg_sd = $avg_sd/$total_count;
+$avg_sd = sqrt($avg_sd); 
 
 #  print out the information
 print "max_depth : $max_depth\n";
+print "avg_depth : $avg_depth\n";
+print "sd_depth  : $avg_sd\n";
 print "paths_to_root : $paths_to_root\n";
 print "sources : $sources\n";
 print "max_branch : $max_branch\n";
@@ -427,11 +442,22 @@ sub _depthFirstSearch
 	$branch_hash{$concept} = $branches;
     }
     
-    #  set the leaf count
-    if($branches == 0) { $leafs{$concept}++; }
-    else               { $nodes{$concept}++; }
+    #  set the leaf count and capture the max depth
+    if($branches == 0) { 
+	if(exists $leafs{$concept}) { 
+	    if($d > $leafs{$concept}) { 
+		$leafs{$concept} = $d; 
+	    } 
+	} else { $leafs{$concept} = $d; }
+    }
+    else {
+	if(exists $nodes{$concept}) { 
+	    if($d > $nodes{$concept}) { 
+		$nodex{$concept} = $d; }
+	}
+	else { $nodes{$concept} = $d; }
+    }
 }
-
 ##############################################################################
 #  function to output minimal usage notes
 ##############################################################################
@@ -485,7 +511,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findDFS.pl,v 1.12 2010/08/02 21:12:05 btmcinnes Exp $';
+    print '$Id: findDFS.pl,v 1.13 2010/08/25 10:02:58 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

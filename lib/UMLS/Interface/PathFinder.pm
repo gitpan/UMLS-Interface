@@ -1,5 +1,5 @@
 # UMLS::Interface::PathFinder
-# (Last Updated $Id: PathFinder.pm,v 1.32 2010/08/22 20:15:33 btmcinnes Exp $)
+# (Last Updated $Id: PathFinder.pm,v 1.33 2010/08/26 13:55:39 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -1396,7 +1396,7 @@ sub _findShortestPathInRealTime {
     }    
 
     #  get the length of the shortest path
-    my $length = $self->_findShortestPathLength($concept1, $concept2);
+    my $length = $self->_findShortestPathLengthInRealTime($concept1, $concept2);
    
     #  initialize the paths array that will be returned
     my @paths = ();
@@ -1557,7 +1557,7 @@ sub _findPathsToCenter {
     my $flag   = shift;
     my $ends   = shift;
     
-    my $function = "_findShortestPathsToCenter";
+    my $function = "_findPathsToCenter";
     &_debug($function);
       
     #  check self
@@ -1906,7 +1906,6 @@ sub _findMaximumDepthInRealTime {
     return $maximum_path_length;
 }
 
-
 #  method that finds the length of the shortest path
 #  input : $concept1  <- the first concept
 #          $concept2  <- the second concept
@@ -1917,7 +1916,41 @@ sub _findShortestPathLength {
     my $concept1 = shift;
     my $concept2 = shift;
     
-    my $function = "_findShortestPathLength";
+    my $function = "_findShortestPathLengthInRealTime";
+    &_debug($function);
+      
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    if($option_realtime) {
+	return $self->_findShortestPathLengthInRealTime($concept1, $concept2);
+    }
+    else {
+	
+	my @paths = $self->_findShortestPathThroughLCS($concept1, $concept2);
+	my $path = shift @paths;
+	if(defined $path) { 
+	    my @cuis = split/\s+/, $path;
+	    my $length = $#cuis + 1;
+	    return $length;
+	}
+	else { return -1; }
+    }
+}
+
+#  method that finds the length of the shortest path
+#  input : $concept1  <- the first concept
+#          $concept2  <- the second concept
+#  output: $length    <- the length of the shortest path between them
+sub _findShortestPathLengthInRealTime {
+
+    my $self = shift;
+    my $concept1 = shift;
+    my $concept2 = shift;
+    
+    my $function = "_findShortestPathLengthInRealTime";
     &_debug($function);
       
     #  check self

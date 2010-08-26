@@ -1,6 +1,14 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.73 to 0.75
+    1. added average maximum depth to the findDFS.pl program
+
+    2. modified the findShortestPathLength function to obtain the length
+    using the index when the --realtime option is not used.
+
+    3. added standard deviation from average depth to the findDFS.pl program
+
   Changes from version 0.71 to 0.73
     1. modified the shortest path - there was a problem with the directed
     paths - I was getting some undirected ones mixed in there. This should
