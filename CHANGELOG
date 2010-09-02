@@ -1,6 +1,13 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.75 to 0.77
+    1. added a getStString.pl program to utils/
+
+    2. added a findShortestPathLength.pl program to utils/
+
+    3. fixed error in the find shortest path length function
+
   Changes from version 0.73 to 0.75
     1. added average maximum depth to the findDFS.pl program
 

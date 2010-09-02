@@ -12,11 +12,13 @@ Makefile.PL
 MANIFEST			This list of files
 META.yml
 README
+samples/2008AA-badpairs
 samples/configuration
 samples/icfrequency
 samples/icpropagation
 samples/README
 t/access.t
+t/check-shortestpath
 t/config/config.fma.par-chd
 t/config/config.icd9cm.par-chd
 t/config/config.msh.par-chd
@@ -25,6 +27,7 @@ t/config/config.mth.rb-rn
 t/config/config.snomedct.par-chd
 t/config/config.snomedct.par-chd-rb-rn
 t/config/config.snomedct.rb-rn
+t/developers-check
 t/findCuiDepth.t
 t/findDFS.t
 t/findLeastCommonSubsumer.t
@@ -124,6 +127,7 @@ t/key/MMSYS-2009AA-20090325/getSts.snomedct.par-chd.hand
 t/mysql.t
 t/options.t
 t/options/icpropagation
+t/output/purpose.txt
 t/prgs.t
 t/README
 t/tests/findCuiDepth.msh.par-chd
@@ -146,6 +150,7 @@ utils/findDFS.pl
 utils/findLeastCommonSubsumer.pl
 utils/findPathToRoot.pl
 utils/findShortestPath.pl
+utils/findShortestPathLength.pl
 utils/getAssociatedCuis.pl
 utils/getAssociatedTerms.pl
 utils/getChildren.pl
@@ -158,5 +163,6 @@ utils/getRelated.pl
 utils/getRelations.pl
 utils/getStDef.pl
 utils/getSts.pl
+utils/getStString.pl
 utils/getTableNames.pl
 utils/removeConfigData.pl

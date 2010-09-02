@@ -511,7 +511,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findDFS.pl,v 1.13 2010/08/25 10:02:58 btmcinnes Exp $';
+    print '$Id: findDFS.pl,v 1.14 2010/08/28 11:48:52 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

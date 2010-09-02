@@ -1,5 +1,5 @@
 # UMLS::Interface::PathFinder
-# (Last Updated $Id: PathFinder.pm,v 1.33 2010/08/26 13:55:39 btmcinnes Exp $)
+# (Last Updated $Id: PathFinder.pm,v 1.38 2010/09/02 14:42:59 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -113,6 +113,7 @@ sub _initialize {
 
     #  set function name
     my $function = "_initialize";
+    &_debug($function);
     
     #  check self
     if(!defined $self || !ref $self) {
@@ -141,6 +142,7 @@ sub _setOptions  {
     my $params = shift;
 
     my $function = "_setOptions";
+    &_debug($function);
 
     #  check self
     if(!defined $self || !ref $self) {
@@ -231,6 +233,7 @@ sub _depth {
     my $self = shift;
     
     my $function = "_depth";
+    &_debug($function);
 
     #  check self
     if(!defined $self || !ref $self) {
@@ -349,12 +352,13 @@ sub _getMaxDepth {
     if(exists ${$hash}{$concept}{$series}) { return; }
     else { ${$hash}{$concept}{$series}++; }
 
-    #  increment the depth
-    $d++;
-    
+   
     #  check to see if it is the max depth
     if(($d) > $max_depth) { $max_depth = $d; }
 
+    #  increment the depth
+    $d++;
+    
     #  add to the depths array - if we are going to go through the trouble 
     #  of having to do a depth first search - we might as well find the 
     #  the maximum depths of all the cuis and store these in the database
@@ -1409,14 +1413,14 @@ sub _findShortestPathInRealTime {
     else {
 
 	#  set split to get the beginning paths
-	my $split1 = int($length/2) - 1; 
+	my $split1 = int($length/2);# + 1; 
 
 	#  we need the cui itself so, if the split is zero setting the
 	#  split to one will just return the cuis
 	if($split1 == 0) { $split1 = 1; }
-
+	
 	#  set split to get the last set of paths
-	my $split2 = $length - $split1;  $split2--; 
+	my $split2 = $length - $split1 -1; 
 	
 	#  initial the hash to hold the ends
 	my %ends = ();
@@ -1425,10 +1429,10 @@ sub _findShortestPathInRealTime {
 	my @paths1 = $self->_findPathsToCenter($concept1, $split1, 1, \%ends );
 	
 	my $endkey = keys %ends;
-	
+
 	#  get all the paths from concept2 of length split2
 	my @paths2 = $self->_findPathsToCenter($concept2, $split2, 2, \%ends );
-	
+
 	#  join the two sets of paths to find all of the full paths
 	@paths = $self->_joinPathsToCenter(\@paths1, \@paths2);
     }
@@ -1474,69 +1478,79 @@ sub _joinPathsToCenter {
 	my $dchange1 = pop @array1;
 	my $c1       = pop @array1;
 	
-	#  get the relation between the last cui and the center
-	my @c1relations = $cuifinder->_getRelationsBetweenCuis($c1, $array1[$#array1]);
-	
-	#  determine whether that relation is a parent or a child relation
-	my $c1flag = 0;
-	foreach my $item (@c1relations) {
-	    $item=~/([A-Z]+) \([A-Z0-9\.]+\)/;
-	    my $rel = $1;
-	    if($childstring=~/($rel)/)  { $c1flag = 1; }
-	    if($parentstring=~/($rel)/) { $c1flag = 2; }
-	}
-
 	foreach my $p2 (@{$paths2}) {
 
 	    #  now get the paths to the center coming from the other direction, 
 	    #  its direction changes and the center
 	    my @array2 = split/\s+/, $p2;	    
-
 	    my $dchange2 = pop @array2;
 	    my $c2       = $array2[$#array2];
 	    
-
 	    #  if the two centers are equal we have path
 	    if($c1 eq $c2) { 
-
+		
 		#  if undirected makke certain that their is at 
 		#  most one direction change
 		if(!($option_undirected)) { 
 		    
-		    #  get the relationships between the last concept in this direction and the parent
-		    my @c2relations = $cuifinder->_getRelationsBetweenCuis($c2, $array2[$#array2-1]);
-		    
-		    #  determine whether that relation is a parent or a child relation
-		    my $c2flag = 0;
-		    foreach my $item (@c2relations) {
-			$item=~/([A-Z]+) \([A-Z0-9\.]+\)/;
-			my $rel = $1;
-			if($childstring=~/($rel)/)  { $c2flag = 1; }
-			if($parentstring=~/($rel)/) { $c2flag = 2; }
-		    }
-		    
-		    #  if we have parent changing to a child
-		    if($c1flag == 2 && $c2flag == 1) { $dchange1++; }
-		    if($c2flag == 2 && $c1flag == 1) { $dchange2++; }
-		    
+		    #  check on basic direction changes
 		    my $totalchanges = $dchange1 + $dchange2;
+		    if($totalchanges > 1)               { next; } 
+		    if($dchange1 > 0 && $dchange2 > 0)  { next; }
 
-		    if($dchange1 > 0 && $dchange2 > 0)  {		
-			next;
-		    }		    
+		    #  set the path
+		    my @rarray2 = reverse @array2;
+		    my @path = (@array1, @rarray2);
+
+		    #  check for complicated embedded direction changes
+		    my $direction = 0; my $previous = "";
+		    for my $i (0..($#path-1)) { 
+			my $cc1 = $path[$i];
+			my $cc2 = $path[$i+1];
+			#  get the relationships the concepts
+			my @ccr = $cuifinder->_getRelationsBetweenCuis($cc1, $cc2);
+			#  determine whether that relation is a 
+			#  parent or a child relation
+			my $pr = 0; my $cr = 0;
+			foreach my $item (@ccr) {
+			    $item=~/([A-Z]+) \([A-Z0-9\.]+\)/;
+			    my $rel = $1; 
+			    if($childstring=~/($rel)/)  { $cr++; }
+			    if($parentstring=~/($rel)/) { $pr++; }
+			}
+			#  determine if there has been a direction change
+			if($previous ne "") { 
+			    if( ($previous eq "CHD") && ($pr > 0)) { $direction++; }
+			    if( ($previous eq "PAR") && ($cr > 0)) { $direction++; }
+			}
+			#  set the previous relation
+			if($pr > 0){ $previous = "PAR"; }
+			if($cr > 0){ $previous = "CHD"; }
+			#  error out if a relation is both a child and parent
+			if($pr > 0 && $cr > 0) { 
+			    print STDERR "ERROR => $cc1 $cc2 (@ccr)\n";
+			}
+		    }
+		    #  if there is more than a single direction change 
+		    #  we don't want the path
+		    if($direction > 1) { next; }
+		    
+		    #  add the path to the list of shortest paths
+		    my $string = join " ", @path;
+		    push @shortestpaths, $string;
+		    
 		}
+		else {
 
+		    #  we have one or less changes if the undirectoption
+		    #  was not set so we can add the path to the shortest
+		    #  path array
+		    my @rarray2 = reverse @array2;
+		    my @path = (@array1, @rarray2);
+		    my $string = join " ", @path;
 
-		#  we have one or less changes if the undirectoption
-		#  was not set so we can add the path to the shortest
-		#  path array
-		my @rarray2 = reverse @array2;
-		my @path = (@array1, @rarray2);
-		my $string = join " ", @path;
-
-		push @shortestpaths, $string;
-
-
+		    push @shortestpaths, $string;
+		}
 	    }
 	}
     }
@@ -1559,17 +1573,17 @@ sub _findPathsToCenter {
     
     my $function = "_findPathsToCenter";
     &_debug($function);
-      
+    
     #  check self
     if(!defined $self || !ref $self) {
 	$errorhandler->_error($pkg, $function, "", 2);
     }
-
+    
     #  check parameter exists
     if(!defined $start) { 
 	$errorhandler->_error($pkg, $function, "Error with input variable \$start.", 4);
     }
-
+    
     #  check if valid concept
     if(! ($errorhandler->_validCui($start)) ) {
 	$errorhandler->_error($pkg, $function, "Concept ($start) in not valid.", 6);
@@ -1587,14 +1601,16 @@ sub _findPathsToCenter {
     my @directions = ();
     my @relations  = ();
     my @paths      = ();
-    my @stack = $cuifinder->_getParents($start);
+    my @stack      = ();
+    
+    @stack = $cuifinder->_getParents($start);
     foreach my $element (@stack) {
 	my @array      = (); 
 	push @paths, \@array;
 	push @directions, 0;
 	push @relations, "PAR";
     }
-
+    
     my @childrenstack = $cuifinder->_getChildren($start);
     @stack = (@stack, @childrenstack);
     foreach my $element (@childrenstack) {
@@ -1612,6 +1628,7 @@ sub _findPathsToCenter {
 	my $direction  = pop @directions;
 	my $relation   = pop @relations;
 	
+
         #  set up the new path
 	my @intermediate = @{$path};
 	my $series = join " ", @intermediate;
@@ -1632,7 +1649,7 @@ sub _findPathsToCenter {
 	my $v = "$concept : $series";
 	if(exists $visited{$v}) { next; }	
 	else { $visited{$v}++; }
-	
+
         #  check if we have a path of approrpiate length
 	#  if so add it to the storage
 	if($distance == $length) { 
@@ -1825,7 +1842,7 @@ sub _findMaximumDepthInRealTime {
     #  set the  storage
     my $maximum_path_length = -1;
 
-    #  set the stack
+  #  set the stack
     my @stack = ();
     push @stack, $concept;
 
@@ -1916,7 +1933,7 @@ sub _findShortestPathLength {
     my $concept1 = shift;
     my $concept2 = shift;
     
-    my $function = "_findShortestPathLengthInRealTime";
+    my $function = "_findShortestPathLength";
     &_debug($function);
       
     #  check self
@@ -1974,30 +1991,286 @@ sub _findShortestPathLengthInRealTime {
 	$errorhandler->_error($pkg, $function, "Concept ($concept2) in not valid.", 6);
     }    
     
+    #  we need to check this in both directions because the BFS
+    #  the direction matters and with the undirected option
+    #  we always want to go up and the problem arrises in the 
+    #  cases in which we continue down in a straight line such 
+    #  that CUI1 is the LCS. Maybe there is a better way to 
+    #  do this but I am not certain quite yet
+    #my $l1 = $self->_findShortestPathLengthInRealTimeBFS($concept1, $concept2, -1);
+
+    #  now swap
+    #my $l2 = $self->_findShortestPathLengthInRealTimeBFS($concept2, $concept1, $l1);
+    
+    #  return the other if it is -1
+    #if($l1 < 0) { return $l2; }
+    #if($l2 < 0) { return $l1; }
+    
+    #  return the lowest
+    #return $l1 < $l2 ? $l1 : $l2;
+
+    my $length = $self->_findShortestPathLengthInRealTimeBFS2($concept1, $concept2);
+    return $length;
+}
+	
+
+#  method that finds the length of the shortest path
+#  input : $concept1  <- the first concept
+#          $concept2  <- the second concept
+#  output: $length    <- the length of the shortest path between them
+sub _findShortestPathLengthInRealTimeBFS2 {
+
+    my $self = shift;
+    my $concept1 = shift;
+    my $concept2 = shift;
+    
+    my $function = "_findShortestPathLengthInRealTimeBFS2($concept1, $concept2)";
+    &_debug($function);
+      
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    #  set the count
+    my %visited1 = ();    my %visited2 = ();
+    
+    #  set the stack
+    my @stack1 = $cuifinder->_getParents($concept1);
+
+    my @stack2 = $cuifinder->_getParents($concept2);
+    my @directions1  = ();    my @directions2  = ();
+    my @relations1   = ();    my @relations2   = ();
+    my @paths1       = ();    my @paths2       = ();
+    my $path_length1 = -1;    my $path_length2 = -1;
+
+    #  get the parents 
+    foreach my $element (@stack1) {
+	my @array1      = (); 
+	push @paths1, \@array1;
+	push @directions1, 0;
+	push @relations1, "PAR";
+    }
+    foreach my $element (@stack2) {
+	my @array2      = (); 
+	push @paths2, \@array2;
+	push @directions2, 0;
+	push @relations2, "PAR";
+    }
+   
+    #  now loop through the stack
+    while($#stack1 >= 0 || $#stack2 >= 0) {
+	
+	my $c1            = "";	my $c2            = "";
+	my $path1         = "";	my $path2         = "";
+	my $direction1    = "";	my $direction2    = "";
+	my $relation1     = "";	my $relation2     = "";
+	my @intermediate1 = (); my @intermediate2 = ();
+	my $series1       = "";	my $series2       = "";
+	my $distance1     = -1;	my $distance2     = -1;
+	my $cui1flag      = 0;  my $cui2flag      = 0;
+
+	if($#stack1 >=0)  {
+	    $c1          = pop @stack1;
+	    $path1       = pop @paths1;
+	    $direction1  = pop @directions1;
+	    $relation1   = pop @relations1;
+
+	    @intermediate1 = @{$path1};
+	    $series1 = join " ", @intermediate1;
+	    push @intermediate1, $c1;
+	    $distance1 = $#intermediate1;
+	    $cui1flag++;
+	}
+	
+	if($#stack2 >=0)  {
+	    $c2          = pop @stack2;
+	    $path2       = pop @paths2;
+	    $direction2  = pop @directions2;
+	    $relation2   = pop @relations2;
+	    
+	    @intermediate2 = @{$path2};
+	    $series2 = join " ", @intermediate2;
+	    push @intermediate2, $c2;
+	    $distance2 = $#intermediate2;
+	    $cui2flag++;
+	}
+
+	#  check if it is our concept2
+	if($c1 eq $concept2) { 
+	    $path_length1 = $distance1 + 2;
+	}
+
+	#  check if it is our concept2
+	if($c2 eq $concept1) { 
+	    $path_length2 = $distance2 + 2;
+	}
+
+	#  if both paths have been set return the shortest
+	if($path_length1 > -1 && $path_length2 > -1) { 
+	    return $path_length1 < $path_length2 ? $path_length1 : $path_length2; 
+	}
+
+	#  if path length1 is set and is distance2 is greater then what
+	#  ever path we find for distance2 is going to be more than 
+	#  for pathlength1 so return (this also works for pathlength2)
+	if($path_length1 > -1 && $path_length1 <= ($distance2+2)) { return $path_length1; }
+	if($path_length2 > -1 && $path_length2 <= ($distance1+2)) { return $path_length2; }
+	
+
+	#  check if concept has been visited already through that path
+	my $flag1 = 0; my $flag2 = 0;
+	if(exists $visited1{$c1}) { $flag1++; }	
+	else { $visited1{$c1}++; }
+
+	if(exists $visited2{$c2}) { $flag2++; }	
+	else { $visited2{$c2}++; }
+
+	#  set the flags if nothing exists
+	if($cui1flag == 0) { $flag1++; }
+	if($cui2flag == 0) { $flag2++; }
+
+
+
+	#  check that the concept is not one of the forbidden concepts
+	if($cui1flag > 0 && $cuifinder->_forbiddenConcept($c1)) { $flag1++; }
+	if($cui2flag > 0 && $cuifinder->_forbiddenConcept($c2)) { $flag2++; }
+
+	#  if both concepts have been flagged - next
+	if($flag1 > 0 && $flag2 > 0) { next; }
+
+	#  if the previous direction was a child we have a change in direction
+	my $dchange1 = $direction1;
+	my $dchange2 = $direction2;
+	
+	#  if the undirected option is set the dchange doesn't matter
+	#  otherwise we need to check
+	if(!$option_undirected) { 
+	    if($relation1 eq "CHD") { $dchange1 = $direction1 + 1; }
+	    if($relation2 eq "CHD") { $dchange2 = $direction2 + 1; }
+	}
+	
+	#  if we have not had more than a single direction change
+	my @parents1 = (); my @parents2 = ();
+	if($flag1 == 0 && $dchange1 < 2)  {
+	    @parents1  = $cuifinder->_getParents($c1);		
+	}
+	if($flag2 == 0 && $dchange2 < 2)  {
+	    @parents2  = $cuifinder->_getParents($c2);		
+	}
+	
+	foreach my $parent1 (@parents1) {
+	    #  check if concept has already in the path
+	    if($series1=~/$parent1/) { next; }
+	    if($parent1 eq $c1)      { next; }
+	    unshift @stack1, $parent1;
+	    unshift @paths1, \@intermediate1;
+	    unshift @relations1, "PAR";
+	    unshift @directions1, $dchange1;
+	}
+
+	foreach my $parent2 (@parents2) {
+	    #  check if concept has already in the path
+	    if($series2=~/$parent2/) { next; }
+	    if($parent2 eq $c2)      { next; }
+	    unshift @stack2, $parent2;
+	    unshift @paths2, \@intermediate2;
+	    unshift @relations2, "PAR";
+	    unshift @directions2, $dchange2;
+	}
+	
+	
+	#  now with the chilcren if the previous direction was a parent we have
+	#  have to change the direction
+	$dchange1 = $direction1;
+	$dchange2 = $direction2;
+
+	#  if the undirected option is set the dchange doesn't matter
+	#  otherwise we need to check
+	if(!$option_undirected) { 
+	    if($relation1 eq "PAR") { $dchange1 = $direction1 + 1; }
+	    if($relation2 eq "PAR") { $dchange2 = $direction2 + 1; }
+	}
+
+	
+
+	#  if we have not had more than a single direction change
+	#  now search through the children
+	my @children1 = (); my @children2 = ();
+	if($flag1 == 0 && $dchange1 < 2) {
+	    @children1 = $cuifinder->_getChildren($c1);
+	}
+
+	if($flag2 == 0 && $dchange2 < 2) {
+	    @children2 = $cuifinder->_getChildren($c2);
+	}
+	
+	foreach my $child1 (@children1) {
+	    #  check if child cui has already in the path
+	    if($series1=~/$child1/)  { next; }
+	    if($child1 eq $c1) { next; }
+	    
+	    #  if not continue 
+	    unshift @stack1, $child1;
+	    unshift @paths1, \@intermediate1;
+	    unshift @relations1, "CHD";
+	    unshift @directions1, $dchange1;
+	}
+
+	foreach my $child2 (@children2) {
+	    #  check if child cui has already in the path
+	    if($series2=~/$child2/)  { next; }
+	    if($child2 eq $c2) { next; }
+	    
+	    #  if not continue 
+	    unshift @stack2, $child2;
+	    unshift @paths2, \@intermediate2;
+	    unshift @relations2, "CHD";
+	    unshift @directions2, $dchange2;
+	}
+    }
+	
+    #  no path was found return -1
+    return -1;
+}
+
+
+#  method that finds the length of the shortest path
+#  input : $concept1  <- the first concept
+#          $concept2  <- the second concept
+#  output: $length    <- the length of the shortest path between them
+sub _findShortestPathLengthInRealTimeBFS {
+
+    my $self = shift;
+    my $concept1 = shift;
+    my $concept2 = shift;
+    my $length   = shift;
+    
+    my $function = "_findShortestPathLengthInRealTimeBFS($concept1, $concept2, $length)";
+    &_debug($function);
+      
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
     #  set the count
     my %visited = ();
     
-    #  get the children and parents 
+    #  set the stack
+    my @stack = $cuifinder->_getParents($concept1);
     my @directions = ();
     my @relations  = ();
     my @paths      = ();
-    my @stack = $cuifinder->_getParents($concept1);
+    
+    #  get the parents 
     foreach my $element (@stack) {
 	my @array      = (); 
 	push @paths, \@array;
 	push @directions, 0;
 	push @relations, "PAR";
     }
-    
-    my @childrenstack = $cuifinder->_getChildren($concept1);
-    @stack = (@stack, @childrenstack);
-    foreach my $element (@childrenstack) {
-	my @array      = (); 
-	push @paths, \@array;
-	push @directions, 0;
-	push @relations, "CHD";
-    }
-    
+   
     #  now loop through the stack
     while($#stack >= 0) {
 	
@@ -2006,50 +2279,54 @@ sub _findShortestPathLengthInRealTime {
 	my $direction  = pop @directions;
 	my $relation   = pop @relations;
 	
-        #  set up the new path
+	#  set up the new path
 	my @intermediate = @{$path};
 	my $series = join " ", @intermediate;
 	push @intermediate, $concept;
 	my $distance = $#intermediate;
 
-	#  check that the concept is not one of the forbidden concepts
-	if($cuifinder->_forbiddenConcept($concept)) { next; }	
+	#  if we are going in the other direction and we
+	#  have already found a shorter path the other way
+	if( ($length) > 0 && ( ($distance+2) >= $length) ) {
+	    return $length; 
+	}
 
-        #  check if concept has been visited already through that path
-	if(exists $visited{$concept}) { next; }	
-	else { $visited{$concept}++; }
-	
-        #  check if it is our concept2
+	#  check if it is our concept2
 	if($concept eq $concept2) { 
 	    my $path_length = $distance + 2;
 	    return $path_length;
 	}
+
+	#  check if concept has been visited already through that path
+	if(exists $visited{$concept}) { next; }	
+	else { $visited{$concept}++; }
+
+	#  check that the concept is not one of the forbidden concepts
+	if($cuifinder->_forbiddenConcept($concept)) { next; }	
 	
-        #  print information into the file if debugpath option is set
+	#  print information into the file if debugpath option is set
 	if($option_debugpath) { 
 	    my $d = $#intermediate+1;
 	    print DEBUG_FILE "$concept\t$d\t@intermediate\n"; 
 	}
-		
+	
 	#  if the previous direction was a child we have a change in direction
 	my $dchange = $direction;
-      
+	
 	#  if the undirected option is set the dchange doesn't matter
 	#  otherwise we need to check
 	if(!$option_undirected) { 
 	    if($relation eq "CHD") { $dchange = $direction + 1; }
 	}
-
+	
 	#  if we have not had more than a single direction change
 	if($dchange < 2) {
 	    #  search through the parents
 	    my @parents  = $cuifinder->_getParents($concept);		
 	    foreach my $parent (@parents) {
-		
 		#  check if concept has already in the path
 		if($series=~/$parent/) { next; }
 		if($parent eq $concept) { next; }
-
 		unshift @stack, $parent;
 		unshift @paths, \@intermediate;
 		unshift @relations, "PAR";
@@ -2065,7 +2342,7 @@ sub _findShortestPathLengthInRealTime {
 	if(!$option_undirected) { 
 	    if($relation eq "PAR") { $dchange = $direction + 1; }
 	}
-
+	
 	#  if we have not had more than a single direction change
 	if($dchange < 2) {
 	    #  now search through the children
@@ -2075,7 +2352,7 @@ sub _findShortestPathLengthInRealTime {
 		#  check if child cui has already in the path
 		if($series=~/$child/)  { next; }
 		if($child eq $concept) { next; }
-
+		
 		#  if not continue 
 		unshift @stack, $child;
 		unshift @paths, \@intermediate;
@@ -2084,7 +2361,7 @@ sub _findShortestPathLengthInRealTime {
 	    }
 	}
     }
-    
+	
     #  no path was found return -1
     return -1;
 }
