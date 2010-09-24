@@ -1,0 +1,27 @@
+
+CuiFinder User Options: 
+   --config option set
+
+
+UMLS-Interface Configuration Information
+  Sources (SAB):
+    SNOMEDCT
+  Relations (REL):
+    CHD
+    PAR
+  Database: 
+    umls (MMSYS-2010AA-20100427)
+
+
+
+PathFinder User Options:
+   --realtime option set
+
+
+
+The least common subsumer between Brain tissue (C0459385) and Infratentorial brain structure (C0228067) is Part of brain (C0445620) 
+
+The least common subsumer between Brain tissue (C0459385) and Infratentorial brain structure (C0228067) is Brain tissue (C0459385) 
+
+There is not a least common subsumer between C0175895 and C0009814 given the current view of the UMLS.
+

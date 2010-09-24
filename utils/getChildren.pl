@@ -241,7 +241,7 @@ foreach my $input (@terms) {
     my @c = ();
     if($input=~/C[0-9]+/) {
 	push @c, $input;
-	($term) = $umls->getTermList($input);
+	($term) = $umls->getAllPreferredTerm($input);
     }
     else {
 	@c = $umls->getConceptList($input);
@@ -328,7 +328,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getChildren.pl,v 1.13 2010/05/24 17:57:16 btmcinnes Exp $';
+    print '$Id: getChildren.pl,v 1.14 2010/09/17 18:54:31 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

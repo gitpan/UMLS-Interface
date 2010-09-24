@@ -1,0 +1,21 @@
+
+CuiFinder User Options: 
+   --config option set
+
+
+UMLS-Interface Configuration Information
+  Sources (SAB):
+    SNOMEDCT
+  Relations (REL):
+    CHD
+    PAR
+  Database: 
+    umls (MMSYS-2010AA-20100427)
+
+
+
+
+The semantic types associated with hand (C0018563):
+  Body Part, Organ, or Organ Component (bpoc)
+The semantic types associated with hand (C1281583):
+  Body Part, Organ, or Organ Component (bpoc)

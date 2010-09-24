@@ -1,5 +1,5 @@
 # UMLS::Interface::PathFinder
-# (Last Updated $Id: PathFinder.pm,v 1.38 2010/09/02 14:42:59 btmcinnes Exp $)
+# (Last Updated $Id: PathFinder.pm,v 1.43 2010/09/23 13:53:03 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -80,6 +80,12 @@ sub new {
     my $params    = shift;
     my $handler   = shift;
     
+    # bless the object.
+    bless($self, $className);
+
+    #  initialize the global variables
+    $self->_initializeGlobalVariables();
+
     # initialize error handler
     $errorhandler = UMLS::Interface::ErrorHandler->new();
         if(! defined $errorhandler) {
@@ -96,14 +102,33 @@ sub new {
 			      8);
     }
 
-    # bless the object.
-    bless($self, $className);
-
     #iInitialize the object.
     $self->_initialize($params);   
 
     return $self;
 }
+
+sub _initializeGlobalVariables {
+
+    $debug = 0;
+    
+    $max_depth = -1;
+    
+    $root = "";
+    
+    $option_verbose     = 0;
+    $option_forcerun    = 0;
+    $option_realtime    = 0;
+    $option_t           = 0;
+    $option_debugpath   = 0;
+    $option_cuilist     = 0;
+    $option_undirected  = 0;
+    
+    $errorhandler = "";
+    $cuifinder    = "";
+    
+    %maximumDepths = ();
+}    
 
 # Method to initialize the UMLS::Interface::PathFinder object.
 sub _initialize {
@@ -453,6 +478,12 @@ sub _getPathsToRootFromIndex {
     #  check self
     if(!defined $self || !ref $self) {
 	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    #  if the concept is the root then return root
+    if($concept eq $root) { 
+	my @array = (); push @array, $root;
+	return \@array;
     }
 
     #  set the index DB handler
@@ -1413,7 +1444,7 @@ sub _findShortestPathInRealTime {
     else {
 
 	#  set split to get the beginning paths
-	my $split1 = int($length/2);# + 1; 
+	my $split1 = int($length/2);
 
 	#  we need the cui itself so, if the split is zero setting the
 	#  split to one will just return the cuis
@@ -1513,24 +1544,30 @@ sub _joinPathsToCenter {
 			#  parent or a child relation
 			my $pr = 0; my $cr = 0;
 			foreach my $item (@ccr) {
-			    $item=~/([A-Z]+) \([A-Z0-9\.]+\)/;
+			    $item=~/([A-Z]+) \([A-Za-z0-9\.]+\)/;
 			    my $rel = $1; 
 			    if($childstring=~/($rel)/)  { $cr++; }
 			    if($parentstring=~/($rel)/) { $pr++; }
 			}
-			#  determine if there has been a direction change
-			if($previous ne "") { 
-			    if( ($previous eq "CHD") && ($pr > 0)) { $direction++; }
-			    if( ($previous eq "PAR") && ($cr > 0)) { $direction++; }
+			
+			#  sometimes there are two directions
+			if($cr > 0 && $pr > 0) { 
+			    # if this is the case we are just going to move on
+			    #  and not worry about right now. There isn't a 
+			    #  loop exactly
 			}
-			#  set the previous relation
-			if($pr > 0){ $previous = "PAR"; }
-			if($cr > 0){ $previous = "CHD"; }
-			#  error out if a relation is both a child and parent
-			if($pr > 0 && $cr > 0) { 
-			    print STDERR "ERROR => $cc1 $cc2 (@ccr)\n";
+			else {
+			    #  determine if there has been a direction change
+			    if($previous ne "") { 
+				if( ($previous eq "CHD") && ($pr > 0)) { $direction++; }
+				if( ($previous eq "PAR") && ($cr > 0)) { $direction++; }
+			    }
+			    #  set the previous relation
+			    if($pr > 0){ $previous = "PAR"; }
+			    if($cr > 0){ $previous = "CHD"; }
 			}
 		    }
+
 		    #  if there is more than a single direction change 
 		    #  we don't want the path
 		    if($direction > 1) { next; }
@@ -2095,15 +2132,18 @@ sub _findShortestPathLengthInRealTimeBFS2 {
 	    $distance2 = $#intermediate2;
 	    $cui2flag++;
 	}
-
+	
 	#  check if it is our concept2
 	if($c1 eq $concept2) { 
 	    $path_length1 = $distance1 + 2;
+	    if($#stack2 < 0) { return $path_length1; }
 	}
 
+	
 	#  check if it is our concept2
 	if($c2 eq $concept1) { 
 	    $path_length2 = $distance2 + 2;
+	    if($#stack1 < 0) { return $path_length2; }
 	}
 
 	#  if both paths have been set return the shortest
@@ -2173,6 +2213,7 @@ sub _findShortestPathLengthInRealTimeBFS2 {
 	    #  check if concept has already in the path
 	    if($series2=~/$parent2/) { next; }
 	    if($parent2 eq $c2)      { next; }
+
 	    unshift @stack2, $parent2;
 	    unshift @paths2, \@intermediate2;
 	    unshift @relations2, "PAR";
@@ -2229,7 +2270,6 @@ sub _findShortestPathLengthInRealTimeBFS2 {
 	    unshift @directions2, $dchange2;
 	}
     }
-	
     #  no path was found return -1
     return -1;
 }

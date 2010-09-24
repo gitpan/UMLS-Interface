@@ -1,6 +1,17 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.77 to 0.79
+    1. added --level option to findDFS.pl which prints out the number of
+    leafs and nodes above a specified depth
+
+    2. added the mean information to findDFS.pl
+
+    3. modified getChildren and getParent to print out the preferred term of
+    a cui rather than a random associated one.
+
+    4. added a developers-check to the t directory
+
   Changes from version 0.75 to 0.77
     1. added a getStString.pl program to utils/
 

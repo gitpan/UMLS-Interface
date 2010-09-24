@@ -104,7 +104,7 @@ like ($output, qr/No term was specified on the command line\s+Type getChildren.p
 
 #  check when invalid CUI is entered
 $output = `$perl $util_prg C98 2>&1`;
-like ($output, qr/ERROR\: UMLS\:\:Interface\:\:CuiFinder\-\>_getTermList\s*Invalid CUI \(Error Code 6\)\.\s*Concept \(C98\) is not valid\./);
+like ($output, qr/ERROR\: UMLS\:\:Interface\:\:CuiFinder\-\>_getAllPreferredTerm\s*Invalid CUI \(Error Code 6\)\.\s*Concept \(C98\) is not valid\./);
 
 #######################################################################################
 #  check the getParents.pl program
@@ -118,7 +118,7 @@ like ($output, qr/No term was specified on the command line\s+Type getParents.pl
 
 #  check when invalid CUI is entered
 $output = `$perl $util_prg C98 2>&1`;
-like ($output, qr/ERROR\: UMLS\:\:Interface\:\:CuiFinder\-\>_getTermList\s*Invalid CUI \(Error Code 6\)\.\s*Concept \(C98\) is not valid\./);
+like ($output, qr/ERROR\: UMLS\:\:Interface\:\:CuiFinder\-\>_getAllPreferredTerm\s*Invalid CUI \(Error Code 6\)\.\s*Concept \(C98\) is not valid\./);
 
 #######################################################################################
 #  check the getCuiDef.pl program

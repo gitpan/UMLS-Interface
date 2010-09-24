@@ -93,6 +93,10 @@ search the complete hierarchy
 Starts the search at a specified CUI. The default starts 
 the search at the UMLS root node
 
+=head3 --level NUMBER
+
+Returns the number of CUIs above and below this NUMBER
+
 =head3 --help
 
 Displays the quick summary of program options.
@@ -174,7 +178,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-eval(GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "depth=s", "root=s", "debugpath=s", "debug")) or die ("Please check the above mentioned option(s).\n");
+eval(GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "depth=s", "root=s", "debugpath=s", "debug", "level=s")) or die ("Please check the above mentioned option(s).\n");
 
 
 
@@ -337,18 +341,58 @@ my $node_count = keys %nodes;
 my $total_count = $leaf_count + $node_count;
 
 #  get the average depth
-my $avg_depth = 0; 
-foreach my $c (sort keys %leafs) { $avg_depth+=$leafs{$c}; }
-foreach my $c (sort keys %nodes) { $avg_depth+=$nodes{$c}; }
-$avg_depth = $avg_depth / $total_count;
+my $avg_leaf_depth = 0; my $avg_node_depth = 0;
+foreach my $c (sort keys %leafs) { $avg_leaf_depth+=$leafs{$c}; }
+foreach my $c (sort keys %nodes) { $avg_node_depth+=$nodes{$c}; }
 
-#  get the average depth
-my $avg_sd = 0;
+my $avg_depth = ($avg_leaf_depth + $avg_node_depth) / $total_count;
+if($leaf_count > 0) { 
+    $avg_leaf_depth = $avg_leaf_depth / $leaf_count;
+}
+if($node_count > 0) { 
+    $avg_node_depth = $avg_node_depth / $node_count;
+}
+
+#  get the standard deviation
+my $avg_leaf_sd = 0; $avg_node_sd = 0;
 foreach my $c (sort keys %leafs) { $avg_sd += ($leafs{$c}-$avg_depth)**2; }
 foreach my $c (sort keys %nodes) { $avg_sd += ($nodes{$c}-$avg_depth)**2; }
+
 $avg_sd = $avg_sd/$total_count;
 $avg_sd = sqrt($avg_sd); 
 
+#  get the mean depth of the leafs and nodes
+#  also get the --level information if defined
+my $leaf_mean = int($leaf_count / 2);
+my $node_mean = int($node_count / 2);
+
+my $leaf_mean_depth  = 0;
+my $node_mean_depth  = 0;
+my $level_leaf_above = 0;
+my $level_leaf_below = 0;
+my $level_node_above = 0;
+my $level_node_below = 0;
+my $counter          = 1;
+
+foreach my $c (sort {$leafs{$b}<=>$leafs{$a}} keys %leafs) { 
+    if($counter == $leaf_mean) { 
+	$leaf_mean_depth = $leafs{$c};
+    }
+    if($leafs{$c} >= $opt_level) { $level_leaf_above++; }
+    if($leafs{$c} <  $opt_level) { $level_leaf_below++; }
+    $counter++; 
+}
+
+$counter = 1;
+foreach my $c (sort {$nodes{$b}<=>$nodes{$a}} keys %nodes) { 
+    if($counter == $node_mean) { 
+	$node_mean_depth = $nodes{$c};
+    }
+    if($nodes{$c} >= $opt_level) { $level_node_above++; }
+    if($nodes{$c} <  $opt_level) { $level_node_below++; }
+    $counter++; 
+}
+    
 #  print out the information
 print "max_depth : $max_depth\n";
 print "avg_depth : $avg_depth\n";
@@ -359,12 +403,17 @@ print "max_branch : $max_branch\n";
 print "avg_branch : $avg_branch\n";
 print "leaf_count : $leaf_count\n";
 print "node_count : $node_count\n";
-print "root : $root\n";
-
-
-#foreach my $b (sort {$a<=>$b} keys %branch_hash) {
-#    print "$b: $branch_hash{$b}\n";
-#}
+print "avg_leaf_depth: $avg_leaf_depth\n";
+print "avg_node_depth: $avg_node_depth\n";
+print "mean_leaf_depth: $leaf_mean_depth\n";
+print "mean_node_depth: $node_mean_depth\n";
+print "root : $root\n"; 
+if(defined $opt_level) { 
+    print "nodes_above_level: $level_node_above\n";
+    print "leafs_above_level: $level_leaf_above\n";
+    print "nodes_below_level: $level_node_below\n";
+    print "leafs_below_level: $level_leaf_below\n";
+}
 
 ######################################################################### 
 #  Depth First Search (DFS) 
@@ -498,7 +547,10 @@ sub showHelp() {
     
     print "--depth NUMBER           Searches up to the specified depth\n";
     print "                         Default searches the complete taxonomy\n\n";
-    
+
+    print "--level NUMBER           Returns the number of CUIs above and \n";
+    print "                         below this NUMBER.\n\n";
+
     print "--root CUI               Starts the search at a specified CUI\n";
     print "                         Default is the UMLS root\n\n";
     
@@ -511,7 +563,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findDFS.pl,v 1.14 2010/08/28 11:48:52 btmcinnes Exp $';
+    print '$Id: findDFS.pl,v 1.18 2010/09/23 13:53:03 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

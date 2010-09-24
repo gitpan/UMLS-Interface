@@ -1,5 +1,5 @@
 # UMLS::Interface::CuiFinder
-# (Last Updated $Id: CuiFinder.pm,v 1.39 2010/09/01 12:28:02 btmcinnes Exp $)
+# (Last Updated $Id: CuiFinder.pm,v 1.40 2010/09/23 13:53:03 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -131,6 +131,11 @@ sub new {
     my $className = shift;
     my $params = shift;
 
+    # bless the object.
+    bless($self, $className);
+
+    $self->_initializeGlobalVariables();
+
     # initialize error handler
     $errorhandler = UMLS::Interface::ErrorHandler->new();
     if(! defined $errorhandler) {
@@ -138,13 +143,80 @@ sub new {
 	exit;
     }
 	
-    # bless the object.
-    bless($self, $className);
-
+   
     # initialize the object.
     $self->_initialize($params);
 
     return $self;
+}
+
+# method to initialize the UMLS::Interface global variables
+sub _initializeGlobalVariables {
+    
+    my $self = shift;
+
+    #  error handling variables
+    $errorhandler = "";
+    
+    #  global variables
+    $debug     = 0;
+    
+    $version   = "";
+    
+    #  list of allowable sources 
+    $sources      = "";
+    %sabHash      = ();
+    %sabnamesHash = ();
+    $sabstring    = "";
+
+    #  list of allowable relations
+    $relations       = "";
+    $childRelations  = "";
+    $parentRelations = "";
+    $relstring       = "";
+    $relastring      = "";
+    
+    #  upper level taxonomy
+    %parentTaxonomyArray = ();
+    %childTaxonomyArray  = ();
+    
+    #  list of interested cuis - default is 
+    #  all given the specified set of sources
+    #  and relations. 
+    %cuiListHash    = ();
+    
+    
+    #  table names
+    $tableName       = "";
+    $parentTable     = "";
+    $childTable      = "";
+    $tableFile       = "";
+    $parentTableHuman= "";
+    $childTableHuman = "";
+    $tableNameHuman  = "";
+    $configFile      = "";
+    $childFile       = "";
+    $parentFile      = "";
+    $infoTable       = "";
+    $infoTableHuman  = "";
+    
+    #  flags and options
+    $umlsall            = 0;
+    $option_verbose     = 0;
+    $option_cuilist     = 0;
+    $option_t           = 0;
+    $option_config      = 0;
+    
+    #  definition containers
+    $sabdefsources      = "";
+    %relDefHash         = ();
+    %sabDefHash         = ();
+    $reldefstring       = "";
+    $sabdefstring       = "";
+    $reladefchildren    = "";
+    $reladefparents     = "";
+    %parameters         = ();
+
 }
 
 #  method to initialize the UMLS::Interface object.
@@ -163,6 +235,7 @@ sub _initialize {
 	$errorhandler->_error($pkg, $function, "", 2);
     }
 
+    
     $params = {} if(!defined $params);
 
     #  get some of the parameters
