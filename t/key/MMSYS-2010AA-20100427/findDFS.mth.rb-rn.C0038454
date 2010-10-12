@@ -24,8 +24,8 @@ max_branch : 6
 avg_branch : 4.33333333333333
 leaf_count : 11
 node_count : 3
-avg_leaf_depth: 2
-avg_node_depth: 1.33333333333333
-mean_leaf_depth: 3
-mean_node_depth: 2
+avg_leaf_depth : 2
+avg_node_depth : 1.33333333333333
+mean_leaf_depth : 3
+mean_node_depth : 2
 root : C0038454

@@ -403,16 +403,16 @@ print "max_branch : $max_branch\n";
 print "avg_branch : $avg_branch\n";
 print "leaf_count : $leaf_count\n";
 print "node_count : $node_count\n";
-print "avg_leaf_depth: $avg_leaf_depth\n";
-print "avg_node_depth: $avg_node_depth\n";
-print "mean_leaf_depth: $leaf_mean_depth\n";
-print "mean_node_depth: $node_mean_depth\n";
+print "avg_leaf_depth : $avg_leaf_depth\n";
+print "avg_node_depth : $avg_node_depth\n";
+print "mean_leaf_depth : $leaf_mean_depth\n";
+print "mean_node_depth : $node_mean_depth\n";
 print "root : $root\n"; 
 if(defined $opt_level) { 
-    print "nodes_above_level: $level_node_above\n";
-    print "leafs_above_level: $level_leaf_above\n";
-    print "nodes_below_level: $level_node_below\n";
-    print "leafs_below_level: $level_leaf_below\n";
+    print "nodes_above_level : $level_node_above\n";
+    print "leafs_above_level : $level_leaf_above\n";
+    print "nodes_below_level : $level_node_below\n";
+    print "leafs_below_level : $level_leaf_below\n";
 }
 
 ######################################################################### 
@@ -450,7 +450,9 @@ sub _depthFirstSearch
     if($concept=~/C1274015/) { return; }
     #C1274021|Moved elsewhere (inactive concept)
     if($concept=~/C1274021/) { return; }
-
+    #C2733115|limited status concept
+    if($concept=~/C2733115/) { return 1; }
+    
     #  set the new path
     my @path = @{$array};
     push @path, $concept;
@@ -563,7 +565,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findDFS.pl,v 1.18 2010/09/23 13:53:03 btmcinnes Exp $';
+    print '$Id: findDFS.pl,v 1.21 2010/10/08 19:26:04 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

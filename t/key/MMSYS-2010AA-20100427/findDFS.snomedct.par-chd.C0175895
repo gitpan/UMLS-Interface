@@ -24,8 +24,8 @@ max_branch : 0
 avg_branch : 0
 leaf_count : 1
 node_count : 0
-avg_leaf_depth: 1
-avg_node_depth: 0
-mean_leaf_depth: 0
-mean_node_depth: 0
+avg_leaf_depth : 1
+avg_node_depth : 0
+mean_leaf_depth : 0
+mean_node_depth : 0
 root : C0175895

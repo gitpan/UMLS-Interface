@@ -1,6 +1,10 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.79 to 0.81
+    1. added a forbidden CUI: C2733115|limited status concept which was
+    introduced in UMLS 2010AA
+
   Changes from version 0.77 to 0.79
     1. added --level option to findDFS.pl which prints out the number of
     leafs and nodes above a specified depth
