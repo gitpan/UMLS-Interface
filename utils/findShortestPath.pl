@@ -276,7 +276,7 @@ my $umls = "";
 my %option_hash = ();
 
 if(defined $opt_icpropagation) {
-    $option_hash{"propagation"} = $opt_icpropagation;
+    $option_hash{"icpropagation"} = $opt_icpropagation;
 }
 if(defined $opt_debug) {
     $option_hash{"debug"} = $opt_debug;
@@ -500,7 +500,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findShortestPath.pl,v 1.21 2010/08/16 21:29:21 btmcinnes Exp $';
+    print '$Id: findShortestPath.pl,v 1.22 2010/11/01 13:10:11 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

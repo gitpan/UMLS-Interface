@@ -1,5 +1,5 @@
 # UMLS::Interface::ICFinder
-# (Last Updated $Id: ICFinder.pm,v 1.16 2010/08/22 14:01:54 btmcinnes Exp $)
+# (Last Updated $Id: ICFinder.pm,v 1.17 2010/11/01 13:10:10 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -113,7 +113,8 @@ sub _initialize
 
     #  set function name
     my $function = "_initialize";
-  
+    &_debug($function);
+    
     #  check self
     if(!defined $self || !ref $self) {
 	$errorhandler->_error($pkg, $function, "", 2);
@@ -279,6 +280,62 @@ sub _getIC
     if(!defined $prob) { return 0; }
 
     return ($prob > 0 and $prob < 1) ? -log($prob) : 0;
+}
+
+ 
+#  returns the probability
+#  input : $concept <- string containing a cui
+#  output: $double  <- double containing its probability
+sub _getProbability
+{
+    my $self     = shift;
+    my $concept  = shift;
+
+    my $function = "_getIC";
+    &_debug($function);
+
+     #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+     
+    #  check concept was obtained
+    if(!$concept) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept.", 4);
+    }
+    
+    #  check if valid concept
+    if(! ($errorhandler->_validCui($concept)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($concept) in not valid.", 6);
+    }    
+       
+    #  if option frequency then the propagation hash 
+    #  hash has not been loaded and we should determine
+    #  the information content of the concept using the
+    #  frequency information in the file in realtime
+    if($option_icfrequency) { 
+	
+  	#  initialize the propagation hash
+	$self->_initializePropagationHash();
+	
+	#  load the propagation frequency hash
+	$self->_loadPropagationFreq(\%frequencyHash);
+	
+	#  propogate the counts
+	&_debug("_propagation");
+	my @array = ();
+	$self->_propagation($concept, \@array);
+	
+	#  tally up the propagation counts
+	$self->_tallyCounts();
+    }
+    
+    my $prob = $propagationHash{$concept};
+
+	
+    if(!defined $prob) { return 0; }
+
+    return $prob;
 }
 
 #  returns the propagation count (frequency)  of a cui
@@ -616,8 +673,6 @@ sub _loadPropagationHash {
 	
 	#  if blank line move on
 	if($_=~/^\s*$/) { next; }
-	
-
 	
 	#  get the cui and its frequency count
 	my ($cui, $freq) = split/<>/;

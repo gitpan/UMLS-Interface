@@ -83,6 +83,11 @@ doing this is that it avoides having a concept that has a probability
 of zero. The disadvantage is that it can shift the overall probability 
 mass of the concepts from what is actually seen in the corpus. 
 
+=head3 --infile
+
+Takes a file of CUIs (one per line) and returns their information 
+content.
+
 =head3 --debug
 
 Sets the debug flag for testing
@@ -180,7 +185,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-eval(GetOptions( "version", "help", "debug", "icfrequency", "icpropagation", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "smooth")) or die ("Please check the above mentioned option(s).\n");
+eval(GetOptions( "version", "help", "debug", "infile=s", "icfrequency", "icpropagation", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "smooth")) or die ("Please check the above mentioned option(s).\n");
 
 
 #  if help is defined, print out help
@@ -198,11 +203,12 @@ if( defined $opt_version ) {
 }
 
 # At least 1 CUI should be given on the command line.
-if(scalar(@ARGV) < 2) {
+if(!(defined $opt_infile) && scalar(@ARGV) < 2) {
     print STDERR "No term or file was specified on the command line\n";
     &minimalUsageNotes();
     exit;
 }
+
 
 my $inputfile = shift;
 
@@ -256,29 +262,43 @@ if(defined $opt_socket) {
 $umls = UMLS::Interface->new(\%option_hash); 
 die "Unable to create UMLS::Interface object.\n" if(!$umls);
 
-my $input = shift;
-my $term  = $input;
-
-my @c = ();
-if($input=~/C[0-9]+/) {
-    push @c, $input;
-    ($term) = $umls->getConceptList($input);
+my @array = ();
+if(defined $opt_infile) { 
+    open(FILE, $opt_infile) || die "Could not open $opt_infile\n";
+    while(<FILE>) {
+	chomp;
+	push @array, $_;
+    }
 }
 else {
-    @c = $umls->getConceptList($input);
+    my $input = shift;
+    push @array, $input;
 }
 
-my $printFlag = 0;
-my $precision = 4;
-my $floatformat = join '', '%', '.', $precision, 'f';
-foreach my $cui (@c) {
-    #  make certain cui exists in this view
-    if($umls->exists($cui) == 0) { next; }	
-
-    my $ic = $umls->getIC($cui); 
-    my $pic = sprintf $floatformat, $ic;
-
-    print "The information content of $term ($cui) is $pic\n";
+foreach my $input (@array) { 
+    my $term  = $input;
+    my @c = ();
+    if($input=~/C[0-9]+/) {
+	push @c, $input;
+	($term) = $umls->getConceptList($input);
+    }
+    else {
+	@c = $umls->getConceptList($input);
+    }
+    
+    my $printFlag = 0;
+    my $precision = 4;
+    my $floatformat = join '', '%', '.', $precision, 'f';
+    foreach my $cui (@c) {
+	#  make certain cui exists in this view
+	if($umls->exists($cui) == 0) { print STDERR "$cui\n"; next; }	
+	
+	my $ic = $umls->getIC($cui); 
+	#    my $pic = sprintf $floatformat, $ic;
+	#    my $pprob = sprintf $floatformat, $prob;
+	
+	print "The information content of $term ($cui) is $ic\n";
+    }
 }
 
 ##############################################################################
@@ -335,7 +355,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getIC.pl,v 1.12 2010/05/24 23:05:10 btmcinnes Exp $';
+    print '$Id: getIC.pl,v 1.13 2010/11/01 13:10:11 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

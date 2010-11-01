@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.88 2010/10/08 21:59:23 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.89 2010/11/01 13:10:09 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -60,7 +60,7 @@ my $pkg = "UMLS::Interface";
 
 use vars qw($VERSION);
 
-$VERSION = '0.81';
+$VERSION = '0.83';
 
 my $debug = 0;
 
@@ -761,6 +761,18 @@ sub getIC {
     my $ic = $icfinder->_getIC($concept);
 
     return $ic;    
+}
+
+#  returns the probability of a given cui
+#  input : $concept <- string containing a cui
+#  output: $double  <- double containing its probability
+sub getProbability {
+    my $self     = shift;
+    my $concept  = shift;
+    
+    my $prob = $icfinder->_getProbability($concept);
+
+    return $prob;
 }
 
 #  returns the total number of CUIs (N)

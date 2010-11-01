@@ -228,7 +228,7 @@ my $umls = "";
 my %option_hash = ();
 
 if(defined $opt_icpropagation) { 
-    $option_hash{"propagation"} = $opt_icpropagation;
+    $option_hash{"icpropagation"} = $opt_icpropagation;
 }
 if(defined $opt_debug) {
     $option_hash{"debug"} = $opt_debug;
@@ -418,7 +418,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findPathToRoot.pl,v 1.21 2010/05/24 17:57:16 btmcinnes Exp $';
+    print '$Id: findPathToRoot.pl,v 1.22 2010/11/01 13:10:11 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

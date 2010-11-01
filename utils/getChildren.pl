@@ -250,7 +250,7 @@ foreach my $input (@terms) {
     my $printFlag = 0;
     
     foreach my $cui (@c) {
-	
+
 	if($umls->exists($cui) == 0) { next; }	
 
 	my @children= $umls->getChildren($cui); 
@@ -328,7 +328,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getChildren.pl,v 1.14 2010/09/17 18:54:31 btmcinnes Exp $';
+    print '$Id: getChildren.pl,v 1.15 2010/11/01 13:10:11 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

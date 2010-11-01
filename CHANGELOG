@@ -1,6 +1,13 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.81 to 0.83
+    1. modified the --icpropagation option in findShortestPath.pl and the
+    findPathToRoot.pl programs. The option was not working properly.
+
+    2. modified getChildren to include the upper level taxonomy even if it
+    isn't explicitily stated in MRREL
+
   Changes from version 0.79 to 0.81
     1. added a forbidden CUI: C2733115|limited status concept which was
     introduced in UMLS 2010AA

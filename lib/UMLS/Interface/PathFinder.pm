@@ -1,5 +1,5 @@
 # UMLS::Interface::PathFinder
-# (Last Updated $Id: PathFinder.pm,v 1.43 2010/09/23 13:53:03 btmcinnes Exp $)
+# (Last Updated $Id: PathFinder.pm,v 1.44 2010/10/12 07:36:43 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -206,13 +206,13 @@ sub _setOptions  {
     #  check if the undirected option is set for shortest path
     if(defined $undirected) { 
 	$option_undirected = 1;
-	$output .= "  --undirected";
+	$output .= "  --undirected\n";
     }
     
     #  check if the cuilist option has been defined
     if(defined $cuilist) { 
 	$option_cuilist = 1;
-	$output .= "  --cuilist";
+	$output .= "  --cuilist\n";
     }
     
     

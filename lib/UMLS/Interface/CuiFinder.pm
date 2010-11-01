@@ -1,6 +1,6 @@
 
 # UMLS::Interface::CuiFinder
-# (Last Updated $Id: CuiFinder.pm,v 1.44 2010/10/11 22:21:30 btmcinnes Exp $)
+# (Last Updated $Id: CuiFinder.pm,v 1.45 2010/11/01 13:10:10 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -375,7 +375,7 @@ sub _createUpperLevelTaxonomy {
 
         #  get the sab's cui
         my $sab_cui = $self->_getSabCui($sab);
-
+	
         #  select all the CUIs from MRREL
         my $allCuis = $self->_getCuis($sab);
 
@@ -2470,6 +2470,9 @@ sub _exists {
     #  check if root
     if($concept eq $umlsRoot) { return 1; }
 
+    #  check if a sab
+    if(exists $sabHash{$concept}) { return 1; }
+
     #  set up database
     my $db = $self->{'db'};
     if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
@@ -3081,6 +3084,7 @@ sub _getChildren {
     my $concept = shift;
 
     my $function = "_getChildren";
+    &_debug($function);
 
     #  check self
     if(!defined $self || !ref $self) {
