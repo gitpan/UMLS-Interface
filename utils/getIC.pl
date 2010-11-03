@@ -355,7 +355,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getIC.pl,v 1.13 2010/11/01 13:10:11 btmcinnes Exp $';
+    print '$Id: getIC.pl,v 1.14 2010/11/03 14:41:25 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

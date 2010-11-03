@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.89 2010/11/01 13:10:09 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.90 2010/11/03 14:41:25 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -60,7 +60,7 @@ my $pkg = "UMLS::Interface";
 
 use vars qw($VERSION);
 
-$VERSION = '0.83';
+$VERSION = '0.85';
 
 my $debug = 0;
 
@@ -386,6 +386,19 @@ sub getAllConcepts {
     my @array = $cuifinder->_getAllConcepts($term);
 
     return @array;
+}
+
+#  method returns all the compounds in the sources 
+#  specified in the configuration file
+#  input:
+#  output: $hash <- reference to a hash containing cuis
+sub getCompounds {
+
+    my $self = shift;
+
+    my $hash = $cuifinder->_getCompounds();
+
+    return $hash;
 }
 
 #  returns all of the cuis in the sources specified in

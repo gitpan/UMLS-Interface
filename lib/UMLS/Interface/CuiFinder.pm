@@ -1,6 +1,6 @@
 
 # UMLS::Interface::CuiFinder
-# (Last Updated $Id: CuiFinder.pm,v 1.45 2010/11/01 13:10:10 btmcinnes Exp $)
+# (Last Updated $Id: CuiFinder.pm,v 1.46 2010/11/03 14:41:25 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -2937,6 +2937,66 @@ sub _getAllConcepts {
 
     return @{$arrRef};
 }
+
+#  method returns all the compounds in the sources 
+#  specified in the configuration file
+#  input:
+#  output: $hash <- reference to a hash containing cuis
+sub _getCompounds {
+
+    my $self = shift;
+
+    my $function = "_getCompounds";
+    &_debug($function);
+
+    #  check self
+    if(!defined $self || !ref $self) {
+        $errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    #  set up the database
+    my $db = $self->{'db'};
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
+
+    #  initialize return hash
+    my %compounds = ();
+
+    #  get strings in the MRCONSO table
+    if($umlsall) {
+	#  get all the terms from the MRCONSO table
+        my $strs = $db->selectcol_arrayref("select distinct STR from MRCONSO");
+        $errorhandler->_checkDbError($pkg, $function, $db);
+
+	#  loop through the terms and add the ones that have more than one word to the hash
+        foreach my $str (@{$strs}) { 
+	    my @array = split/\s+/, $str;
+	    if($#array > 0) { 
+		$compounds{$str} = 0; 
+	    }
+	}
+    }
+    else {
+
+	#  for each of the sabs in the configuratinon file get strings
+        foreach my $sab (sort keys %sabnamesHash) { 
+    
+	    #  get the cuis for that sab
+	    my $strs = $db->selectcol_arrayref("select distinct STR from MRCONSO where SAB=\'$sab\'");
+	    $errorhandler->_checkDbError($pkg, $function, $db);
+	    
+	    #  loop through the terms and add the ones that have more than one word to the hash
+	    foreach my $str (@{$strs}) { 
+		my @array = split/\s+/, $str;
+		if($#array > 0) { 
+		    $compounds{$str} = 0; 
+		}
+	    }
+	}
+    }
+    
+    return \%compounds;
+}
+
 
 #  method returns all of the cuis in the sources
 #  specified in the configuration file

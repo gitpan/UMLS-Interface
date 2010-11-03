@@ -2,16 +2,17 @@
 
 =head1 NAME
 
-getCuiList.pl - This program returns a list of CUIs based on the configuration file. 
+getCompounds.pl - This program returns a list of compounds in the UMLS.
+
 
 =head1 SYNOPSIS
 
-This program returns a list of CUIs based on the sources and relations specified 
-in the configuration file.
+This program returns a list of compounds that exist in a the sources specified 
+in the configuration file. 
 
 =head1 USAGE
 
-Usage: getCuiList.pl [OPTIONS] CONFIGFILE
+Usage: getCompounds.pl [OPTIONS] CONFIGFILE
 
 =head1 INPUT
 
@@ -196,10 +197,10 @@ if(defined $opt_socket) {
 $umls = UMLS::Interface->new(\%option_hash); 
 die "Unable to create UMLS::Interface object.\n" if(!$umls);
 
-my $hashref = $umls->getCuiList();
+my $hashref = $umls->getCompounds();
 
-foreach my $cui (sort keys %{$hashref}) {
-    print "$cui\n";
+foreach my $term (sort keys %{$hashref}) {
+    print "$term\n";
 }
 
 ##############################################################################
@@ -207,7 +208,7 @@ foreach my $cui (sort keys %{$hashref}) {
 ##############################################################################
 sub minimalUsageNotes {
     
-    print "Usage: getCuiList.pl [OPTIONS] CONFIGFILE\n";
+    print "Usage: getCompounds.pl [OPTIONS] CONFIGFILE\n";
     &askHelp();
     exit;
 }
@@ -218,10 +219,10 @@ sub minimalUsageNotes {
 sub showHelp() {
 
         
-    print "This is a utility returns all the CUIs associated with a\n";
+    print "This is a utility returns all the strings associated with a\n";
     print "configuration file.\n\n";
   
-    print "Usage: getCuiList.pl [OPTIONS] CONFIGFILE\n\n";
+    print "Usage: getCompounds.pl [OPTIONS] CONFIGFILE\n\n";
 
     print "Options:\n\n";
 
@@ -246,7 +247,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getCuiList.pl,v 1.4 2010/11/03 14:41:25 btmcinnes Exp $';
+    print '$Id: getCompounds.pl,v 1.1 2010/11/03 14:41:25 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 
@@ -254,6 +255,6 @@ sub showVersion {
 #  function to output "ask for help" message when user's goofed
 ##############################################################################
 sub askHelp {
-    print STDERR "Type getCuiList.pl --help for help.\n";
+    print STDERR "Type getCompounds.pl --help for help.\n";
 }
     

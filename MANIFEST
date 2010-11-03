@@ -37,6 +37,7 @@ t/functions.t
 t/getAssociatedCuis.t
 t/getAssociatedTerms.t
 t/getChildren.t
+t/getCompounds.t
 t/getCuiDef.t
 t/getCuiList.t
 t/getExtendedDef.t
@@ -72,6 +73,7 @@ t/key/MMSYS-2010AA-20100427/getChildren.mth.rb-rn.hand
 t/key/MMSYS-2010AA-20100427/getChildren.snomedct.par-chd-rb-rn.C1281583
 t/key/MMSYS-2010AA-20100427/getChildren.snomedct.par-chd.C0018563
 t/key/MMSYS-2010AA-20100427/getChildren.snomedct.par-chd.hand
+t/key/MMSYS-2010AA-20100427/getCompounds.mth.rb-rn
 t/key/MMSYS-2010AA-20100427/getCuiDef.msh.par-chd.C0018563
 t/key/MMSYS-2010AA-20100427/getCuiDef.msh.par-chd.hand
 t/key/MMSYS-2010AA-20100427/getCuiDef.mth.rb-rn.C0018563
@@ -157,6 +159,7 @@ utils/findShortestPathLength.pl
 utils/getAssociatedCuis.pl
 utils/getAssociatedTerms.pl
 utils/getChildren.pl
+utils/getCompounds.pl
 utils/getCuiDef.pl
 utils/getCuiList.pl
 utils/getExtendedDef.pl

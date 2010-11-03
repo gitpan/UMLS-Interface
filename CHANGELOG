@@ -1,6 +1,13 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.83 to 0.85
+1. added a new program called getCompounds.pl which returns a list
+    of compounds from the MRCONSO table given a specified set of 
+    sources in the configuration table
+    2. added the getCompound() function in the Interface.pm module to
+    support this program
+
   Changes from version 0.81 to 0.83
     1. modified the --icpropagation option in findShortestPath.pl and the
     findPathToRoot.pl programs. The option was not working properly.
