@@ -24,7 +24,7 @@ WriteMakefile(
 				      'Digest::SHA1' => '2.12',
                                       'File::Spec' => '3.31',
                                       'File::Path' => '2.08'},
-              'EXE_FILES'         => [("utils/removeConfigData.pl", "utils/findLeastCommonSubsumer.pl", "utils/findPathToRoot.pl", "utils/findShortestPath.pl", "utils/getChildren.pl", "utils/getParents.pl", "utils/getCuiDef.pl", "utils/getExtendedDef.pl", "utils/getRelated.pl", "utils/getRelations.pl", "utils/getStDef.pl", "utils/getAssociatedTerms.pl", "utils/getAssociatedCuis.pl", "utils/findCuiDepth.pl", "utils/getSts.pl", "utils/findDFS.pl", "utils/getTableNames.pl", "utils/getCuiList.pl", "utils/getIC.pl", "utils/getStString.pl", "utils/findShortestPathLength.pl", "utils/getCompounds.pl")],
+              'EXE_FILES'         => [("utils/removeConfigData.pl", "utils/findLeastCommonSubsumer.pl", "utils/findPathToRoot.pl", "utils/findShortestPath.pl", "utils/getChildren.pl", "utils/getParents.pl", "utils/getCuiDef.pl", "utils/getExtendedDef.pl", "utils/getRelated.pl", "utils/getRelations.pl", "utils/getStDef.pl", "utils/getAssociatedTerms.pl", "utils/getAssociatedCuis.pl", "utils/findCuiDepth.pl", "utils/getSts.pl", "utils/findDFS.pl", "utils/getTableNames.pl", "utils/getCuiList.pl", "utils/getIC.pl", "utils/getStString.pl", "utils/findShortestPathLength.pl", "utils/getCompounds.pl", "utils/findNumberOfCloserConcepts.pl")],
               'dist'              => {'COMPRESS' => 'gzip -9f', 'SUFFIX' => 'gz'},
               ($] >= 5.005 ?
                ('ABSTRACT_FROM'   => 'lib/UMLS/Interface.pm', # retrieve abstract from module

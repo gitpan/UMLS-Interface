@@ -153,6 +153,7 @@ TODO
 utils/findCuiDepth.pl
 utils/findDFS.pl
 utils/findLeastCommonSubsumer.pl
+utils/findNumberOfCloserConcepts.pl
 utils/findPathToRoot.pl
 utils/findShortestPath.pl
 utils/findShortestPathLength.pl
@@ -172,3 +173,4 @@ utils/getSts.pl
 utils/getStString.pl
 utils/getTableNames.pl
 utils/removeConfigData.pl
+utils/umlsCycles.pl

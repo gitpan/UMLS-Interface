@@ -1,10 +1,18 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.85 to 0.87
+    1. changed the IC to return log base 10 rather than the natural log
+    (which is the default in perl)
+
+    2. added a new util/ program findNumberOfCloserConcepts.pl to coincide
+    with the new function findNumberOfCloserConcepts()
+
   Changes from version 0.83 to 0.85
-1. added a new program called getCompounds.pl which returns a list
-    of compounds from the MRCONSO table given a specified set of 
-    sources in the configuration table
+    1. added a new program called getCompounds.pl which returns a list of
+    compounds from the MRCONSO table given a specified set of sources in the
+    configuration table
+
     2. added the getCompound() function in the Interface.pm module to
     support this program
 

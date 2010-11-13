@@ -60,7 +60,7 @@ my $pkg = "UMLS::Interface";
 
 use vars qw($VERSION);
 
-$VERSION = '0.85';
+$VERSION = '0.87';
 
 my $debug = 0;
 
@@ -711,6 +711,21 @@ sub findMaximumDepth {
 
     return $depth;
 }    
+
+#  method that finds the number of cuis closer to concept1 than concept2
+#  input : $concept1  <- the first concept
+#          $concept2  <- the second concept
+#  output: $number    <- number of cuis closer to concept1 than concept2
+sub findNumberOfCloserConcepts {
+
+    my $self = shift;
+    my $concept1 = shift;
+    my $concept2 = shift;
+    
+    my $length = $pathfinder->_findNumberOfCloserConcepts($concept1, $concept2);
+    
+    return $length;
+}
 
 
 #  method that finds the length of the shortest path

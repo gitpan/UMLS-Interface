@@ -3144,7 +3144,7 @@ sub _getChildren {
     my $concept = shift;
 
     my $function = "_getChildren";
-    &_debug($function);
+    #&_debug($function);
 
     #  check self
     if(!defined $self || !ref $self) {

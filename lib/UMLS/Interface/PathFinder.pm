@@ -2526,6 +2526,260 @@ sub _shortestPath {
     return \%rhash;
 }
 
+
+#  method that finds the length of the shortest path
+#  input : $concept1  <- the first concept
+#          $concept2  <- the second concept
+#  output: $number    <- number cuis closer to concept1 than concept2
+sub _findNumberOfCloserConcepts {
+
+    my $self = shift;
+    my $concept1 = shift;
+    my $concept2 = shift;
+    
+    my $function = "_findNumberOfCloserConcepts($concept1, $concept2)";
+    &_debug($function);
+      
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    if($concept1 eq $concept2) { return 0; }
+
+    my %closerConceptHash = ();
+
+    #  set the count
+    my %visited1 = ();    my %visited2 = ();
+    
+    #  set the stack
+    my @stack1 = $cuifinder->_getParents($concept1);
+
+    my @stack2 = $cuifinder->_getParents($concept2);
+    my @directions1  = ();    my @directions2  = ();
+    my @relations1   = ();    my @relations2   = ();
+    my @paths1       = ();    my @paths2       = ();
+    my $path_length1 = -1;    my $path_length2 = -1;
+
+    #  get the parents 
+    foreach my $element (@stack1) {
+	my @array1      = (); 
+	push @paths1, \@array1;
+	push @directions1, 0;
+	push @relations1, "PAR";
+    }
+    foreach my $element (@stack2) {
+	my @array2      = (); 
+	push @paths2, \@array2;
+	push @directions2, 0;
+	push @relations2, "PAR";
+    }
+   
+    #  now loop through the stack
+    while($#stack1 >= 0 || $#stack2 >= 0) {
+	
+	my $c1            = "";	my $c2            = "";
+	my $path1         = "";	my $path2         = "";
+	my $direction1    = "";	my $direction2    = "";
+	my $relation1     = "";	my $relation2     = "";
+	my @intermediate1 = (); my @intermediate2 = ();
+	my $series1       = "";	my $series2       = "";
+	my $distance1     = -1;	my $distance2     = -1;
+	my $cui1flag      = 0;  my $cui2flag      = 0;
+
+	if($#stack1 >=0)  {
+	    $c1          = pop @stack1;
+	    $path1       = pop @paths1;
+	    $direction1  = pop @directions1;
+	    $relation1   = pop @relations1;
+
+	    @intermediate1 = @{$path1};
+	    $series1 = join " ", @intermediate1;
+	    push @intermediate1, $c1;
+	    $distance1 = $#intermediate1;
+	    $cui1flag++;
+	}
+	
+	if($#stack2 >=0)  {
+	    $c2          = pop @stack2;
+	    $path2       = pop @paths2;
+	    $direction2  = pop @directions2;
+	    $relation2   = pop @relations2;
+	    
+	    @intermediate2 = @{$path2};
+	    $series2 = join " ", @intermediate2;
+	    push @intermediate2, $c2;
+	    $distance2 = $#intermediate2;
+	    $cui2flag++;
+	}
+	
+
+	
+	#  check if it is our concept2
+	if($c1 eq $concept2) { 
+	    $path_length1 = $distance1 + 2;
+	    if($#stack2 < 0) { last; }
+	}
+
+	
+	#  check if it is our concept2
+	if($c2 eq $concept1) { 
+	    $path_length2 = $distance2 + 2;
+	    if($#stack1 < 0) { last; }
+	}
+
+	#  if both paths have been set return the shortest
+	if($path_length1 > -1 && $path_length2 > -1) { last; }
+
+	#  if path length1 is set and is distance2 is greater then what
+	#  ever path we find for distance2 is going to be more than 
+	#  for pathlength1 so return (this also works for pathlength2)
+	if($path_length1 > -1 && $path_length1 <= ($distance2+2)) { last; }
+	if($path_length2 > -1 && $path_length2 <= ($distance1+2)) { last; }
+	
+
+	#  check if concept has been visited already through that path
+	my $flag1 = 0; my $flag2 = 0;
+	if(exists $visited1{$c1}) { $flag1++; }	
+	else { $visited1{$c1}++; }
+
+	if(exists $visited2{$c2}) { $flag2++; }	
+	else { $visited2{$c2}++; }
+
+	#  set the flags if nothing exists
+	if($cui1flag == 0) { $flag1++; }
+	if($cui2flag == 0) { $flag2++; }
+
+	#  check that the concept is not one of the forbidden concepts
+	if($cui1flag > 0 && $cuifinder->_forbiddenConcept($c1)) { $flag1++; }
+	if($cui2flag > 0 && $cuifinder->_forbiddenConcept($c2)) { $flag2++; }
+
+	#  if both concepts have been flagged - next
+	if($flag1 > 0 && $flag2 > 0) { next; }
+
+	#  add concepts to the closest hash if closer
+	if($flag1 <= 0) { 
+	    if(! (exists $closerConceptHash{$c1}) ) {
+		$closerConceptHash{$c1} = $distance1 + 2; 
+	    }
+	}
+	if($flag2 <= 0) { 
+	    if(! (exists $closerConceptHash{$c2}) ) {
+		$closerConceptHash{$c2} = $distance2 + 2; 
+	    }
+	}
+
+	#  if the previous direction was a child we have a change in direction
+	my $dchange1 = $direction1;
+	my $dchange2 = $direction2;
+	
+	#  if the undirected option is set the dchange doesn't matter
+	#  otherwise we need to check
+	if(!$option_undirected) { 
+	    if($relation1 eq "CHD") { $dchange1 = $direction1 + 1; }
+	    if($relation2 eq "CHD") { $dchange2 = $direction2 + 1; }
+	}
+	
+	#  if we have not had more than a single direction change
+	my @parents1 = (); my @parents2 = ();
+	if($flag1 == 0 && $dchange1 < 2)  {
+	    @parents1  = $cuifinder->_getParents($c1);		
+	}
+	if($flag2 == 0 && $dchange2 < 2)  {
+	    @parents2  = $cuifinder->_getParents($c2);		
+	}
+	
+	foreach my $parent1 (@parents1) {
+	    #  check if concept has already in the path
+	    if($series1=~/$parent1/) { next; }
+	    if($parent1 eq $c1)      { next; }
+	    unshift @stack1, $parent1;
+	    unshift @paths1, \@intermediate1;
+	    unshift @relations1, "PAR";
+	    unshift @directions1, $dchange1;
+	}
+
+	foreach my $parent2 (@parents2) {
+	    #  check if concept has already in the path
+	    if($series2=~/$parent2/) { next; }
+	    if($parent2 eq $c2)      { next; }
+
+	    unshift @stack2, $parent2;
+	    unshift @paths2, \@intermediate2;
+	    unshift @relations2, "PAR";
+	    unshift @directions2, $dchange2;
+	}
+	
+	
+	#  now with the chilcren if the previous direction was a parent we have
+	#  have to change the direction
+	$dchange1 = $direction1;
+	$dchange2 = $direction2;
+
+	#  if the undirected option is set the dchange doesn't matter
+	#  otherwise we need to check
+	if(!$option_undirected) { 
+	    if($relation1 eq "PAR") { $dchange1 = $direction1 + 1; }
+	    if($relation2 eq "PAR") { $dchange2 = $direction2 + 1; }
+	}
+
+	
+
+	#  if we have not had more than a single direction change
+	#  now search through the children
+	my @children1 = (); my @children2 = ();
+	if($flag1 == 0 && $dchange1 < 2) {
+	    @children1 = $cuifinder->_getChildren($c1);
+	}
+
+	if($flag2 == 0 && $dchange2 < 2) {
+	    @children2 = $cuifinder->_getChildren($c2);
+	}
+	
+	foreach my $child1 (@children1) {
+	    #  check if child cui has already in the path
+	    if($series1=~/$child1/)  { next; }
+	    if($child1 eq $c1) { next; }
+	    
+	    #  if not continue 
+	    unshift @stack1, $child1;
+	    unshift @paths1, \@intermediate1;
+	    unshift @relations1, "CHD";
+	    unshift @directions1, $dchange1;
+	}
+
+	foreach my $child2 (@children2) {
+	    #  check if child cui has already in the path
+	    if($series2=~/$child2/)  { next; }
+	    if($child2 eq $c2) { next; }
+	    
+	    #  if not continue 
+	    unshift @stack2, $child2;
+	    unshift @paths2, \@intermediate2;
+	    unshift @relations2, "CHD";
+	    unshift @directions2, $dchange2;
+	}
+    }
+
+    if($path_length1 < 0 && $path_length2 < 0) { return -1; }
+    
+    my $length = $path_length1 < $path_length2 ? $path_length1 : $path_length2;
+    
+    if($path_length1 < 0) { $length = $path_length2; }
+    if($path_length2 < 0) { $length = $path_length1; }
+
+    my $counter = 0;
+    foreach my $cui (sort keys %closerConceptHash) { 
+	if($closerConceptHash{$cui} < $length) { 
+	    $counter++; 
+	}
+    }
+
+    
+    #  no path was found return -1
+    return $counter;
+}
+
 1;
 
 __END__

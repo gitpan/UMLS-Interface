@@ -1,5 +1,5 @@
 # UMLS::Interface::ICFinder
-# (Last Updated $Id: ICFinder.pm,v 1.17 2010/11/01 13:10:10 btmcinnes Exp $)
+# (Last Updated $Id: ICFinder.pm,v 1.18 2010/11/04 22:44:58 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -279,7 +279,9 @@ sub _getIC
 
     if(!defined $prob) { return 0; }
 
-    return ($prob > 0 and $prob < 1) ? -log($prob) : 0;
+    my $ic = 0;
+    if($prob > 0 and $prob < 1) { $ic = -1 * (log($prob) / log(10)); }    
+    return $ic;
 }
 
  
