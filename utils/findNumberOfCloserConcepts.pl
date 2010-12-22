@@ -358,7 +358,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findNumberOfCloserConcepts.pl,v 1.1 2010/09/01 22:09:25 btmcinnes Exp $';
+    print '$Id: findNumberOfCloserConcepts.pl,v 1.1 2010/11/29 22:59:20 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

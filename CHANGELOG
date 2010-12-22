@@ -1,6 +1,9 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.87 to 0.89
+    1. added the mysql_auto_reconnect option to the database variables
+
   Changes from version 0.85 to 0.87
     1. changed the IC to return log base 10 rather than the natural log
     (which is the default in perl)

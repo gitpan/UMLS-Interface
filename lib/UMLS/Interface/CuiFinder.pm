@@ -1,6 +1,6 @@
 
 # UMLS::Interface::CuiFinder
-# (Last Updated $Id: CuiFinder.pm,v 1.46 2010/11/03 14:41:25 btmcinnes Exp $)
+# (Last Updated $Id: CuiFinder.pm,v 1.49 2010/12/22 01:10:46 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -249,7 +249,7 @@ sub _initialize {
 
     #  to store the database object
     my $db = $self->_setDatabase($params);
-
+    
     #  set up the options
     $self->_setOptions($params);
 
@@ -664,6 +664,11 @@ sub _connectIndexDB {
     }
 
     $errorhandler->_checkDbError($pkg, $function, $sdb);
+
+    #  set database parameters
+    $sdb->{'mysql_enable_utf8'} = 1;
+    $sdb->do('SET NAMES utf8');
+    $sdb->{mysql_auto_reconnect} = 1;
 
     $self->{'sdb'} = $sdb;
 
@@ -2292,6 +2297,7 @@ sub _setDatabase  {
     #  set database parameters
     $db->{'mysql_enable_utf8'} = 1;
     $db->do('SET NAMES utf8');
+    $db->{mysql_auto_reconnect} = 1;
 
     #  set the self parameters
     $self->{'db'}           = $db;
