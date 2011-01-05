@@ -1,6 +1,6 @@
 
 # UMLS::Interface::CuiFinder
-# (Last Updated $Id: CuiFinder.pm,v 1.49 2010/12/22 01:10:46 btmcinnes Exp $)
+# (Last Updated $Id: CuiFinder.pm,v 1.52 2011/01/03 18:16:26 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -100,7 +100,8 @@ my $childFile       = "";
 my $parentFile      = "";
 my $infoTable       = "";
 my $infoTableHuman  = "";
-
+my $cacheTable      = "";
+my $cacheTableHuman = "";
 
 #  flags and options
 my $umlsall            = 0;
@@ -202,6 +203,8 @@ sub _initializeGlobalVariables {
     $parentFile      = "";
     $infoTable       = "";
     $infoTableHuman  = "";
+    $cacheTable      = "";
+    $cacheTableHuman = "";
 
     #  flags and options
     $umlsall            = 0;
@@ -282,6 +285,9 @@ sub _initialize {
 
     #  set the upper level taxonomy
     $self->_setUpperLevelTaxonomy();
+
+    #  set the cache tables
+    $self->_setCacheTable();
 }
 
 #  this function returns the umls root
@@ -290,6 +296,41 @@ sub _initialize {
 sub _root {
 
     return $umlsRoot;
+}
+
+#  this function sets the upper level taxonomy between
+#  the sources and the root UMLS node
+#  input :
+#  output:
+sub _setCacheTable {
+
+    my $self = shift;
+
+    my $function = "_setCacheTable";
+    &_debug($function);
+
+    #  check self
+    if(!defined $self || !ref $self) {
+        $errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    #  set the sourceDB handler
+    my $sdb = $self->{'sdb'};
+    if(!$sdb) { $errorhandler->_error($pkg, $function, "Error with sdb.", 3); }
+
+    #  check if the cache table exists 
+    #  if does just return otherwise create it
+    if($self->_checkTableExists($cacheTable)) { 
+        return;
+    }
+    else {
+	#  create cache table
+	$sdb->do("CREATE TABLE IF NOT EXISTS $cacheTable (CUI1 char(8), CUI2 char(8), LENGTH char(8))");
+	$errorhandler->_checkDbError($pkg, $function, $sdb);
+	#  store the name in the table index
+	$sdb->do("INSERT INTO tableindex (TABLENAME, HEX) VALUES ('$cacheTableHuman', '$cacheTable')");
+	$errorhandler->_checkDbError($pkg, $function, $sdb);
+    }
 }
 
 #  this function sets the upper level taxonomy between
@@ -869,6 +910,7 @@ sub _setConfigurationFile {
     $parentTable= "$ver";
     $childTable = "$ver";
     $infoTable  = "$ver";
+    $cacheTable = "$ver";
 
     my $output = "";
     $output .= "UMLS-Interface Configuration Information\n";
@@ -890,6 +932,7 @@ sub _setConfigurationFile {
         $tableName  .= "_$sab";
         $parentTable.= "_$sab";
         $childTable .= "_$sab";
+	$cacheTable .= "_$sab";
         $infoTable  .= "_$sab";
         $saboutput .= "    $sab\n";
     }
@@ -924,6 +967,7 @@ sub _setConfigurationFile {
         $tableName  .= "_$rel";
         $parentTable.= "_$rel";
         $childTable .= "_$rel";
+	$cacheTable .= "_$rel";
         $infoTable  .= "_$rel";
 
         $output .= "    $rel\n";
@@ -946,6 +990,7 @@ sub _setConfigurationFile {
         $tableName  .= "_$rel";
         $parentTable.= "_$rel";
         $childTable .= "_$rel";
+	$cacheTable .= "_$rel";
         $infoTable  .= "_$rel";
 
         $output .= "    $rel\n";
@@ -958,12 +1003,14 @@ sub _setConfigurationFile {
     $tableName  .= "_table";
     $parentTable.= "_parent";
     $childTable .= "_child";
+    $cacheTable .= "_cache";
     $infoTable .= "_info";
 
     #  convert the databases to the hex name
     #  and store the human readable form
     $tableNameHuman   = $tableName;
     $childTableHuman  = $childTable;
+    $cacheTableHuman  = $cacheTable;
     $parentTableHuman = $parentTable;
     $infoTableHuman   = $infoTable;
 
@@ -971,6 +1018,7 @@ sub _setConfigurationFile {
     $childTable  = "a" . sha1_hex($childTableHuman);
     $parentTable = "a" . sha1_hex($parentTableHuman);
     $infoTable   = "a" . sha1_hex($infoTableHuman);
+    $cacheTable  = "a" . sha1_hex($cacheTableHuman);
 
     if($option_verbose) {
         $output .= "  Configuration file:\n";
@@ -2899,6 +2947,7 @@ sub _getConceptList {
         $arrRef = $db->selectcol_arrayref("select distinct CUI from MRCONSO where STR='$term'");
     }
     elsif($sources ne "") {
+
         $arrRef = $db->selectcol_arrayref("select distinct CUI from MRCONSO where STR='$term' and ($sources)");
     }
     else {
@@ -3860,6 +3909,7 @@ sub _returnTableNames {
     $hash{$parentTableHuman} = $parentTable;
     $hash{$childTableHuman}  = $childTable;
     $hash{$tableNameHuman}   = $tableName;
+    $hash{$cacheTableHuman} = $cacheTable;
 
     return \%hash;
 }
@@ -3904,6 +3954,10 @@ sub _dropConfigTable {
         $sdb->do("drop table $childTable");
         $errorhandler->_checkDbError($pkg, $function, $sdb);
     }
+    if(exists $tables{$cacheTable}) {
+        $sdb->do("drop table $cacheTable");
+        $errorhandler->_checkDbError($pkg, $function, $sdb);
+    }
     if(exists $tables{$tableName}) {
         $sdb->do("drop table $tableName");
         $errorhandler->_checkDbError($pkg, $function, $sdb);
@@ -3918,6 +3972,9 @@ sub _dropConfigTable {
         $errorhandler->_checkDbError($pkg, $function, $sdb);
 
         $sdb->do("delete from tableindex where HEX='$childTable'");
+        $errorhandler->_checkDbError($pkg, $function, $sdb);
+
+        $sdb->do("delete from tableindex where HEX='$cacheTable'");
         $errorhandler->_checkDbError($pkg, $function, $sdb);
 
         $sdb->do("delete from tableindex where HEX='$tableName'");
@@ -4074,6 +4131,14 @@ sub _getTableNameHuman {
     return $tableNameHuman;
 }
 
+sub _getCacheTableName {
+    return $cacheTable;
+}
+
+sub _getCacheTableNameHuman{ 
+    return $cacheTableHuman;
+}
+
 sub _getInfoTableName {
     return $infoTable;
 }
@@ -4089,114 +4154,112 @@ sub _getInfoTableNameHuman {
 
 __END__
 
-    =head1 NAME
+=head1 NAME
 
-    UMLS::Interface::CuiFinder - provides the information
-    about CUIs in the UMLS for the modules in the
-    UMLS::Interface package.
+UMLS::Interface::CuiFinder - provides the information about CUIs 
+in the UMLS for the modules in the UMLS::Interface package.
 
-    =head1 DESCRIPTION
+=head1 DESCRIPTION
 
-    This package provides the information about CUIs in the
-    UMLS for the modules in the UMLS::Interface package.
+This package provides the information about CUIs in the
+UMLS for the modules in the UMLS::Interface package.
 
-    For more information please see the UMLS::Interface.pm
-    documentation.
+For more information please see the UMLS::Interface.pm documentation.
 
-    =head1 SYNOPSIS
+=head1 SYNOPSIS
 
-    #!/usr/bin/perl
+ #!/usr/bin/perl
 
-    use UMLS::Interface::CuiFinder;
+ use UMLS::Interface::CuiFinder;
 
-%params = ();
+ %params = ();
 
-$params{"realtime"} = 1;
+ $params{"realtime"} = 1;
 
-$cuifinder = UMLS::Interface::CuiFinder->new(\%params);
-die "Unable to create UMLS::Interface::CuiFinder object.\n" if(!$cuifinder);
+ $cuifinder = UMLS::Interface::CuiFinder->new(\%params);
+ die "Unable to create UMLS::Interface::CuiFinder object.\n" if(!$cuifinder);
 
-$root = $cuifinder->_root();
+ $root = $cuifinder->_root();
 
-$version = $cuifinder->_version();
+ $version = $cuifinder->_version();
 
-$concept = "C0018563"; $rel = "PAR";
-@array = $cuifinder->_getRelated($concept, $rel);
-@array = $cuifinder->_getTermList($concept);
-@array = $cuifinder->_getAllTerms($concept);
+ $concept = "C0018563"; $rel = "PAR";
+ @array = $cuifinder->_getRelated($concept, $rel);
+ @array = $cuifinder->_getTermList($concept);
+ @array = $cuifinder->_getAllTerms($concept);
 
-$term = shift @array;
-@array = $cuifinder->_getConceptList($term);
-@array = $cuifinder ->_getAllConcepts($term);
+ $term = shift @array;
+ @array = $cuifinder->_getConceptList($term);
+ @array = $cuifinder ->_getAllConcepts($term);
 
-$hash = $cuifinder->_getCuiList();
+ $hash = $cuifinder->_getCuiList();
 
-$sab = "MSH";
-$array = $cuifinder->_getCuisFromSource($sab);
+ $sab = "MSH";
+ $array = $cuifinder->_getCuisFromSource($sab);
 
-@array = $cuifinder->_getSab($concept);
+ @array = $cuifinder->_getSab($concept);
 
-@array = $cuifinder->_getChildren($concept);
+ @array = $cuifinder->_getChildren($concept);
 
-@array = $cuifinder->_getParents($concept);
+ @array = $cuifinder->_getParents($concept);
 
-@array = $cuifinder->_getRelations($concept);
+ @array = $cuifinder->_getRelations($concept);
 
-$concept1 = "C0018563"; $concept2 = "C0037303";
+ $concept1 = "C0018563"; $concept2 = "C0037303";
 
-@array = $cuifinder->_getRelationsBetweenCuis($concept1, $concept2);
+ @array = $cuifinder->_getRelationsBetweenCuis($concept1, $concept2);
 
-@array = $cuifinder->_getSt($concept);
+ @array = $cuifinder->_getSt($concept);
 
-$abr = "bpoc";
-$string = $cuifinder->_getStString($abr);
+ $abr = "bpoc";
+ $string = $cuifinder->_getStString($abr);
 
-$tui = "T12";
-$string = $cuifinder->_getStAbr($tui);
+ $tui = "T12";
+ $string = $cuifinder->_getStAbr($tui);
 
-$definition = $cuifinder->_getStDef($abr);
+ $definition = $cuifinder->_getStDef($abr);
 
-$array = $cuifinder->_getExtendedDefinition($concept);
+ $array = $cuifinder->_getExtendedDefinition($concept);
 
-@array = $cuifinder->_getCuiDef($concept, $sabflag);
+ @array = $cuifinder->_getCuiDef($concept, $sabflag);
 
-$bool = $cuifinder->_exists($concept);
+ $bool = $cuifinder->_exists($concept);
 
-$hash = $cuifinder->_returnTableNames();
+ $hash = $cuifinder->_returnTableNames();
 
 =head1 INSTALL
 
-    To install the module, run the following magic commands:
+To install the module, run the following magic commands:
 
     perl Makefile.PL
     make
     make test
     make install
 
-    This will install the module in the standard location. You will, most
-    probably, require root privileges to install in standard system
-    directories. To install in a non-standard directory, specify a prefix
-    during the 'perl Makefile.PL' stage as:
+This will install the module in the standard location. You will, most
+probably, require root privileges to install in standard system
+directories. To install in a non-standard directory, specify a prefix
+during the 'perl Makefile.PL' stage as:
 
     perl Makefile.PL PREFIX=/home/sid
 
-    It is possible to modify other parameters during installation. The
-    details of these can be found in the ExtUtils::MakeMaker
-    documentation. However, it is highly recommended not messing around
-    with other parameters, unless you know what you're doing.
+It is possible to modify other parameters during installation. The
+details of these can be found in the ExtUtils::MakeMaker
+documentation. However, it is highly recommended not messing around
+with other parameters, unless you know what you're doing.
 
-    =head1 SEE ALSO
+=head1 SEE ALSO
 
-http://tech.groups.yahoo.com/group/umls-similarity/
+L<http://tech.groups.yahoo.com/group/umls-similarity/>
 
-http://search.cpan.org/dist/UMLS-Similarity/
+L<http://search.cpan.org/dist/UMLS-Similarity/>
 
-    =head1 AUTHOR
+=head1 AUTHOR
 
     Bridget T McInnes <bthomson@cs.umn.edu>
     Ted Pedersen <tpederse@d.umn.edu>
 
-    =head1 COPYRIGHT
+=head1 COPYRIGHT
 
     Copyright (c) 2007-2009
     Bridget T. McInnes, University of Minnesota
@@ -4214,17 +4277,17 @@ http://search.cpan.org/dist/UMLS-Similarity/
     Ying Liu, University of Minnesota Twin Cities
     liux0395 at umn.edu
 
-    This program is free software; you can redistribute it and/or modify it under
-    the terms of the GNU General Public License as published by the Free Software
-    Foundation; either version 2 of the License, or (at your option) any later
-    version.
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation; either version 2 of the License, or (at your option) any later
+version.
 
-    This program is distributed in the hope that it will be useful, but WITHOUT
-    ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-    FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License along with
-    this program; if not, write to
+You should have received a copy of the GNU General Public License along with
+this program; if not, write to
 
     The Free Software Foundation, Inc.,
     59 Temple Place - Suite 330,

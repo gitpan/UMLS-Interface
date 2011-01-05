@@ -1,6 +1,15 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.89 to 0.91
+    1. modified documentation
+
+    2. added a length cache for the realtime option so once you find the
+    path length in realtime, it will store that for you. This is similar to
+    what I did for the depth only this only runs during realtime - other
+    wise there is the index that is created so there is no point in having
+    both due to space issues.
+
   Changes from version 0.87 to 0.89
     1. added the mysql_auto_reconnect option to the database variables
 

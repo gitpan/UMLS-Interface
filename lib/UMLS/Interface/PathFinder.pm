@@ -1,5 +1,5 @@
 # UMLS::Interface::PathFinder
-# (Last Updated $Id: PathFinder.pm,v 1.45 2010/11/12 19:54:07 btmcinnes Exp $)
+# (Last Updated $Id: PathFinder.pm,v 1.47 2011/01/01 16:03:08 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -1127,12 +1127,13 @@ sub _findShortestPath {
 
     #  if realtime option is set find the shortest path in realtime 
     if($option_realtime) {
-	return $self->_findShortestPathInRealTime($concept1, $concept2);
+       	return $self->_findShortestPathInRealTime($concept1, $concept2);
     }
     else {
 	return $self->_findShortestPathThroughLCS($concept1, $concept2);
     }
 }
+
 
 #  this function returns the shortest path between two concepts
 #  input : $concept1 <- string containing the first cui
@@ -1979,7 +1980,14 @@ sub _findShortestPathLength {
     }
 
     if($option_realtime) {
-	return $self->_findShortestPathLengthInRealTime($concept1, $concept2);
+	
+	my $length = $self->_findShortestPathLengthInCache($concept1, $concept2);
+	if(defined $length) { return $length; }
+	else { 
+	    my $length = $self->_findShortestPathLengthInRealTime($concept1, $concept2);
+	    $self->_storeShortestPathLengthInCache($concept1, $concept2, $length);
+	    return $length;
+	}
     }
     else {
 	
@@ -1992,6 +2000,80 @@ sub _findShortestPathLength {
 	}
 	else { return -1; }
     }
+}
+
+
+sub _storeShortestPathLengthInCache
+{
+    my $self     = shift;
+    my $concept1 = shift;
+    my $concept2 = shift;
+    my $length   = shift;
+
+    my $function = "_storeShortestPathLengthInCache";
+    &_debug($function);
+         
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    #  get the info table name
+    my $cacheTableName = $cuifinder->_getCacheTableName();
+    
+    #  set the index DB handler
+    my $sdb = $self->{'sdb'};
+    if(!$sdb) { $errorhandler->_error($pkg, $function, "Error with sdb.", 3); }
+
+    #  store the length in the cache table
+    my $arrRef = $sdb->do("INSERT INTO $cacheTableName (CUI1, CUI2, LENGTH) VALUES ('$concept1', '$concept2', '$length')");
+    $errorhandler->_checkDbError($pkg, $function, $sdb);
+ }
+
+sub _findShortestPathLengthInCache
+{
+    my $self     = shift;
+    my $concept1 = shift;
+    my $concept2 = shift;
+    
+    my $function = "_findShortestPathLengthInCache";
+    &_debug($function);
+         
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+    #  check parameter exists
+    if(!defined $concept1) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept1.", 4);
+    }
+    if(!defined $concept2) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept2.", 4);
+    }
+
+    #  check if valid concept
+    if(! ($errorhandler->_validCui($concept1)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($concept1) in not valid.", 6);
+    }    
+    if(! ($errorhandler->_validCui($concept2)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($concept2) in not valid.", 6);
+    }    
+
+    #  get the info table name
+    my $cacheTableName = $cuifinder->_getCacheTableName();
+    
+    #  set the index DB handler
+    my $sdb = $self->{'sdb'};
+    if(!$sdb) { $errorhandler->_error($pkg, $function, "Error with sdb.", 3); }
+
+    #  get length from the cache table if it exists
+    my $arrRef = $sdb->selectcol_arrayref("select LENGTH from $cacheTableName where CUI1=\'$concept1\' and CUI2=\'$concept2\'");
+    $errorhandler->_checkDbError($pkg, $function, $sdb);
+
+    #  get the depth from the array
+    my $length = shift @{$arrRef};
+    
+    return $length;
 }
 
 #  method that finds the length of the shortest path
