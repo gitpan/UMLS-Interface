@@ -1,10 +1,10 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.93 2010/12/31 15:53:41 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.95 2011/01/12 21:16:34 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
 #
-# Copyright (c) 2004-2010,
+# Copyright (c) 2004-2011,
 #
 # Bridget T. McInnes, University of Minnesota Twin Cities
 # bthomson at cs.umn.edu
@@ -60,7 +60,7 @@ my $pkg = "UMLS::Interface";
 
 use vars qw($VERSION);
 
-$VERSION = '0.91';
+$VERSION = '0.93';
 
 my $debug = 0;
 
@@ -357,6 +357,20 @@ sub getConceptList {
     my $term = shift;
 
     my @array = $cuifinder->_getConceptList($term);
+
+    return @array;
+}
+
+#  method to maps a given term to a set cuis in the sources
+#  specified in the configuration file by SABDEF
+#  input : $term  <- string containing a term
+#  output: @array <- array containing cuis
+sub getDefConceptList {
+
+    my $self = shift;
+    my $term = shift;
+
+    my @array = $cuifinder->_getDefConceptList($term);
 
     return @array;
 }

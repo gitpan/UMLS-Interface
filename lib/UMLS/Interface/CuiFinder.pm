@@ -1,11 +1,11 @@
 
 # UMLS::Interface::CuiFinder
-# (Last Updated $Id: CuiFinder.pm,v 1.52 2011/01/03 18:16:26 btmcinnes Exp $)
+# (Last Updated $Id: CuiFinder.pm,v 1.54 2011/01/13 13:29:18 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
 #
-# Copyright (c) 2004-2010,
+# Copyright (c) 2004-2011,
 #
 # Bridget T. McInnes, University of Minnesota, Twin Cities
 # bthomson at cs.umn.edu
@@ -110,6 +110,7 @@ my $option_verbose     = 0;
 my $option_cuilist     = 0;
 my $option_t           = 0;
 my $option_config      = 0;
+my $defflag            = 0;
 
 #  definition containers
 my $sabdefsources      = "";
@@ -899,7 +900,8 @@ sub _setConfigurationFile {
     my $ver = $version;
     $ver=~s/-/_/g;
 
-    #  set table and upper level relations files
+    #  set table and upper level relations files as well the 
+    #  output of the configuration information for the user
     $childFile  = "$umlsinterface/$ver";
     $parentFile = "$umlsinterface/$ver";
     $tableFile  = "$umlsinterface/$ver";
@@ -915,15 +917,18 @@ sub _setConfigurationFile {
     my $output = "";
     $output .= "UMLS-Interface Configuration Information\n";
 
-    my $dk = keys %sabDefHash;
-    if($dk > 0) {
+    my $saboutput = "";
+    my %sabs = ();
+    if($defflag == 1) {
         $output .= "  Sources (SABDEF):\n";
+	foreach my $sab (sort keys %sabDefHash) { $saboutput .= "    $sab\n"; }
     }
     else {
         $output .= "  Sources (SAB):\n";
+	foreach my $sab (sort keys %sabnamesHash) { $saboutput .= "    $sab\n"; }
     }
+    
 
-    my $saboutput = "";
     foreach my $sab (sort keys %sabnamesHash) {
         $tableFile  .= "_$sab";
         $childFile  .= "_$sab";
@@ -934,7 +939,6 @@ sub _setConfigurationFile {
         $childTable .= "_$sab";
 	$cacheTable .= "_$sab";
         $infoTable  .= "_$sab";
-        $saboutput .= "    $sab\n";
     }
 
     if($umlsall) {
@@ -946,19 +950,21 @@ sub _setConfigurationFile {
 
     #  seperate the RELs and the RELAs from $relations
     my %rels = (); my %relas = ();
-    while($relations=~/=\'(.*?)\'/g) {
-        my $rel = $1;
-        if($rel=~/[a-z\_]+/) { $relas{$rel}++; }
-        else                 { $rels{$rel}++; }
-    }
 
-    my $rk = keys %relDefHash;
-    if($rk > 0) {
+
+    if($defflag == 1) {
         $output .= "  Relations (RELDEF):\n";
+	foreach my $rel (sort keys %relDefHash) { $rels{$rel}++; }
     }
     else {
-        $output .= "  Relations (REL):\n";
+	$output .= "  Relations (REL):\n";
+	while($relations=~/=\'(.*?)\'/g) {
+	    my $rel = $1;
+	    if($rel=~/[a-z\_]+/) { $relas{$rel}++; }
+	    else                 { $rels{$rel}++; }
+	}
     }
+
     foreach my $rel (sort keys %rels) {
         $tableFile  .= "_$rel";
         $childFile  .= "_$rel";
@@ -975,7 +981,7 @@ sub _setConfigurationFile {
 
     my $rak = keys %relas;
     if($rak > 0) {
-        if($rk > 0) {
+        if($defflag == 1) { 
             $output .= "  Relations (RELADEF):\n";
         }
         else {
@@ -1432,9 +1438,11 @@ sub _setSabs {
         $errorhandler->_error($pkg, $function, "SAB variables not defined.", 4);
     }
 
-    $sources = "";
-
+    #  return if no sab or rel options were in the config file
     if($includesabkeys <= 0 && $excludesabkeys <=0) { return; }
+
+    #  initialize the sources
+    $sources = "";
 
     #  if the umls all option is set clear out the the includesab hash and
     #  add the umlsall to the exclude. This way all should be included since
@@ -1938,17 +1946,9 @@ sub _config {
             }
         }
     }
-    else {
 
-        #  set the defaults
-        $includesab{"MSH"}++;
-        $includerel{"PAR"}++;
-        $includerel{"CHD"}++;
 
-        $sabstring = "SAB :: include MSH";
-        $relstring = "REL :: include CHD, PAR";
-    }
-
+    
     #  check about the UMLS_ALL option in RELA and RELADEF
     #  this is the default so just remove them - it is here
     #  for the user not really for us
@@ -2010,6 +2010,38 @@ sub _config {
                               5);
     }
 
+
+    #  set the defaults
+    if($includerelkeys <= 0 && $excluderelkeys <= 0) { 
+	
+	$includesab{"MSH"}++;
+        $includerel{"PAR"}++;
+        $includerel{"CHD"}++;
+
+        $sabstring = "SAB :: include MSH";
+        $relstring = "REL :: include CHD, PAR";
+
+	$includerelkeys = keys %includerel;
+	$includesabkeys = keys %includesab;
+    }
+
+    #  set the defaults
+    if($includereldefkeys <= 0 && $excludereldefkeys <= 0) { 
+	
+	$includesabdef{"UMLS_ALL"}++;
+        $includereldef{"UMLS_ALL"}++;
+
+        $sabdefstring = "SAB :: include UMLS_ALL";
+        $reldefstring = "REL :: include UMLS_ALL";
+
+	$includereldefkeys = keys %includereldef;
+	$includesabdefkeys = keys %includesabdef;
+	
+    }
+    else {
+	$defflag = 1;
+    }
+
     #  The order matters here so don't mess with it! The relations have to be set
     #  prior to the sabs and both need to be set prior to the relas.
 
@@ -2062,17 +2094,17 @@ sub _config {
     #  completely seperate. Doing it this way though allows for the REL,
     #  SAB, RELDEF and SABDEF to all be specified - again order matters here.
 
-    if($includerelkeys == 0 && $excluderelkeys == 0) {
-        $self->_setRelations($includereldefkeys, $excludereldefkeys, \%includereldef, \%excludereldef);
-    }
-    if($includesabkeys == 0 && $excludesabkeys == 0) {
-        $self->_setSabs($includesabdefkeys, $excludesabdefkeys, \%includesabdef, \%excludesabdef);
-    }
-    if($includerelkeys == 0 && $excluderelkeys == 0) {
-        if($relations=~/(PAR|CHD|RB|RN)/) {
-            $self->_setRelas($includereladefkeys, $excludereladefkeys, \%includereladef, \%excludereladef);
-        }
-    }
+    #if($includerelkeys == 0 && $excluderelkeys == 0) {
+    #    $self->_setRelations($includereldefkeys, $excludereldefkeys, \%includereldef, \%excludereldef);
+    #}
+    #if($includesabkeys == 0 && $excludesabkeys == 0) {
+     #   $self->_setSabs($includesabdefkeys, $excludesabdefkeys, \%includesabdef, \%excludesabdef);
+    #}
+    #if($includerelkeys == 0 && $excluderelkeys == 0) {
+    #    if($relations=~/(PAR|CHD|RB|RN)/) {
+    #        $self->_setRelas($includereladefkeys, $excludereladefkeys, \%includereladef, \%excludereladef);
+    #    }
+    #}
 
     if($debug) {
         if($umlsall) { print STDERR "SOURCE   : UMLS_ALL\n"; }
@@ -2092,6 +2124,8 @@ sub _config {
 	    $reldefrelations = $1;
 	}
         print STDERR "RELDEF   : $reldefrelations\n";
+	print STDERR "SAB : $sources\n";
+	print STDERR "REL : $relations\n";
     }
 }
 
@@ -2442,11 +2476,11 @@ sub _getSabCui {
         return $umlsRoot;
     }
 
-    my $arrRef = $db->selectcol_arrayref("select distinct RCUI from MRSAB where RSAB='$sab'");
+    my $arrRef = $db->selectcol_arrayref("select distinct RCUI from MRSAB where RSAB='$sab' and SABIN='Y'");
     $errorhandler->_checkDbError($pkg, $function, $db);
 
     if(scalar(@{$arrRef}) < 1) {
-        $errorhandler->_error($pkg, $function, "No CUI info in table MRSAB for $sab.", 7);
+        $errorhandler->_error($pkg, $function, "SAB ($sab) does not exist in your current UMLS view.", 7);
     }
 
     if(scalar(@{$arrRef}) > 1) {
@@ -2925,6 +2959,7 @@ sub _getConceptList {
     my $term = shift;
 
     my $function = "_getConceptList";
+    &_debug($function);
 
     #  check self
     if(!defined $self || !ref $self) {
@@ -2947,6 +2982,50 @@ sub _getConceptList {
         $arrRef = $db->selectcol_arrayref("select distinct CUI from MRCONSO where STR='$term'");
     }
     elsif($sources ne "") {
+
+        $arrRef = $db->selectcol_arrayref("select distinct CUI from MRCONSO where STR='$term' and ($sources)");
+    }
+    else {
+        $errorhandler->_error($pkg, $function, "Error with sources from configuration file.", 5);
+    }
+    #  check for database errors
+    $errorhandler->_checkDbError($pkg, $function, $db);
+
+    return @{$arrRef};
+}
+
+#  method to map CUIs to a terms in the sources and the relations
+#  specified in the configuration file by SABDEF and RELDEF
+#  input : $term  <- string containing a term
+#  output: @array <- array containing cuis
+sub _getDefConceptList {
+
+    my $self = shift;
+    my $term = shift;
+
+    my $function = "_getDefConceptList";
+
+    #  check self
+    if(!defined $self || !ref $self) {
+        $errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    #  check parameter exists
+    if(!defined $term) {
+        $errorhandler->_error($pkg, $function, "Error with input variable \$term.", 4);
+    }
+
+    #  set up the database
+    my $db = $self->{'db'};
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
+
+    #  get the cuis
+    my $arrRef = "";
+
+    if($umlsall) {
+        $arrRef = $db->selectcol_arrayref("select distinct CUI from MRCONSO where STR='$term'");
+    }
+    elsif($sabdefsources ne "") {
 
         $arrRef = $db->selectcol_arrayref("select distinct CUI from MRCONSO where STR='$term' and ($sources)");
     }
@@ -4171,6 +4250,8 @@ For more information please see the UMLS::Interface.pm documentation.
  #!/usr/bin/perl
 
  use UMLS::Interface::CuiFinder;
+ use UMLS::Interface::ErrorHandler;
+
 
  %params = ();
 
@@ -4187,10 +4268,12 @@ For more information please see the UMLS::Interface.pm documentation.
  @array = $cuifinder->_getRelated($concept, $rel);
  @array = $cuifinder->_getTermList($concept);
  @array = $cuifinder->_getAllTerms($concept);
+ print "Terms of $concept: @array\n";
 
  $term = shift @array;
  @array = $cuifinder->_getConceptList($term);
  @array = $cuifinder ->_getAllConcepts($term);
+ print "CUIs of $term: @array\n";
 
  $hash = $cuifinder->_getCuiList();
 
@@ -4200,14 +4283,17 @@ For more information please see the UMLS::Interface.pm documentation.
  @array = $cuifinder->_getSab($concept);
 
  @array = $cuifinder->_getChildren($concept);
+ print "Children of $concept @array\n";
 
  @array = $cuifinder->_getParents($concept);
+ print "Parents of $concept: @array\n";
 
  @array = $cuifinder->_getRelations($concept);
 
  $concept1 = "C0018563"; $concept2 = "C0037303";
 
  @array = $cuifinder->_getRelationsBetweenCuis($concept1, $concept2);
+ print "Relation(s) between $concept1 and $concept2: @array\n";
 
  @array = $cuifinder->_getSt($concept);
 
@@ -4218,10 +4304,19 @@ For more information please see the UMLS::Interface.pm documentation.
  $string = $cuifinder->_getStAbr($tui);
 
  $definition = $cuifinder->_getStDef($abr);
+ print "Definition of semantic type ($abr): $definition\n";
 
  $array = $cuifinder->_getExtendedDefinition($concept);
+ print "Extended definition of $concept: \n";
+ foreach my $el (@{$array}) {
+    print "$el\n";
+ } 
 
  @array = $cuifinder->_getCuiDef($concept, $sabflag);
+ print "Definition of $concept: \n";
+ foreach my $el (@array) {
+    print "$el\n";
+ } 
 
  $bool = $cuifinder->_exists($concept);
 
@@ -4261,7 +4356,7 @@ L<http://search.cpan.org/dist/UMLS-Similarity/>
 
 =head1 COPYRIGHT
 
-    Copyright (c) 2007-2009
+    Copyright (c) 2007-2011
     Bridget T. McInnes, University of Minnesota
     bthomson at cs.umn.edu
 

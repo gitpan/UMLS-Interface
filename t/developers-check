@@ -50,8 +50,6 @@ $indexfile = File::Spec->catfile('t', 'output', 'msh.100.sp.indexfile');
 $realfile  = File::Spec->catfile('t', 'output', 'msh.100.sp.realfile');
 $infile    = File::Spec->catfile('t', 'tests', 'msh.100');
 
-print STDERR "$util_prg --config $config --infile $infile > $indexfile\n";
-
 `$perl $util_prg --config $config --infile $infile > $indexfile`;
 `$perl $util_prg --config $config --realtime --infile $infile > $realfile`;
 
@@ -83,8 +81,6 @@ $indexfile = File::Spec->catfile('t', 'output', 'fma.100.sp.indexfile');
 $realfile  = File::Spec->catfile('t', 'output', 'fma.100.sp.realfile');
 $infile    = File::Spec->catfile('t', 'tests', 'fma.100');
 
-print STDERR "$util_prg --config $config --infile $infile > $indexfile\n";
-
 `$perl $util_prg --config $config --infile $infile > $indexfile`;
 `$perl $util_prg --config $config --realtime --infile $infile > $realfile`;
 
@@ -115,8 +111,6 @@ $config    = File::Spec->catfile('t', 'config', 'config.snomedct.par-chd');
 $indexfile = File::Spec->catfile('t', 'output', 'snomedct.100.sp.indexfile');
 $realfile  = File::Spec->catfile('t', 'output', 'snomedct.100.sp.realfile');
 $infile    = File::Spec->catfile('t', 'tests', 'snomedct.100');
-
-print STDERR "$util_prg --config $config --infile $infile > $indexfile\n";
 
 `$perl $util_prg --config $config --infile $infile > $indexfile`;
 `$perl $util_prg --config $config --realtime --infile $infile > $realfile`;

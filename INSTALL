@@ -392,6 +392,9 @@ Stage 5 - Load UMLS into MySQL, if already installed go to Stage 6
           query_cache_limit = 3M
           query_cache_size  = 100M
 
+    Also make certain that this file is readable in order to run this as
+    non-root. To change permission on it: chmod gou+r /etc/my.cnf
+
   Step 3: Populate the MySQL table using the load scripts
    Step A: Find the MySQL load script for the Metathesaurus
     Go to your Destination directory that you typed in Step C (this is where
@@ -562,6 +565,11 @@ Stage 5 - Load UMLS into MySQL, if already installed go to Stage 6
 
     The database is whatever you called the database that the UMLS is
     installed in. Mine is 'umls'.
+
+    Also again remember to make certain that this file is readable in order
+    to run this as non-root user. To change permission on it:
+
+          chmod gou+r /etc/my.cnf
 
 Stage 6 - Install UMLS-Interface and set environment variable
     The usual way to install the package is to run the following commands:

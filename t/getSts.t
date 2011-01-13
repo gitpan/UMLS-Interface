@@ -43,7 +43,7 @@ if(! (-e $keydir) ) {
 my $perl     = $^X;
 my $util_prg = File::Spec->catfile('utils', 'getSts.pl');
 
-my ($keyfile, $file, $output, $term, $config, $cui);
+my ($keyfile, $file, $output, $term, $cui);
 
 ### Note : if a key for the version of UMLS is being run on 
 ###        exists we will test our run against the key 
@@ -54,8 +54,7 @@ my ($keyfile, $file, $output, $term, $config, $cui);
 $term    = "hand";
 $file    = "getSts.mth.rb-rn.$term";
 $keyfile = File::Spec->catfile($keydir, $file);
-$config  = File::Spec->catfile('t', 'config', 'config.mth.rb-rn');
-$output = `$perl $util_prg --config $config $term 2>&1`;
+$output = `$perl $util_prg $term 2>&1`;
 
 if(-e $keyfile) {
     ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";
@@ -78,8 +77,7 @@ else {
 $term    = "hand";
 $file    = "getSts.snomedct.par-chd.$term";
 $keyfile = File::Spec->catfile($keydir, $file);
-$config  = File::Spec->catfile('t', 'config', 'config.snomedct.par-chd');
-$output = `$perl $util_prg --config $config $term 2>&1`;
+$output = `$perl $util_prg  $term 2>&1`;
 
 if(-e $keyfile) {
     ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";
@@ -102,8 +100,7 @@ else {
 $term    = "hand";
 $file    = "getSts.msh.par-chd.$term";
 $keyfile = File::Spec->catfile($keydir, $file);
-$config  = File::Spec->catfile('t', 'config', 'config.msh.par-chd');
-$output = `$perl $util_prg --config $config $term 2>&1`;
+$output = `$perl $util_prg $term 2>&1`;
 
 if(-e $keyfile) {
     ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";
@@ -126,8 +123,7 @@ else {
 $cui    = "C0038454";
 $file    = "getSts.mth.rb-rn.$cui";
 $keyfile = File::Spec->catfile($keydir, $file);
-$config  = File::Spec->catfile('t', 'config', 'config.mth.rb-rn');
-$output = `$perl $util_prg --config $config $term 2>&1`;
+$output = `$perl $util_prg $term 2>&1`;
 
 if(-e $keyfile) {
     ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";
@@ -147,8 +143,7 @@ else {
 $cui    = "C0021308";
 $file    = "getSts.mth.rb-rn.$cui";
 $keyfile = File::Spec->catfile($keydir, $file);
-$config  = File::Spec->catfile('t', 'config', 'config.mth.rb-rn');
-$output = `$perl $util_prg --config $config $term 2>&1`;
+$output = `$perl $util_prg $term 2>&1`;
 
 if(-e $keyfile) {
     ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";
@@ -171,8 +166,7 @@ else {
 $cui    = "C0018787";
 $file    = "getSts.snomedct.par-chd.$cui";
 $keyfile = File::Spec->catfile($keydir, $file);
-$config  = File::Spec->catfile('t', 'config', 'config.snomedct.par-chd');
-$output = `$perl $util_prg --config $config $cui 2>&1`;
+$output = `$perl $util_prg $cui 2>&1`;
 
 if(-e $keyfile) {
     ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";
@@ -194,8 +188,7 @@ else {
 $cui    = "C0003811";
 $file    = "getSts.snomedct.par-chd-rb-rn.$cui";
 $keyfile = File::Spec->catfile($keydir, $file);
-$config  = File::Spec->catfile('t', 'config', 'config.snomedct.par-chd-rb-rn');
-$output = `$perl $util_prg --config $config $cui 2>&1`;
+$output = `$perl $util_prg $cui 2>&1`;
 
 if(-e $keyfile) {
     ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";
@@ -218,8 +211,7 @@ else {
 $cui    = "C0018563";
 $file    = "getSts.msh.par-chd.$cui";
 $keyfile = File::Spec->catfile($keydir, $file);
-$config  = File::Spec->catfile('t', 'config', 'config.msh.par-chd');
-$output = `$perl $util_prg --config $config $cui 2>&1`;
+$output = `$perl $util_prg $cui 2>&1`;
 
 if(-e $keyfile) {
     ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";

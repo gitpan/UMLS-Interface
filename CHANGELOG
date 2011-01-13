@@ -1,6 +1,16 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.91 to 0.93
+    1. modified the configuration options such that if not defined in the
+    configuration file they use their respective defaults.
+
+    2. return error message if source in the configuration file does not
+    exist in the current view of the UMLS.
+
+    3. added a getDefConceptList() function to obtain the concepts using the
+    SABDEF information rather than the SAB information
+
   Changes from version 0.89 to 0.91
     1. modified documentation
 

@@ -1,21 +1,19 @@
 
-CuiFinder User Options: 
-   --config option set
 
+UMLS-Interface Configuration Information:
+(Default Information - no config file)
 
-UMLS-Interface Configuration Information
   Sources (SAB):
-    SNOMEDCT
+     MSH
   Relations (REL):
-    CHD
-    PAR
-    RB
-    RN
-  Database: 
-    umls (MMSYS-2010AA-20100427)
+     PAR
+     CHD
+
+  Sources (SABDEF):
+     UMLS_ALL
+  Relations (RELDEF):
+     UMLS_ALL
 
 
-
-
-The semantic types associated with cardiac dysrhythmias nos (C0003811):
+The semantic types associated with cardiac dysrhythmia (C0003811):
   Pathologic Function (patf)
