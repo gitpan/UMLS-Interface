@@ -1,6 +1,9 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.95 to 0.97
+    1. I forgot to add the new configuration files for the test cases
+
   Changes from version 0.93 to 0.95
     1. added a getDefTermList() function to obtain the concepts using the
     SABDEF information rather than the SAB information

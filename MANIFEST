@@ -27,6 +27,10 @@ t/config/config.mth.rb-rn
 t/config/config.snomedct.par-chd
 t/config/config.snomedct.par-chd-rb-rn
 t/config/config.snomedct.rb-rn
+t/config/defconfig.msh.par-chd
+t/config/defconfig.mth.rb-rn
+t/config/defconfig.snomedct.par-chd
+t/config/defconfig.snomedct.par-chd-rb-rn
 t/developers-check
 t/findCuiDepth.t
 t/findDFS.t
@@ -82,6 +86,7 @@ t/key/MMSYS-2010AA-20100427/getCuiDef.snomedct.par-chd-rb-rn.C1281583
 t/key/MMSYS-2010AA-20100427/getCuiDef.snomedct.par-chd.C0018563
 t/key/MMSYS-2010AA-20100427/getCuiDef.snomedct.par-chd.hand
 t/key/MMSYS-2010AA-20100427/getCuiList.mth.rb-rn
+t/key/MMSYS-2010AA-20100427/getExtendedDef.default.C0018563
 t/key/MMSYS-2010AA-20100427/getExtendedDef.msh.par-chd.C0018563
 t/key/MMSYS-2010AA-20100427/getExtendedDef.msh.par-chd.hand
 t/key/MMSYS-2010AA-20100427/getExtendedDef.mth.rb-rn.C0018563
@@ -173,4 +178,4 @@ utils/getSts.pl
 utils/getStString.pl
 utils/getTableNames.pl
 utils/removeConfigData.pl
-utils/umlsCycles.pl
+
