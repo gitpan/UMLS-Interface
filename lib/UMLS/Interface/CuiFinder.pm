@@ -1,6 +1,6 @@
 
 # UMLS::Interface::CuiFinder
-# (Last Updated $Id: CuiFinder.pm,v 1.54 2011/01/13 13:29:18 btmcinnes Exp $)
+# (Last Updated $Id: CuiFinder.pm,v 1.57 2011/01/14 19:42:22 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -2757,7 +2757,7 @@ sub _getPreferredTerm {
 
 
 #  method that maps terms to cuis in the sources specified in
-#  in the configuration file by the user
+#  in the configuration file by the user using the SAB parameter
 #  input : $concept <- string containing cui
 #  output: @array   <- array of terms (strings)
 sub _getTermList {
@@ -2819,6 +2819,68 @@ sub _getTermList {
 }
 
 #  method that maps terms to cuis in the sources specified in
+#  in the configuration file by the user using the SABDEF parameter
+#  input : $concept <- string containing cui
+#  output: @array   <- array of terms (strings)
+sub _getDefTermList {
+    my $self = shift;
+    my $concept = shift;
+
+    my $function = "_getTermList";
+
+    #  check self
+    if(!defined $self || !ref $self) {
+        $errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    #  check parameter exists
+    if(!defined $concept) {
+        $errorhandler->_error($pkg, $function, "Error with input variable \$concept.", 4);
+    }
+
+    #  check if valid concept
+    if(! ($errorhandler->_validCui($concept)) ) {
+        $errorhandler->_error($pkg, $function, "Concept ($concept) is not valid.", 6);
+    }
+
+    #  set the return hash
+    my %retHash = ();
+
+    #  if the concept is the root return the root string
+    if($concept eq $umlsRoot) {
+        $retHash{"**UMLS ROOT**"}++;
+        return keys(%retHash);
+    }
+
+    #  set the database
+    my $db = $self->{'db'};
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
+
+    #  get the strings associated to the CUI
+    my $arrRef = "";
+    if($sabdef_umlsall) {
+        $arrRef = $db->selectcol_arrayref("select distinct STR from MRCONSO where CUI='$concept'");
+    }
+    else {
+        $arrRef = $db->selectcol_arrayref("select distinct STR from MRCONSO where CUI='$concept' and ($sabdefsources or SAB='SRC')");
+    }
+
+    #  check the database for errors
+    $errorhandler->_checkDbError($pkg, $function, $db);
+
+    #  clean up the strings a bit and lower case them
+    foreach my $tr (@{$arrRef}) {
+        $tr =~ s/^\s+//;
+        $tr =~ s/\s+$//;
+        $tr =~ s/\s+/ /g;
+        $retHash{lc($tr)} = 1;
+    }
+
+    #  return the strings
+    return keys(%retHash);
+}
+
+#  method that maps terms to cuis in the sources specified in
 #  in the configuration file by the user
 #  input : $concept <- string containing cui
 #  output: @array   <- array of terms and their sources (strings)
@@ -2858,11 +2920,11 @@ sub _getTermSabList {
     if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
     #  get all of the strings with their corresponding sab
     my %strhash = (); my $sql = "";
-    if($umlsall) {
+    if($sabdef_umlsall) {
         $sql = qq{ select STR, SAB from MRCONSO where CUI='$concept' };
     }
     else {
-        $sql = qq{select STR, SAB from MRCONSO where CUI='$concept' and ($sources or SAB='SRC') };
+        $sql = qq{select STR, SAB from MRCONSO where CUI='$concept' and ($sabdefsources or SAB='SRC') };
     }
     my $sth = $db->prepare( $sql );
     $sth->execute();
@@ -3021,12 +3083,11 @@ sub _getDefConceptList {
 
     #  get the cuis
     my $arrRef = "";
-
-    if($umlsall) {
-        $arrRef = $db->selectcol_arrayref("select distinct CUI from MRCONSO where STR='$term'");
+    
+    if($sabdef_umlsall) {
+	$arrRef = $db->selectcol_arrayref("select distinct CUI from MRCONSO where STR='$term'");
     }
     elsif($sabdefsources ne "") {
-
         $arrRef = $db->selectcol_arrayref("select distinct CUI from MRCONSO where STR='$term' and ($sources)");
     }
     else {
@@ -3907,7 +3968,6 @@ sub _getExtendedDefinition {
             push @defs, $def;
         }
     }
-
     return \@defs;
 }
 
@@ -4267,11 +4327,13 @@ For more information please see the UMLS::Interface.pm documentation.
  $concept = "C0018563"; $rel = "PAR";
  @array = $cuifinder->_getRelated($concept, $rel);
  @array = $cuifinder->_getTermList($concept);
+ @array = $cuifinder->_getDefTermList($concept);
  @array = $cuifinder->_getAllTerms($concept);
  print "Terms of $concept: @array\n";
 
  $term = shift @array;
  @array = $cuifinder->_getConceptList($term);
+ @array = $cuifinder->_getDefConceptList($term);
  @array = $cuifinder ->_getAllConcepts($term);
  print "CUIs of $term: @array\n";
 

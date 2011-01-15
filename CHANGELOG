@@ -1,6 +1,15 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.93 to 0.95
+    1. added a getDefTermList() function to obtain the concepts using the
+    SABDEF information rather than the SAB information
+
+    2. modified the getExtendedDef() function to reflect this
+
+    3. modified the getCuiDef() function to print out the term as well as
+    the CUI when returning the definition
+
   Changes from version 0.91 to 0.93
     1. modified the configuration options such that if not defined in the
     configuration file they use their respective defaults.

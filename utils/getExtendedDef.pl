@@ -234,7 +234,7 @@ my $term  = $input;
 my @c = ();
 if($input=~/C[0-9]+/) {
     push @c, $input;
-    ($term) = $umls->getConceptList($input);
+    ($term) = $umls->getDefTermList($input);
 }
 else {
     @c = $umls->getConceptList($input);
@@ -245,7 +245,7 @@ my $printFlag = 0;
 foreach my $cui (@c) {
 
     my $rdef = $umls->getExtendedDefinition($cui); 
-    my @defs = @{$rdef};
+    my @defs = @{$rdef}; 
 
     if($#defs >= 0) {
 	print "The definition(s) of $term ($cui):\n";
@@ -312,7 +312,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getExtendedDef.pl,v 1.9 2010/08/04 13:56:07 btmcinnes Exp $';
+    print '$Id: getExtendedDef.pl,v 1.10 2011/01/14 19:24:25 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

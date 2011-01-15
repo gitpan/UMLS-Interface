@@ -140,7 +140,13 @@ NAME
 
      my @array = $interface->getConceptList($term);    
          Returns the list of all CUIs of a given term
-         from the sources specified in the config file
+         from the SAB parameter specified in the config 
+         file or the default 
+
+     my @array = $interface->getDefConceptList($term);
+         Returns the list of all CUIs of a given term
+         from the SABDEF parameter specified in the 
+         config file or the default 
 
      my $hash = $interface->getCuiList();              
          Returns a list of CUIs from the source(s) specified 
@@ -149,12 +155,29 @@ NAME
      my $array = $interface->getCuisFromSource($sab);       
          Returns a list of CUIs from a specific source
 
-     my @array = $interface->getTermsList($cui);            
-         Returns the list of terms and their sources given a CUI
+     my @array = $interface->getTermList($cui);            
+         Returns the list of terms and their sources using 
+         the SAB parameter in the configuration file or the 
+         default
+
+     my @array = $interface->getDefTermList($cui);            
+         Returns the list of terms and their sources using 
+         the SABDEF parameter in the configuration file or 
+         the default     
 
      my @array = $interface->getAllTerms($cui);             
          Returns the list of terms corresponding to a CUI 
          for all sources 
+
+     my $term = $interface->getPreferredTerms($cui);             
+         Returns the preferred term of a CUI if that term 
+         exists in the sources specified by the SAB parameter 
+         in the configuration file or the default
+
+     my $term = $interface->getPreferredTerms($cui);             
+         Returns the preferred term of a CUI regardless
+         of the source information in the configuration
+         file
 
      my @array = $interface->getParents($cui);              
          Returns the parent of a given CUI

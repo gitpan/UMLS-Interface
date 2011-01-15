@@ -5,7 +5,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 15;
+use Test::More tests => 17;
 
 use UMLS::Interface;
 use File::Spec;
@@ -51,7 +51,7 @@ my ($keyfile, $file, $output, $term, $config, $cui);
 $term    = "hand";
 $file    = "getExtendedDef.mth.rb-rn.$term";
 $keyfile = File::Spec->catfile($keydir, $file);
-$config  = File::Spec->catfile('t', 'config', 'config.mth.rb-rn');
+$config  = File::Spec->catfile('t', 'config', 'defconfig.mth.rb-rn');
 $output = `$perl $util_prg --config $config $term 2>&1`;
 
 if(-e $keyfile) {
@@ -75,7 +75,7 @@ else {
 $term    = "hand";
 $file    = "getExtendedDef.snomedct.par-chd.$term";
 $keyfile = File::Spec->catfile($keydir, $file);
-$config  = File::Spec->catfile('t', 'config', 'config.snomedct.par-chd');
+$config  = File::Spec->catfile('t', 'config', 'defconfig.snomedct.par-chd');
 $output = `$perl $util_prg --config $config $term 2>&1`;
 
 if(-e $keyfile) {
@@ -99,7 +99,7 @@ else {
 $term    = "hand";
 $file    = "getExtendedDef.msh.par-chd.$term";
 $keyfile = File::Spec->catfile($keydir, $file);
-$config  = File::Spec->catfile('t', 'config', 'config.msh.par-chd');
+$config  = File::Spec->catfile('t', 'config', 'defconfig.msh.par-chd');
 $output = `$perl $util_prg --config $config $term 2>&1`;
 
 if(-e $keyfile) {
@@ -123,7 +123,7 @@ else {
 $cui    = "C0018563";
 $file    = "getExtendedDef.mth.rb-rn.$cui";
 $keyfile = File::Spec->catfile($keydir, $file);
-$config  = File::Spec->catfile('t', 'config', 'config.mth.rb-rn');
+$config  = File::Spec->catfile('t', 'config', 'defconfig.mth.rb-rn');
 $output = `$perl $util_prg --config $config $term 2>&1`;
 
 if(-e $keyfile) {
@@ -147,7 +147,7 @@ else {
 $cui    = "C0018563";
 $file    = "getExtendedDef.snomedct.par-chd.$cui";
 $keyfile = File::Spec->catfile($keydir, $file);
-$config  = File::Spec->catfile('t', 'config', 'config.snomedct.par-chd');
+$config  = File::Spec->catfile('t', 'config', 'defconfig.snomedct.par-chd');
 $output = `$perl $util_prg --config $config $cui 2>&1`;
 
 if(-e $keyfile) {
@@ -170,7 +170,7 @@ else {
 $cui    = "C1281583";
 $file    = "getExtendedDef.snomedct.par-chd-rb-rn.$cui";
 $keyfile = File::Spec->catfile($keydir, $file);
-$config  = File::Spec->catfile('t', 'config', 'config.snomedct.par-chd-rb-rn');
+$config  = File::Spec->catfile('t', 'config', 'defconfig.snomedct.par-chd-rb-rn');
 $output = `$perl $util_prg --config $config $cui 2>&1`;
 
 if(-e $keyfile) {
@@ -194,8 +194,31 @@ else {
 $cui    = "C0018563";
 $file    = "getExtendedDef.msh.par-chd.$cui";
 $keyfile = File::Spec->catfile($keydir, $file);
-$config  = File::Spec->catfile('t', 'config', 'config.msh.par-chd');
+$config  = File::Spec->catfile('t', 'config', 'defconfig.msh.par-chd');
 $output = `$perl $util_prg --config $config $cui 2>&1`;
+
+if(-e $keyfile) {
+    ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";
+    my $key = "";
+    while(<KEY>) { $key .= $_; } close KEY;
+    cmp_ok($output, 'eq', $key);
+}
+else {
+    ok(open KEY, ">$keyfile") || diag "Could not open $keyfile: $!";
+    print KEY $output;
+    close KEY;
+  SKIP: {
+      skip ("Generating key, no need to run test", 1);
+    }
+}
+
+#######################################################################################
+#  check default
+#######################################################################################
+$cui    = "C0018563";
+$file    = "getExtendedDef.default.$cui";
+$keyfile = File::Spec->catfile($keydir, $file);
+$output = `$perl $util_prg $cui 2>&1`;
 
 if(-e $keyfile) {
     ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";

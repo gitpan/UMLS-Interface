@@ -132,7 +132,7 @@ like ($output, qr/No term was specified on the command line\s+Type getCuiDef.pl 
 
 #  check when invalid CUI is entered
 $output = `$perl $util_prg C98 2>&1`;
-like ($output, qr/ERROR\: UMLS\:\:Interface\:\:CuiFinder\-\>_getCuiDef\s*Invalid CUI \(Error Code 6\)\.\s*Concept \(C98\) is not valid\./);
+like ($output, qr/\s*UMLS\-Interface Configuration Information\:\s*\(Default Information - no config file\)\s*Sources \(SAB\)\:\s*MSH\s*Relations \(REL\)\:\s*PAR\s*CHD\s*Sources \(SABDEF\)\:\s*UMLS\_ALL\s*Relations \(RELDEF\)\:\s*UMLS\_ALL\s*ERROR\:\s*UMLS\:\:Interface\:\:CuiFinder\-\>_getTermList\s*Invalid CUI \(Error Code 6\)\.\s*Concept \(C98\) is not valid\./);
 
 #######################################################################################
 #  check the getRelated.pl program

@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.95 2011/01/12 21:16:34 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.97 2011/01/14 19:42:22 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -60,7 +60,7 @@ my $pkg = "UMLS::Interface";
 
 use vars qw($VERSION);
 
-$VERSION = '0.93';
+$VERSION = '0.95';
 
 my $debug = 0;
 
@@ -321,7 +321,7 @@ sub getAllPreferredTerm {
 }
 
 #  method to map terms to a given cui from the sources 
-#  specified in the configuration file
+#  specified in the configuration file using SAB
 #  input : $concept <- string containing cui
 #  output: @array   <- array of terms (strings)
 sub getTermList {
@@ -330,6 +330,20 @@ sub getTermList {
     my $concept = shift;
     
     my @array = $cuifinder->_getTermList($concept);
+
+    return @array;
+}
+
+#  method to map terms to a given cui from the sources 
+#  specified in the configuration file using SABDEF
+#  input : $concept <- string containing cui
+#  output: @array   <- array of terms (strings)
+sub getDefTermList {
+
+    my $self    = shift;
+    my $concept = shift;
+    
+    my @array = $cuifinder->_getDefTermList($concept);
 
     return @array;
 }
@@ -922,7 +936,7 @@ UMLS::Interface - Perl interface to the Unified Medical Language System (UMLS)
  } else { print "This concept ($cui1) does exist\n"; }
 
  my $term2    = "cell";
- my @tList2   = $umls->getConceptList($term2);
+ my @tList2   = $umls->getDefConceptList($term2);
 
  my $cui2     = pop @tList2;
  my $exists1  = $umls->exists($cui1);
@@ -936,15 +950,14 @@ UMLS::Interface - Perl interface to the Unified Medical Language System (UMLS)
  print "\n";
 
  my @cList1   = $umls->getTermList($cui1);
- my @cList2   = $umls->getTermList($cui2);
+ my @cList2   = $umls->getDefTermList($cui2);
 
- print "The terms associated with $term1 ($cui1):\n";
+ print "The terms associated with $term1 ($cui1) using the SAB parameter:\n";
  foreach my $c1 (@cList1) {
     print " => $c1\n";
  } print "\n";
 
- print "The terms associated with $term2 ($cui2):\n";
-
+ print "The terms associated with $term2 ($cui2) using the SABDEF parameter:\n";
  foreach my $c2 (@cList2) {
     print " => $c2\n";
  } print "\n";

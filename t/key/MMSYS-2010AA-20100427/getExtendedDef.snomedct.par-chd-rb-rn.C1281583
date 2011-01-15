@@ -4,9 +4,9 @@ CuiFinder User Options:
 
 
 UMLS-Interface Configuration Information
-  Sources (SAB):
+  Sources (SABDEF):
     SNOMEDCT
-  Relations (REL):
+  Relations (RELDEF):
     CHD
     PAR
     RB
@@ -17,36 +17,6 @@ UMLS-Interface Configuration Information
 
 
 
-The definition(s) of  (C1281583):
-  1. C1281583 ST bpoc STDEF : A collection of cells and tissues which are localized to a specific area or combine and carry out one or more specialized functions of an organism. This ranges from gross structures to small components of complex organs. These structures are relatively localized in comparison to tissues.
-  2. C1281583 PAR C0018563 CSP : part of the upper limb distal to the wrist including carpus, metacarpus and fingers.
-  3. C1281583 PAR C0018563 NCI : The distal portion of the upper extremity. It consists of the carpus, metacarpus, and digits. (NCI)
-  4. C1281583 PAR C0018563 NCI : The distal portion of the upper extremity. It consists of the carpus, metacarpus, and digits.
-  5. C1281583 RB C0018563 CSP : part of the upper limb distal to the wrist including carpus, metacarpus and fingers.
-  6. C1281583 RB C0018563 NCI : The distal portion of the upper extremity. It consists of the carpus, metacarpus, and digits. (NCI)
-  7. C1281583 RB C0018563 NCI : The distal portion of the upper extremity. It consists of the carpus, metacarpus, and digits.
-  8. C1281583 RB C1552914 NCI : A traditional unit of length equal to 4 inches or 10.16 centimeters.
-  9. C1281583 RB C1552914 HL7V3.0 : 4 [in_i]
-  10. C1281583 RB C1552914 HL7V3.0 : 4 [in_i]
-  11. C1281583 RN C0016129 UWDA : Subdivision of the hand demarcated from the hand proper by the skin crease in line with the distal edge of finger webs. Examples: thumb, right middle finger, left little finger.
-  12. C1281583 RN C0016129 CSP : one of the five digits of the hand.
-  13. C1281583 RN C0016129 FMA : Subdivision of the hand demarcated from the hand proper by the skin crease in line with the distal edge of finger webs. Examples: thumb, right middle finger, left little finger.
-  14. C1281583 RN C0016129 NCI : Any of the digits of the hand. (NCI)
-  15. C1281583 RN C0016129 NCI : Any of the digits of the hand.
-  16. C1281583 RN C0025525 MSH : The articulation between a metacarpal bone and a phalanx.
-  17. C1281583 RN C0025526 MSH : The five cylindrical bones of the METACARPUS, articulating with the CARPAL BONES proximally and the PHALANGES OF FINGERS distally.
-  18. C1281583 RN C0222229 SNOMEDCT : Skin region including some skin of finger AND some additional non finger skin
-  19. C1281583 RN C0222494 SNOMEDCT : Subcutaneous tissue including some tissue of finger AND some additional non finger tissue
-  20. C1281583 RN C0223792 NCI : A bone of the hand.
-  21. C1281583 RN C0223792 NCI : A bone of the hand. (NCI)
-  22. C1281583 RN C0223792 MSH : Bones that make up the SKELETON of the FINGERS, consisting of two for the THUMB, and three for each of the other fingers.
-  23. C1281583 RN C0224620 MSH : The articulations between the CARPAL BONES and the METACARPAL BONES.
-  24. C1281583 RN C0448064 MSH : The CARPAL BONES; METACARPAL BONES; and FINGER PHALANGES. In each hand there are eight carpal bones, five metacarpal bones, and 14 phalanges.
-  25. C1281583 RN C0459470 MSH : The articulations extending from the WRIST distally to the FINGERS. These include the WRIST JOINT; CARPAL JOINTS; METACARPOPHALANGEAL JOINT; and FINGER JOINT.
-  26. C1281583 RN C0580156 UWDA : Synovial joint between the bases of adjacent metacarpals. Examples: intermetacarpal joint of right second and third metacarpal bones, intermetacarpal joint of right fourth and fifth metacarpal bones.
-  27. C1281583 RN C0580156 FMA : Synovial joint between the bases of adjacent metacarpals. Examples: intermetacarpal joint of right second and third metacarpal bones, intermetacarpal joint of right fourth and fifth metacarpal bones.
-  28. C1281583 RO C0441987 NCI : A line segment forming part of the perimeter of a plane figure.
-  29. C1281583 RO C0441987 NCI : One of the two lateral margins or surfaces of a body, midway between the front and back.
-  30. C1281583 TERM C1281583 SNOMEDCT : entire hand
-  31. C1281583 TERM C1281583 SNOMEDCT : entire hand (body structure)
-  32. C1281583 TERM C1281583 SNOMEDCT : hand
+The definition(s) of entire hand (body structure) (C1281583):
+  1. C1281583 RN C0222229 SNOMEDCT : Skin region including some skin of finger AND some additional non finger skin
+  2. C1281583 RN C0222494 SNOMEDCT : Subcutaneous tissue including some tissue of finger AND some additional non finger tissue
