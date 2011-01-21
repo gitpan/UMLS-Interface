@@ -1,6 +1,14 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.97 to 0.99
+    1. added program to obtain the semantic group of a cui or a term
+
+    2. added an --infile FILE option to getSts.pl
+
+    3. added a reConfig function which takes in a new configuration
+    parameters
+
   Changes from version 0.95 to 0.97
     1. I forgot to add the new configuration files for the test cases
 

@@ -173,6 +173,7 @@ utils/getIC.pl
 utils/getParents.pl
 utils/getRelated.pl
 utils/getRelations.pl
+utils/getSemanticGroup.pl
 utils/getStDef.pl
 utils/getSts.pl
 utils/getStString.pl

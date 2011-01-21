@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.98 2011/01/15 21:38:06 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.99 2011/01/21 19:49:57 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -60,7 +60,7 @@ my $pkg = "UMLS::Interface";
 
 use vars qw($VERSION);
 
-$VERSION = '0.97';
+$VERSION = '0.99';
 
 my $debug = 0;
 
@@ -136,6 +136,18 @@ sub _initialize {
 	$errorhandler->_error($pkg, $function, $str, 8);
     }
     
+}
+
+#  method to re-initialize the interface configuration parameters
+#  input: $hash -> reference to hash containing parameters - this
+#                  is the same hash that would be used with new()
+#  output:
+sub reConfig
+{
+    my $self = shift;
+    my $params = shift;
+
+    $cuifinder->_reConfig($params);
 }
 
 #  method checks the parameters based to the UMLS::Interface package
@@ -1183,6 +1195,17 @@ of the Interface.pm module.
   'icfrequency'  -> This parameter contains a file consisting of frequency
                     counts of a CUIs. Then the information content is 
                     created on the fly (in realtime). 
+
+
+You can also reconfigure these options by calling the reConfig 
+method. 
+
+    $umls->reConfig({"forcerun"      => "1",
+		     "realtime"      => "1",
+		     "verbose"       => "1", 
+                     "debugpath"     => "file", 
+                     "icfrequency"   => "file"});
+
 
 =head1 CONFIGURATION FILE
 

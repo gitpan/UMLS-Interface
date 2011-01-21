@@ -109,6 +109,12 @@ NAME
     the MySQL my.cnf file. This is preferable. The directions for this are
     in the INSTALL file. It is Stage 5 Step D.
 
+    These options can be reconfigured during run time using the reConfig()
+    method.
+
+        $options{'config'} = $newconfig;
+        $interface->reConfig(\%options);
+
   USING THE MODULE
     Once the object of module is successfully created after following the
     steps described in the previous section, a number of methods can be

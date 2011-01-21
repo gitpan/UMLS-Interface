@@ -15,7 +15,7 @@ UMLS-Interface Configuration Information
 
 
 PathFinder User Options:
-   --realtime option set
+  --realtime option set
 
 
 The minimum depth of hand (C0018563) is 9

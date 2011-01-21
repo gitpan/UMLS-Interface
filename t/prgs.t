@@ -174,7 +174,7 @@ ok(-e $util_prg);
 
 #  check no command line inputs
 $output = `$perl $util_prg 2>&1`;
-like ($output, qr/No term was specified on the command line\s+Type getSts.pl --help for help.\s+Usage\: getSts\.pl \[OPTIONS\] \[TERM\|CUI\]\s*/);
+like ($output, qr/At least 1 term or CUI should be given on the\s+command line or use the \-\-infile option\s+Type getSts.pl --help for help.\s+Usage\: getSts\.pl \[OPTIONS\] \[TERM\|CUI\]\s*/);
 
 #  check when invalid CUI is entered
 $output = `$perl $util_prg C98 2>&1`;

@@ -1,6 +1,6 @@
 
 # UMLS::Interface::CuiFinder
-# (Last Updated $Id: CuiFinder.pm,v 1.57 2011/01/14 19:42:22 btmcinnes Exp $)
+# (Last Updated $Id: CuiFinder.pm,v 1.58 2011/01/21 19:49:57 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -148,24 +148,41 @@ sub new {
         exit;
     }
 
-
     # initialize the object.
     $self->_initialize($params);
 
     return $self;
 }
 
-# method to initialize the UMLS::Interface global variables
-sub _initializeGlobalVariables {
+#  method to re-initialize the UMLS::Interface parameters
+sub _reConfig {
 
     my $self = shift;
+    my $params = shift;
 
-    #  error handling variables
-    $errorhandler = "";
+    my $function = "_reConfig";
+    &_debug($function);
 
+    #  re initialize the global variables
+    $self->_initializeGlobalVariables();
+
+    # initialize the object.
+    $self->_initialize($params);
+
+    return $self;
+    
+    
+}
+# method to initialize the UMLS::Interface global variables
+sub _initializeGlobalVariables {
+    
+    my $self = shift;
+
+    my $function = "_initializeGlobalVariables";
+    &_debug($function);
+    
     #  global variables
     $debug     = 0;
-
     $version   = "";
 
     #  list of allowable sources
@@ -250,7 +267,7 @@ sub _initialize {
     my $cuilist      = $params->{'cuilist'};
     my $database     = $params->{'database'};
 
-
+       
     #  to store the database object
     my $db = $self->_setDatabase($params);
     
@@ -265,7 +282,7 @@ sub _initialize {
 
     #  set the configuration
     $self->_config($config);
-
+    
     #  set the umls interface configuration variable
     $self->_setEnvironmentVariable();
 
@@ -1871,10 +1888,9 @@ sub _config {
     my %check = ();
     if(defined $file) {
         open(FILE, $file) || die "Could not open configuration file: $file\n";
-
         while(<FILE>) {
             chomp;
-
+	   
             #  if blank line skip
             if($_=~/^\s*$/) { next; }
 
@@ -1892,6 +1908,7 @@ sub _config {
 
                 my @array = split/\s*\,\s*/, $list;
                 foreach my $element (@array) {
+
                     $element=~s/^\s+//g; $element=~s/\s+$//g;
                     if(   $type eq "SAB"    and $det eq "include") { $includesab{$element}++;
                                                                      $sabstring  = $_;
@@ -2013,7 +2030,6 @@ sub _config {
 
     #  set the defaults
     if($includerelkeys <= 0 && $excluderelkeys <= 0) { 
-	
 	$includesab{"MSH"}++;
         $includerel{"PAR"}++;
         $includerel{"CHD"}++;

@@ -2,19 +2,27 @@
 
 =head1 NAME
 
-getSts.pl - This program returns a concepts semantic type(s).
+getSemanticGroup.pl - This program returns a concepts semantic group(s).
 
 =head1 SYNOPSIS
 
-This program takes in a CUI or a TERM and returns its semantic type(s).
+This program takes in a CUI or a TERM and returns its semantic group(s).
 
 =head1 USAGE
 
-Usage: getSts.pl [OPTIONS] [TERM|CUI]
+Usage: getSemanticGroup.pl [OPTIONS] [SemGroups.txt] [TERM|CUI]
 
 =head1 INPUT
 
 =head2 Required Arguments:
+
+=head3 SemGroups.txt
+
+This is the SemGroups.txt file from the National Library of Medicine. 
+You can download this file here:
+
+http://semanticnetwork.nlm.nih.gov/SemGroups/SemGroups.txt
+
 
 =head3 [TERM|CUI]
 
@@ -195,8 +203,16 @@ if(defined $opt_socket) {
 $umls = UMLS::Interface->new(\%option_hash); 
 die "Unable to create UMLS::Interface object.\n" if(!$umls);
 
+my $semgroupsfile = shift;
 
-
+open(GROUPS, $semgroupsfile) || die "Could not open SemGroups.txt file\n";
+my %groups = ();
+while(<GROUPS>) { 
+    chomp;
+    my ($abbrev, $group, $tui, $st) = split/\|/;
+    push @{$groups{$st}}, $group;
+}
+    
 my @terms = ();
 if(defined $opt_infile) { 
     open(INFILE, $opt_infile) || die "Could not open infile ($opt_infile)\n";
@@ -228,21 +244,28 @@ foreach my $input (@terms) {
 	my @sts = $umls->getSt($cui);
 	
 	if($#sts < 0) {
-	    print "There are no semantic types associated with $term ($cui)\n";
+	    print "There are no semantic groups associated with $term ($cui)\n";
 	}
 	else {
-	    print "The semantic types associated with $term ($cui):\n";
-	foreach my $st (@sts) {
-	    my $abr = $umls->getStAbr($st);
-	    my $string = $umls->getStString($abr);
-	    print "  $string ($abr)\n";
+	    my @semanticgroups = ();
+	    foreach my $st (@sts) {
+		my $abr = $umls->getStAbr($st);
+		my $string = $umls->getStString($abr);
+		foreach my $group (@{$groups{$string}}) { 
+		    $semanticgroups{$group}++;
+		}
+	    }
+	    
+	    print "The semantic groups associated with $term ($cui):\n";
+	    foreach my $group (sort keys %semanticgroups) {
+		print "  $group\n";
+		$printFlag = 1;
+	    }
 	}
-	}
-	$printFlag = 1;
+	
     }
-
     if(! ($printFlag) ) {
-	print "There are no semantic types associated with $input\n";
+	print "There are no semantic groups associated with $input\n";
     }
 }
 
@@ -251,7 +274,7 @@ foreach my $input (@terms) {
 ##############################################################################
 sub minimalUsageNotes {
     
-    print "Usage: getSts.pl [OPTIONS] [TERM|CUI] \n";
+    print "Usage: getSemanticGroup.pl [OPTIONS] [SemGroups.txt] [TERM|CUI] \n";
     &askHelp();
     exit;
 }
@@ -263,9 +286,9 @@ sub showHelp() {
 
         
     print "This is a utility that takes as input a TERM or\n";
-    print "a CUI and returns all of its semantic types.\n\n";
+    print "a CUI and returns all of its semantic groupss.\n\n";
   
-    print "Usage: getSts.pl [OPTIONS] [TERM|CUI]\n\n";
+    print "Usage: getSemanticGroup.pl [OPTIONS] [SemGroups.txt] [TERM|CUI]\n\n";
 
     print "Options:\n\n";
     
@@ -293,7 +316,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getSts.pl,v 1.11 2011/01/16 22:51:42 btmcinnes Exp $';
+    print '$Id: getSemanticGroup.pl,v 1.1 2011/01/16 22:51:42 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 
@@ -301,6 +324,6 @@ sub showVersion {
 #  function to output "ask for help" message when user's goofed
 ##############################################################################
 sub askHelp {
-    print STDERR "Type getSts.pl --help for help.\n";
+    print STDERR "Type getSemanticGroup.pl --help for help.\n";
 }
     

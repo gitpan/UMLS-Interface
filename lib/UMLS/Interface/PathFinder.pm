@@ -1,5 +1,5 @@
 # UMLS::Interface::PathFinder
-# (Last Updated $Id: PathFinder.pm,v 1.48 2011/01/12 20:25:17 btmcinnes Exp $)
+# (Last Updated $Id: PathFinder.pm,v 1.49 2011/01/21 15:02:40 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -206,13 +206,13 @@ sub _setOptions  {
     #  check if the undirected option is set for shortest path
     if(defined $undirected) { 
 	$option_undirected = 1;
-	$output .= "  --undirected\n";
+	$output .= "  --undirected option set\n";
     }
     
     #  check if the cuilist option has been defined
     if(defined $cuilist) { 
 	$option_cuilist = 1;
-	$output .= "  --cuilist\n";
+	$output .= "  --cuilist option set\n";
     }
     
     
@@ -228,7 +228,7 @@ sub _setOptions  {
     if(defined $realtime) {
 	$option_realtime = 1;
 	
-	$output .= "   --realtime option set\n";
+	$output .= "  --realtime option set\n";
     }
 
     #  check if verbose run has been identified
@@ -1985,7 +1985,9 @@ sub _findShortestPathLength {
 	if(defined $length) { return $length; }
 	else { 
 	    my $length = $self->_findShortestPathLengthInRealTime($concept1, $concept2);
-	    $self->_storeShortestPathLengthInCache($concept1, $concept2, $length);
+	    if(!$option_undirected) { 
+		$self->_storeShortestPathLengthInCache($concept1, $concept2, $length);
+	    }
 	    return $length;
 	}
     }
