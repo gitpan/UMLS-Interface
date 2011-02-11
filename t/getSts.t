@@ -8,7 +8,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 17;
+use Test::More tests => 13;
 
 use UMLS::Interface;
 use File::Spec;
@@ -48,11 +48,10 @@ my ($keyfile, $file, $output, $term, $cui);
 ### Note : if a key for the version of UMLS is being run on 
 ###        exists we will test our run against the key 
 ###        otherwise the key will be created
-#######################################################################################
-#  check mth tests for term
-#######################################################################################
+
+##############################################################################
 $term    = "hand";
-$file    = "getSts.mth.rb-rn.$term";
+$file    = "getSts.$term";
 $keyfile = File::Spec->catfile($keydir, $file);
 $output = `$perl $util_prg $term 2>&1`;
 
@@ -70,60 +69,11 @@ else {
       skip ("Generating key, no need to run test", 1);
     }
 }
-
-#######################################################################################
-#  check snomedct tests for term
-#######################################################################################
-$term    = "hand";
-$file    = "getSts.snomedct.par-chd.$term";
-$keyfile = File::Spec->catfile($keydir, $file);
-$output = `$perl $util_prg  $term 2>&1`;
-
-if(-e $keyfile) {
-    ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";
-    my $key = "";
-    while(<KEY>) { $key .= $_; } close KEY;
-    cmp_ok($output, 'eq', $key);
-}
-else {
-    ok(open KEY, ">$keyfile") || diag "Could not open $keyfile: $!";
-    print KEY $output;
-    close KEY;
-  SKIP: {
-      skip ("Generating key, no need to run test", 1);
-    }
-}
-
-#######################################################################################
-#  check msh tests for term
-#######################################################################################
-$term    = "hand";
-$file    = "getSts.msh.par-chd.$term";
-$keyfile = File::Spec->catfile($keydir, $file);
-$output = `$perl $util_prg $term 2>&1`;
-
-if(-e $keyfile) {
-    ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";
-    my $key = "";
-    while(<KEY>) { $key .= $_; } close KEY;
-    cmp_ok($output, 'eq', $key);
-}
-else {
-    ok(open KEY, ">$keyfile") || diag "Could not open $keyfile: $!";
-    print KEY $output;
-    close KEY;
-  SKIP: {
-      skip ("Generating key, no need to run test", 1);
-    }
-}
-
-#######################################################################################
-#  check mth rb-rn tests for cui
-#######################################################################################
+##############################################################################
 $cui    = "C0038454";
-$file    = "getSts.mth.rb-rn.$cui";
+$file    = "getSts.$cui";
 $keyfile = File::Spec->catfile($keydir, $file);
-$output = `$perl $util_prg $term 2>&1`;
+$output = `$perl $util_prg $cui 2>&1`;
 
 if(-e $keyfile) {
     ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";
@@ -139,11 +89,11 @@ else {
       skip ("Generating key, no need to run test", 1);
     }
 }
-
+##############################################################################
 $cui    = "C0021308";
-$file    = "getSts.mth.rb-rn.$cui";
+$file    = "getSts.$cui";
 $keyfile = File::Spec->catfile($keydir, $file);
-$output = `$perl $util_prg $term 2>&1`;
+$output = `$perl $util_prg $cui 2>&1`;
 
 if(-e $keyfile) {
     ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";
@@ -159,12 +109,9 @@ else {
       skip ("Generating key, no need to run test", 1);
     }
 }
-
-#######################################################################################
-#  check snomedct par-chd tests for cui
-#######################################################################################
+##############################################################################
 $cui    = "C0018787";
-$file    = "getSts.snomedct.par-chd.$cui";
+$file    = "getSts.$cui";
 $keyfile = File::Spec->catfile($keydir, $file);
 $output = `$perl $util_prg $cui 2>&1`;
 
@@ -182,11 +129,9 @@ else {
       skip ("Generating key, no need to run test", 1);
     }
 }
-#######################################################################################
-#  check snomedct par-chd-rb-rn tests  for cui
-#######################################################################################
+##############################################################################
 $cui    = "C0003811";
-$file    = "getSts.snomedct.par-chd-rb-rn.$cui";
+$file    = "getSts.$cui";
 $keyfile = File::Spec->catfile($keydir, $file);
 $output = `$perl $util_prg $cui 2>&1`;
 
@@ -204,12 +149,9 @@ else {
       skip ("Generating key, no need to run test", 1);
     }
 }
-
-#######################################################################################
-#  check msh par-chd tests for cui
-#######################################################################################
+##############################################################################
 $cui    = "C0018563";
-$file    = "getSts.msh.par-chd.$cui";
+$file    = "getSts.$cui";
 $keyfile = File::Spec->catfile($keydir, $file);
 $output = `$perl $util_prg $cui 2>&1`;
 

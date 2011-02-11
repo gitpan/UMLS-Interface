@@ -1,6 +1,6 @@
 
 # UMLS::Interface::CuiFinder
-# (Last Updated $Id: CuiFinder.pm,v 1.58 2011/01/21 19:49:57 btmcinnes Exp $)
+# (Last Updated $Id: CuiFinder.pm,v 1.60 2011/02/11 13:23:07 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -83,6 +83,10 @@ my %childTaxonomyArray  = ();
 #  and relations.
 my %cuiListHash    = ();
 
+#  initialize the semantic groups and relations hash
+my %semanticGroups = ();
+my %semanticRelations = ();
+
 #  database
 my $indexDB        = "umlsinterfaceindex";
 my $umlsinterface   = $ENV{UMLSINTERFACE_CONFIGFILE_DIR};
@@ -150,6 +154,9 @@ sub new {
 
     # initialize the object.
     $self->_initialize($params);
+
+    #  set the semantic groups
+    $self->_setSemanticGroups();
 
     return $self;
 }
@@ -3673,6 +3680,49 @@ sub _getSt {
     return (@{$arrRef});
 }
 
+#  subroutine to get the relation(s) between two semantic types
+#  input : $st1  <- semantic type abbreviation
+#          $st2  <- semantic type abbreviation
+#  output: @rels <- array of semantic relation(s)
+sub _getSemanticRelation {
+
+    my $self = shift;
+    my $st1  = shift;
+    my $st2  = shift;
+
+
+    my $function = "_getSemanticRelation";
+    &_debug($function);
+
+    #  check self
+    if(!defined $self || !ref $self) {
+        $errorhandler->_error($pkg, $function, "", 2);
+    }
+    
+    #  check input
+    if(!defined $st1) {
+        $errorhandler->_error($pkg, $function, "Error with input variable \$st1.", 4);
+    }
+    if(!defined $st2) {
+        $errorhandler->_error($pkg, $function, "Error with input variable \$st2.", 4);
+    }
+
+    #  set the database
+    my $db = $self->{'db'};
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
+
+    my $string1 = $self->_getStString($st1);
+    my $string2 = $self->_getStString($st2);
+
+    #  get the string associated with the semantic type
+    my $arrRef = $db->selectcol_arrayref("select distinct RL from SRSTR where STY_RL1=\'$string1\' and STY_RL2=\'$string2\'");
+
+    #  check database errors
+    $errorhandler->_checkDbError($pkg, $function, $db);
+
+    return (shift @{$arrRef});
+}
+
 #  subroutine to get the name of a semantic type given its abbreviation
 #  input : $st     <- string containing the abbreviation of the semantic type
 #  output: $string <- string containing the full name of the semantic type
@@ -3777,6 +3827,44 @@ sub _getStDef {
     return (shift @{$arrRef});
 }
 
+#  method returns the semantic group(s) associated with the concept
+#  input : $concept <- string containing cuis
+#  output: @array   <- array containing semantic groups
+sub _getSemanticGroup {
+    my $self = shift;
+    my $concept = shift;
+
+   my $function = "_getSemanticGroup";
+    &_debug($function);
+
+    #  check self
+    if(!defined $self || !ref $self) {
+        $errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    #  check parameter exists
+    if(!defined $concept) {
+        $errorhandler->_error($pkg, $function, "Error with input variable \$concept.", 4);
+    }
+
+    my @sts = $self->_getSt($concept);
+	
+    my %groups = ();
+    foreach my $st (@sts) {
+	my $abr = $self->_getStAbr($st);
+	my $string = $self->_getStString($abr);
+	foreach my $group (@{$semanticGroups{$string}}) { 
+	    $groups{$group}++;
+	}
+    }
+    
+    my @array = ();
+    foreach my $group (sort keys %groups) { push @array, $group; }
+    
+    return @array;
+}
+
+	    
 #  method that returns a list of concepts (@concepts) related
 #  to a concept $concept through a relation $rel
 #  input : $concept <- string containing cui
@@ -4067,6 +4155,145 @@ sub _returnTableNames {
     $hash{$cacheTableHuman} = $cacheTable;
 
     return \%hash;
+}
+
+sub _setSemanticGroups {
+
+    %semanticGroups = ();
+
+    push @{$semanticGroups{"Activity"}}, "Activities & Behaviors";
+    push @{$semanticGroups{"Behavior"}}, "Activities & Behaviors";
+    push @{$semanticGroups{"Daily or Recreational Activity"}}, "Activities & Behaviors";
+    push @{$semanticGroups{"Event"}}, "Activities & Behaviors";
+    push @{$semanticGroups{"Governmental or Regulatory Activity"}}, "Activities & Behaviors";
+    push @{$semanticGroups{"Individual Behavior"}}, "Activities & Behaviors";
+    push @{$semanticGroups{"Machine Activity"}}, "Activities & Behaviors";
+    push @{$semanticGroups{"Occupational Activity"}}, "Activities & Behaviors";
+    push @{$semanticGroups{"Social Behavior"}}, "Activities & Behaviors";
+    push @{$semanticGroups{"Anatomical Structure"}}, "Anatomy";
+    push @{$semanticGroups{"Body Location or Region"}}, "Anatomy";
+    push @{$semanticGroups{"Body Part, Organ, or Organ Component"}}, "Anatomy";
+    push @{$semanticGroups{"Body Space or Junction"}}, "Anatomy";
+    push @{$semanticGroups{"Body Substance"}}, "Anatomy";
+    push @{$semanticGroups{"Body System"}}, "Anatomy";
+    push @{$semanticGroups{"Cell"}}, "Anatomy";
+    push @{$semanticGroups{"Cell Component"}}, "Anatomy";
+    push @{$semanticGroups{"Embryonic Structure"}}, "Anatomy";
+    push @{$semanticGroups{"Fully Formed Anatomical Structure"}}, "Anatomy";
+    push @{$semanticGroups{"Tissue"}}, "Anatomy";
+    push @{$semanticGroups{"Amino Acid, Peptide, or Protein"}}, "Chemicals & Drugs";
+    push @{$semanticGroups{"Antibiotic"}}, "Chemicals & Drugs";
+    push @{$semanticGroups{"Biologically Active Substance"}}, "Chemicals & Drugs";
+    push @{$semanticGroups{"Biomedical or Dental Material"}}, "Chemicals & Drugs";
+    push @{$semanticGroups{"Carbohydrate"}}, "Chemicals & Drugs";
+    push @{$semanticGroups{"Chemical"}}, "Chemicals & Drugs";
+    push @{$semanticGroups{"Chemical Viewed Functionally"}}, "Chemicals & Drugs";
+    push @{$semanticGroups{"Chemical Viewed Structurally"}}, "Chemicals & Drugs";
+    push @{$semanticGroups{"Clinical Drug"}}, "Chemicals & Drugs";
+    push @{$semanticGroups{"Eicosanoid"}}, "Chemicals & Drugs";
+    push @{$semanticGroups{"Element, Ion, or Isotope"}}, "Chemicals & Drugs";
+    push @{$semanticGroups{"Enzyme"}}, "Chemicals & Drugs";
+    push @{$semanticGroups{"Hazardous or Poisonous Substance"}}, "Chemicals & Drugs";
+    push @{$semanticGroups{"Hormone"}}, "Chemicals & Drugs";
+    push @{$semanticGroups{"Immunologic Factor"}}, "Chemicals & Drugs";
+    push @{$semanticGroups{"Indicator, Reagent, or Diagnostic Aid"}}, "Chemicals & Drugs";
+    push @{$semanticGroups{"Inorganic Chemical"}}, "Chemicals & Drugs";
+    push @{$semanticGroups{"Lipid"}}, "Chemicals & Drugs";
+    push @{$semanticGroups{"Neuroreactive Substance or Biogenic Amine"}}, "Chemicals & Drugs";
+    push @{$semanticGroups{"Nucleic Acid, Nucleoside, or Nucleotide"}}, "Chemicals & Drugs";
+    push @{$semanticGroups{"Organic Chemical"}}, "Chemicals & Drugs";
+    push @{$semanticGroups{"Organophosphorus Compound"}}, "Chemicals & Drugs";
+    push @{$semanticGroups{"Pharmacologic Substance"}}, "Chemicals & Drugs";
+    push @{$semanticGroups{"Receptor"}}, "Chemicals & Drugs";
+    push @{$semanticGroups{"Steroid"}}, "Chemicals & Drugs";
+    push @{$semanticGroups{"Vitamin"}}, "Chemicals & Drugs";
+    push @{$semanticGroups{"Classification"}}, "Concepts & Ideas";
+    push @{$semanticGroups{"Conceptual Entity"}}, "Concepts & Ideas";
+    push @{$semanticGroups{"Functional Concept"}}, "Concepts & Ideas";
+    push @{$semanticGroups{"Group Attribute"}}, "Concepts & Ideas";
+    push @{$semanticGroups{"Idea or Concept"}}, "Concepts & Ideas";
+    push @{$semanticGroups{"Intellectual Product"}}, "Concepts & Ideas";
+    push @{$semanticGroups{"Language"}}, "Concepts & Ideas";
+    push @{$semanticGroups{"Qualitative Concept"}}, "Concepts & Ideas";
+    push @{$semanticGroups{"Quantitative Concept"}}, "Concepts & Ideas";
+    push @{$semanticGroups{"Regulation or Law"}}, "Concepts & Ideas";
+    push @{$semanticGroups{"Spatial Concept"}}, "Concepts & Ideas";
+    push @{$semanticGroups{"Temporal Concept"}}, "Concepts & Ideas";
+    push @{$semanticGroups{"Drug Delivery Device"}}, "Devices";
+    push @{$semanticGroups{"Medical Device"}}, "Devices";
+    push @{$semanticGroups{"Research Device"}}, "Devices";
+    push @{$semanticGroups{"Acquired Abnormality"}}, "Disorders";
+    push @{$semanticGroups{"Anatomical Abnormality"}}, "Disorders";
+    push @{$semanticGroups{"Cell or Molecular Dysfunction"}}, "Disorders";
+    push @{$semanticGroups{"Congenital Abnormality"}}, "Disorders";
+    push @{$semanticGroups{"Disease or Syndrome"}}, "Disorders";
+    push @{$semanticGroups{"Experimental Model of Disease"}}, "Disorders";
+    push @{$semanticGroups{"Finding"}}, "Disorders";
+    push @{$semanticGroups{"Injury or Poisoning"}}, "Disorders";
+    push @{$semanticGroups{"Mental or Behavioral Dysfunction"}}, "Disorders";
+    push @{$semanticGroups{"Neoplastic Process"}}, "Disorders";
+    push @{$semanticGroups{"Pathologic Function"}}, "Disorders";
+    push @{$semanticGroups{"Sign or Symptom"}}, "Disorders";
+    push @{$semanticGroups{"Amino Acid Sequence"}}, "Genes & Molecular Sequences";
+    push @{$semanticGroups{"Carbohydrate Sequence"}}, "Genes & Molecular Sequences";
+    push @{$semanticGroups{"Gene or Genome"}}, "Genes & Molecular Sequences";
+    push @{$semanticGroups{"Molecular Sequence"}}, "Genes & Molecular Sequences";
+    push @{$semanticGroups{"Nucleotide Sequence"}}, "Genes & Molecular Sequences";
+    push @{$semanticGroups{"Geographic Area"}}, "Geographic Areas";
+    push @{$semanticGroups{"Age Group"}}, "Living Beings";
+    push @{$semanticGroups{"Amphibian"}}, "Living Beings";
+    push @{$semanticGroups{"Animal"}}, "Living Beings";
+    push @{$semanticGroups{"Archaeon"}}, "Living Beings";
+    push @{$semanticGroups{"Bacterium"}}, "Living Beings";
+    push @{$semanticGroups{"Bird"}}, "Living Beings";
+    push @{$semanticGroups{"Eukaryote"}}, "Living Beings";
+    push @{$semanticGroups{"Family Group"}}, "Living Beings";
+    push @{$semanticGroups{"Fish"}}, "Living Beings";
+    push @{$semanticGroups{"Fungus"}}, "Living Beings";
+    push @{$semanticGroups{"Group"}}, "Living Beings";
+    push @{$semanticGroups{"Human"}}, "Living Beings";
+    push @{$semanticGroups{"Mammal"}}, "Living Beings";
+    push @{$semanticGroups{"Organism"}}, "Living Beings";
+    push @{$semanticGroups{"Patient or Disabled Group"}}, "Living Beings";
+    push @{$semanticGroups{"Plant"}}, "Living Beings";
+    push @{$semanticGroups{"Population Group"}}, "Living Beings";
+    push @{$semanticGroups{"Professional or Occupational Group"}}, "Living Beings";
+    push @{$semanticGroups{"Reptile"}}, "Living Beings";
+    push @{$semanticGroups{"Vertebrate"}}, "Living Beings";
+    push @{$semanticGroups{"Virus"}}, "Living Beings";
+    push @{$semanticGroups{"Entity"}}, "Objects";
+    push @{$semanticGroups{"Food"}}, "Objects";
+    push @{$semanticGroups{"Manufactured Object"}}, "Objects";
+    push @{$semanticGroups{"Physical Object"}}, "Objects";
+    push @{$semanticGroups{"Substance"}}, "Objects";
+    push @{$semanticGroups{"Biomedical Occupation or Discipline"}}, "Occupations";
+    push @{$semanticGroups{"Occupation or Discipline"}}, "Occupations";
+    push @{$semanticGroups{"Health Care Related Organization"}}, "Organizations";
+    push @{$semanticGroups{"Organization"}}, "Organizations";
+    push @{$semanticGroups{"Professional Society"}}, "Organizations";
+    push @{$semanticGroups{"Self-help or Relief Organization"}}, "Organizations";
+    push @{$semanticGroups{"Biologic Function"}}, "Phenomena";
+    push @{$semanticGroups{"Environmental Effect of Humans"}}, "Phenomena";
+    push @{$semanticGroups{"Human-caused Phenomenon or Process"}}, "Phenomena";
+    push @{$semanticGroups{"Laboratory or Test Result"}}, "Phenomena";
+    push @{$semanticGroups{"Natural Phenomenon or Process"}}, "Phenomena";
+    push @{$semanticGroups{"Phenomenon or Process"}}, "Phenomena";
+    push @{$semanticGroups{"Cell Function"}}, "Physiology";
+    push @{$semanticGroups{"Clinical Attribute"}}, "Physiology";
+    push @{$semanticGroups{"Genetic Function"}}, "Physiology";
+    push @{$semanticGroups{"Mental Process"}}, "Physiology";
+    push @{$semanticGroups{"Molecular Function"}}, "Physiology";
+    push @{$semanticGroups{"Organism Attribute"}}, "Physiology";
+    push @{$semanticGroups{"Organism Function"}}, "Physiology";
+    push @{$semanticGroups{"Organ or Tissue Function"}}, "Physiology";
+    push @{$semanticGroups{"Physiologic Function"}}, "Physiology";
+    push @{$semanticGroups{"Diagnostic Procedure"}}, "Procedures";
+    push @{$semanticGroups{"Educational Activity"}}, "Procedures";
+    push @{$semanticGroups{"Health Care Activity"}}, "Procedures";
+    push @{$semanticGroups{"Laboratory Procedure"}}, "Procedures";
+    push @{$semanticGroups{"Molecular Biology Research Technique"}}, "Procedures";
+    push @{$semanticGroups{"Research Activity"}}, "Procedures";
+    push @{$semanticGroups{"Therapeutic or Preventive Procedure"}}, "Procedures";
 }
 
 #  removes the configuration tables

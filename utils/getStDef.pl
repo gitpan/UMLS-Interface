@@ -75,7 +75,7 @@ List of CUIs that are associated with the input term
 
 =head1 COPYRIGHT
 
-Copyright (c) 2007-2009,
+Copyright (c) 2007-2011,
 
  Bridget T. McInnes, University of Minnesota
  bthomson at cs.umn.edu
@@ -179,6 +179,7 @@ if(defined $opt_socket) {
     $option_hash{"socket"}   = $socket;
 }
 
+$option_hash{"t"} = 1;
 $umls = UMLS::Interface->new(\%option_hash); 
 die "Unable to create UMLS::Interface object.\n" if(!$umls);
 
@@ -238,8 +239,8 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getStDef.pl,v 1.8 2011/01/11 18:09:38 btmcinnes Exp $';
-    print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
+    print '$Id: getStDef.pl,v 1.10 2011/02/11 13:23:08 btmcinnes Exp $';
+    print "\nCopyright (c) 2011, Ted Pedersen & Bridget McInnes\n";
 }
 
 ##############################################################################

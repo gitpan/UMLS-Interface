@@ -193,6 +193,7 @@ if(defined $opt_socket) {
     $option_hash{"socket"}   = $socket;
 }
 
+$option_hash{"t"} = 1;
 $umls = UMLS::Interface->new(\%option_hash); 
 die "Unable to create UMLS::Interface object.\n" if(!$umls);
 
@@ -271,7 +272,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getStString.pl,v 1.2 2011/01/11 18:09:39 btmcinnes Exp $';
+    print '$Id: getStString.pl,v 1.3 2011/01/26 16:15:47 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

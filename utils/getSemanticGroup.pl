@@ -10,19 +10,11 @@ This program takes in a CUI or a TERM and returns its semantic group(s).
 
 =head1 USAGE
 
-Usage: getSemanticGroup.pl [OPTIONS] [SemGroups.txt] [TERM|CUI]
+Usage: getSemanticGroup.pl [OPTIONS] [TERM|CUI]
 
 =head1 INPUT
 
 =head2 Required Arguments:
-
-=head3 SemGroups.txt
-
-This is the SemGroups.txt file from the National Library of Medicine. 
-You can download this file here:
-
-http://semanticnetwork.nlm.nih.gov/SemGroups/SemGroups.txt
-
 
 =head3 [TERM|CUI]
 
@@ -94,7 +86,7 @@ List of CUIs that are associated with the input term
 
 =head1 COPYRIGHT
 
-Copyright (c) 2007-2009,
+Copyright (c) 2007-2011,
 
  Bridget T. McInnes, University of Minnesota
  bthomson at cs.umn.edu
@@ -200,18 +192,9 @@ if(defined $opt_socket) {
     $option_hash{"socket"}   = $socket;
 }
 
+$option_hash{"t"} = 1;
 $umls = UMLS::Interface->new(\%option_hash); 
 die "Unable to create UMLS::Interface object.\n" if(!$umls);
-
-my $semgroupsfile = shift;
-
-open(GROUPS, $semgroupsfile) || die "Could not open SemGroups.txt file\n";
-my %groups = ();
-while(<GROUPS>) { 
-    chomp;
-    my ($abbrev, $group, $tui, $st) = split/\|/;
-    push @{$groups{$st}}, $group;
-}
     
 my @terms = ();
 if(defined $opt_infile) { 
@@ -241,23 +224,14 @@ foreach my $input (@terms) {
     
     foreach my $cui (@c) {
 	
-	my @sts = $umls->getSt($cui);
+	my @groups = $umls->getSemanticGroup($cui);
 	
-	if($#sts < 0) {
+	if($#groups < 0) {
 	    print "There are no semantic groups associated with $term ($cui)\n";
 	}
 	else {
-	    my @semanticgroups = ();
-	    foreach my $st (@sts) {
-		my $abr = $umls->getStAbr($st);
-		my $string = $umls->getStString($abr);
-		foreach my $group (@{$groups{$string}}) { 
-		    $semanticgroups{$group}++;
-		}
-	    }
-	    
 	    print "The semantic groups associated with $term ($cui):\n";
-	    foreach my $group (sort keys %semanticgroups) {
+	    foreach my $group (@groups) {
 		print "  $group\n";
 		$printFlag = 1;
 	    }
@@ -274,7 +248,7 @@ foreach my $input (@terms) {
 ##############################################################################
 sub minimalUsageNotes {
     
-    print "Usage: getSemanticGroup.pl [OPTIONS] [SemGroups.txt] [TERM|CUI] \n";
+    print "Usage: getSemanticGroup.pl [OPTIONS] [TERM|CUI] \n";
     &askHelp();
     exit;
 }
@@ -288,7 +262,7 @@ sub showHelp() {
     print "This is a utility that takes as input a TERM or\n";
     print "a CUI and returns all of its semantic groupss.\n\n";
   
-    print "Usage: getSemanticGroup.pl [OPTIONS] [SemGroups.txt] [TERM|CUI]\n\n";
+    print "Usage: getSemanticGroup.pl [OPTIONS] [TERM|CUI]\n\n";
 
     print "Options:\n\n";
     
@@ -316,8 +290,8 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getSemanticGroup.pl,v 1.1 2011/01/16 22:51:42 btmcinnes Exp $';
-    print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
+    print '$Id: getSemanticGroup.pl,v 1.3 2011/02/11 13:23:08 btmcinnes Exp $';
+    print "\nCopyright (c) 2008-2011, Ted Pedersen & Bridget McInnes\n";
 }
 
 ##############################################################################

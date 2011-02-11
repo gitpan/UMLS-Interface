@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.99 2011/01/21 19:49:57 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.102 2011/02/11 14:56:27 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -60,7 +60,7 @@ my $pkg = "UMLS::Interface";
 
 use vars qw($VERSION);
 
-$VERSION = '0.99';
+$VERSION = '0.101';
 
 my $debug = 0;
 
@@ -542,6 +542,21 @@ sub getRelationsBetweenCuis {
     return @array;
 }
 
+#  subroutine to get the relation(s) between two semantic types
+#  input : $st1  <- semantic type abbreviation
+#          $st2  <- semantic type abbreviation
+#  output: @rels <- array of semantic relation(s)
+sub getSemanticRelation {
+    
+    my $self = shift;
+    my $st1  = shift;
+    my $st2  = shift;
+
+    my @array = $cuifinder->_getSemanticRelation($st1, $st2);
+
+    return @array;
+}
+ 
 #  returns the semantic type(s) of a given cui
 # input : $cui   <- string containing a concept
 # output: @array <- array containing the semantic type's TUIs
@@ -556,6 +571,18 @@ sub getSt {
     return @array;
 }
 
+#  method returns the semantic group(s) associated with the concept
+#  input : $concept <- string containing cuis
+#  output: @array   <- @array reference containing semantic groups
+sub getSemanticGroup {
+
+    my $self = shift;
+    my $cui  = shift;
+    
+    my @array = $cuifinder->_getSemanticGroup($cui);
+
+    return @array;
+}
 
 #  returns the full name of a semantic type given its abbreviation
 #  input : $st     <- string containing the abbreviation of the semantic type

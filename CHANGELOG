@@ -1,6 +1,20 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.99 to 0.101
+    1. revised the program to obtain the semantic group of a cui or term <-
+    no input file needed now
+
+    2. added getSemanticGroup function in Interface.pm and its corresponding
+    _getSemanticGroup function in CuiFinder.pm
+
+    3. added getSemanticGroup.t test program in t/
+
+    4. revised getSts.t test program in t/
+
+    5. added a getSemanticRelation.pl program in the utils/ directory along
+    with its corresponding functions and test cases
+
   Changes from version 0.97 to 0.99
     1. added program to obtain the semantic group of a cui or a term
 
