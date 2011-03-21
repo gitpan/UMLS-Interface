@@ -1,6 +1,13 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 0.101 to 1.01
+    1. modified the version number - this release was specifically about
+    modifying the version number because cpan doesn't realize that .101 is
+    greater than .99
+
+    2. updated documentation
+
   Changes from version 0.99 to 0.101
     1. revised the program to obtain the semantic group of a cui or term <-
     no input file needed now

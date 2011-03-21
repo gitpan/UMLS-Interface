@@ -1,6 +1,6 @@
 
 # UMLS::Interface::CuiFinder
-# (Last Updated $Id: CuiFinder.pm,v 1.60 2011/02/11 13:23:07 btmcinnes Exp $)
+# (Last Updated $Id: CuiFinder.pm,v 1.61 2011/03/21 14:06:57 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -274,7 +274,6 @@ sub _initialize {
     my $cuilist      = $params->{'cuilist'};
     my $database     = $params->{'database'};
 
-       
     #  to store the database object
     my $db = $self->_setDatabase($params);
     
@@ -1893,12 +1892,12 @@ sub _config {
     my %includereladef = ();    my %excludereladef = ();
 
     my %check = ();
+
     if(defined $file) {
         open(FILE, $file) || die "Could not open configuration file: $file\n";
         while(<FILE>) {
             chomp;
-	   
-            #  if blank line skip
+	    #  if blank line skip
             if($_=~/^\s*$/) { next; }
 
             if($_=~/([A-Z]+)\s*\:\:\s*(include|exclude)\s+(.*)/) {
@@ -4549,8 +4548,6 @@ UMLS for the modules in the UMLS::Interface package.
 For more information please see the UMLS::Interface.pm documentation.
 
 =head1 SYNOPSIS
-
- #!/usr/bin/perl
 
  use UMLS::Interface::CuiFinder;
  use UMLS::Interface::ErrorHandler;

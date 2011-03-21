@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.102 2011/02/11 14:56:27 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.103 2011/03/21 14:06:55 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -60,7 +60,7 @@ my $pkg = "UMLS::Interface";
 
 use vars qw($VERSION);
 
-$VERSION = '0.101';
+$VERSION = '1.01';
 
 my $debug = 0;
 
@@ -955,7 +955,6 @@ __END__
 UMLS::Interface - Perl interface to the Unified Medical Language System (UMLS)
 
 =head1 SYNOPSIS
- #!/usr/bin/perl
 
  use UMLS::Interface;
 
