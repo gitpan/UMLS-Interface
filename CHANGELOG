@@ -1,6 +1,9 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 1.01 to 1.03
+    1. updated the synopsis code in the .pm modules
+
   Changes from version 0.101 to 1.01
     1. modified the version number - this release was specifically about
     modifying the version number because cpan doesn't realize that .101 is

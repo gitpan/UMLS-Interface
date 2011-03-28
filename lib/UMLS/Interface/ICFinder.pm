@@ -1,5 +1,5 @@
 # UMLS::Interface::ICFinder
-# (Last Updated $Id: ICFinder.pm,v 1.20 2011/03/21 14:06:57 btmcinnes Exp $)
+# (Last Updated $Id: ICFinder.pm,v 1.21 2011/03/28 19:23:05 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -943,6 +943,16 @@ documentation.
  $concept = "C0037303";
 
  $ic = $icfinder->_getIC($concept);
+ print "The IC of $concept is $ic\n\n";
+
+ print "Note: This probably returned zero because the information\n";
+ print "content file is not specified - this is difficult to do in\n"; 
+ print "the synopsis. You need to create an icpropagation file and\n";
+ print "then pass it as one of the parameters. See:\n\n";
+ print "            create-icpropagation.pl\n\n";
+ print "to create it and then add the following line above:\n\n";
+ print "           \$params{\"icpropgation\"} = <icpropagation file>;\n\n";
+ print "\n";
 
  $hash = $icfinder->_getPropagationCuis();
 

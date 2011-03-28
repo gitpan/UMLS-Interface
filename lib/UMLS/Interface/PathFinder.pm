@@ -1,5 +1,5 @@
 # UMLS::Interface::PathFinder
-# (Last Updated $Id: PathFinder.pm,v 1.50 2011/03/21 14:06:57 btmcinnes Exp $)
+# (Last Updated $Id: PathFinder.pm,v 1.51 2011/03/28 19:23:05 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -2900,20 +2900,37 @@ documentation.
  $concept = "C0037303";
 
  $depth = $pathfinder->_depth();
+ print "The depth of the taxonomy is $depth\n";
 
  $array = $pathfinder->_pathsToRoot($concept);
+ print "The paths from $concept to root: \n";
+ foreach my $p (@{$array}) { 
+    print "  => $p\n";
+ }
 
- $depth = $pathfinder->_findMinimumDepth($concept);
+ $mindepth = $pathfinder->_findMinimumDepth($concept);
+ $maxdepth = $pathfinder->_findMaximumDepth($concept);
+ print "The minimum depth of $concept is $mindepth\n";
+ print "The maximum depth of $concept is $maxdepth\n";
 
- $depth = $pathfinder->_findMaximumDepth($concept);
 
  $concept1 = "C0037303"; $concept2 = "C0018563";
 
  $length = $pathfinder->_findShortestPathLength($concept1, $concept2);
-
- @array  = $pathfinder->_findShortestPath($concept1, $concept2);
+ print "The length of the shortest path between $concept1 and $concept2 is $length\n";
 
  @array = $pathfinder->_findLeastCommonSubsumer($concept1, $concept2);
+ print "The LCS(es) between $concept1 and $concept2 are: \n";
+ foreach my $lcs (@array) { 
+    print "  => $lcs: \n";
+ }
+ 
+ @array  = $pathfinder->_findShortestPath($concept1, $concept2);
+ print "The shortest pahts between $concept1 and $concept2 are:\n";
+ foreach my $path (@array) { 
+    print "  => $path\n";
+ }
+
 
 =head1 INSTALL
 

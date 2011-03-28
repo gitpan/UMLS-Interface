@@ -1,5 +1,5 @@
 # UMLS::Interface::ErrorHandler
-# (Last Updated $Id: ErrorHandler.pm,v 1.7 2010/07/15 22:05:41 btmcinnes Exp $)
+# (Last Updated $Id: ErrorHandler.pm,v 1.8 2011/03/21 23:58:35 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -163,8 +163,6 @@ For more information please see the UMLS::Interface.pm
 documentation. 
 
 =head1 SYNOPSIS
-
-  #!/usr/bin/perl
 
   use UMLS::Interface::ErrorHandler();
 

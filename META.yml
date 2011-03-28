@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               UMLS-Interface
-version:            1.01
+version:            1.03
 abstract:           Perl interface to the Unified Medical Language System (UMLS)
 author:
     - Bridget McInnes <bthomson@cs.umn.edu>, Ted Pedersen <tpederse@d.umn.edu>, Serguei Pakhomov <pakh0002@umn.edu>, Siddharth Patwardhan <sidd@cs.utah.edu>

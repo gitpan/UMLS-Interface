@@ -1,6 +1,6 @@
 
 # UMLS::Interface::CuiFinder
-# (Last Updated $Id: CuiFinder.pm,v 1.61 2011/03/21 14:06:57 btmcinnes Exp $)
+# (Last Updated $Id: CuiFinder.pm,v 1.62 2011/03/28 19:23:05 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -4552,7 +4552,6 @@ For more information please see the UMLS::Interface.pm documentation.
  use UMLS::Interface::CuiFinder;
  use UMLS::Interface::ErrorHandler;
 
-
  %params = ();
 
  $params{"realtime"} = 1;
@@ -4561,21 +4560,27 @@ For more information please see the UMLS::Interface.pm documentation.
  die "Unable to create UMLS::Interface::CuiFinder object.\n" if(!$cuifinder);
 
  $root = $cuifinder->_root();
+ print "The root is: $root\n";
 
  $version = $cuifinder->_version();
+ print "The UMLS version is: $version\n";
 
- $concept = "C0018563"; $rel = "PAR";
+ $concept = "C0018563"; $rel = "SIB";
  @array = $cuifinder->_getRelated($concept, $rel);
+ print "The sibling(s) of $concept is:\n";
+ foreach my $s (@array) { print "  => $s\n"; }
+ print "\n";
+
  @array = $cuifinder->_getTermList($concept);
  @array = $cuifinder->_getDefTermList($concept);
  @array = $cuifinder->_getAllTerms($concept);
- print "Terms of $concept: @array\n";
+ print "The terms of $concept are: @array\n";
 
  $term = shift @array;
  @array = $cuifinder->_getConceptList($term);
  @array = $cuifinder->_getDefConceptList($term);
  @array = $cuifinder ->_getAllConcepts($term);
- print "CUIs of $term: @array\n";
+ print "The possible CUIs of the $term are: @array\n";
 
  $hash = $cuifinder->_getCuiList();
 
@@ -4583,21 +4588,26 @@ For more information please see the UMLS::Interface.pm documentation.
  $array = $cuifinder->_getCuisFromSource($sab);
 
  @array = $cuifinder->_getSab($concept);
+ print "$concept exists in the following sources:\n";
+ foreach my $sab (@array) {  print "  => $sab\n"; }
+ print "\n";
 
  @array = $cuifinder->_getChildren($concept);
  print "Children of $concept @array\n";
 
  @array = $cuifinder->_getParents($concept);
- print "Parents of $concept: @array\n";
+ print "Parents of $concept: @array\n\n";
 
  @array = $cuifinder->_getRelations($concept);
+ print "The relations of $concept: @array\n";
 
  $concept1 = "C0018563"; $concept2 = "C0037303";
 
  @array = $cuifinder->_getRelationsBetweenCuis($concept1, $concept2);
- print "Relation(s) between $concept1 and $concept2: @array\n";
+ print "Relation(s) between $concept1 and $concept2: @array\n\n";
 
  @array = $cuifinder->_getSt($concept);
+ print "The semantic type of $concept: @array\n";
 
  $abr = "bpoc";
  $string = $cuifinder->_getStString($abr);
@@ -4606,23 +4616,29 @@ For more information please see the UMLS::Interface.pm documentation.
  $string = $cuifinder->_getStAbr($tui);
 
  $definition = $cuifinder->_getStDef($abr);
- print "Definition of semantic type ($abr): $definition\n";
+ print "Definition of semantic type ($abr): $definition\n\n";
 
- $array = $cuifinder->_getExtendedDefinition($concept);
- print "Extended definition of $concept: \n";
- foreach my $el (@{$array}) {
-    print "$el\n";
- } 
 
  @array = $cuifinder->_getCuiDef($concept, $sabflag);
  print "Definition of $concept: \n";
  foreach my $el (@array) {
-    print "$el\n";
+    print "  =>$el\n";
  } 
+ print "\n";
+
+ my $concept = "C0376209";
+ $array = $cuifinder->_getExtendedDefinition($concept);
+ print "Extended definition of $concept: \n";
+ foreach my $el (@{$array}) {
+    print "  => $el\n";
+ } 
+ print "\n";
 
  $bool = $cuifinder->_exists($concept);
 
  $hash = $cuifinder->_returnTableNames();
+ print "The tables currently in the index are: \n";
+ foreach my $t (sort keys %{$hash}) { print "  => $t\n"; }
 
 =head1 INSTALL
 

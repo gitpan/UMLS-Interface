@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.103 2011/03/21 14:06:55 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.105 2011/03/28 19:28:39 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -60,7 +60,7 @@ my $pkg = "UMLS::Interface";
 
 use vars qw($VERSION);
 
-$VERSION = '1.01';
+$VERSION = '1.03';
 
 my $debug = 0;
 
@@ -1032,8 +1032,8 @@ UMLS::Interface - Perl interface to the Unified Medical Language System (UMLS)
  my @rel_sab = $umls->getRelationsBetweenCuis($cui1, "C1524024");
  print "The relation (source) between $cui1 and $cui2: @rel_sab\n";
 
- my @siblings = $umls->getRelated($cui2, "SIB");
- print "The sibling(s) of $term2 ($cui2) are: @siblings\n\n";
+ my @rels = $umls->getRelated($cui2, "PAR");
+ print "The parents(s) of $term2 ($cui2) are: @rels\n\n";
 
  my @definitions = $umls->getCuiDef($cui1);
  print "The definition(s) of $term1 ($cui1) are:\n";
