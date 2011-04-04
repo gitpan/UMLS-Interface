@@ -263,7 +263,7 @@ else {
 foreach my $cui (@cuis) { 
     my @terms = ();
     if(defined $opt_config) {
-	if(defined $opt_preferred) { 
+	if(defined $opt_preferred) {             
 	    my $t = $umls->getPreferredTerm($cui); push @terms, $t;
 	}
 	else {
@@ -342,7 +342,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getAssociatedTerms.pl,v 1.11 2010/08/09 15:02:09 btmcinnes Exp $';
+    print '$Id: getAssociatedTerms.pl,v 1.12 2011/04/01 19:55:18 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

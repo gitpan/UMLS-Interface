@@ -44,6 +44,20 @@ you have performed.
 
 =head2 Optional Arguments:
 
+=head3 --term
+
+Returns the terms associated with the CUI in the following format:
+
+CUI term1|term2|term3|...
+
+=head3 --st <semantic type abbreviation>
+
+Returns only those CUIs with the specified semantic type
+
+=head4 --sg <semantic group name>
+
+Returns only those CUIs with the specified semantic group
+
 =head3 --debug
 
 Sets the debug flag for testing
@@ -141,7 +155,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-eval(GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s")) or die ("Please check the above mentioned option(s).\n");
+eval(GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "term", "st=s", "sg=s")) or die ("Please check the above mentioned option(s).\n");
 
 
 #  if help is defined, print out help
@@ -199,7 +213,44 @@ die "Unable to create UMLS::Interface object.\n" if(!$umls);
 my $hashref = $umls->getCuiList();
 
 foreach my $cui (sort keys %{$hashref}) {
-    print "$cui\n";
+    #  flag to determine whether the cui is to be printed
+    my $flag = 1;
+
+    #  if --st, check to make certain the cui is of the 
+    #  appropriate semantic type
+    if(defined $opt_st) {
+	$flag = 0;
+	my @sts = $umls->getSt($cui);
+	foreach my $st (@sts) { 
+	    my $abbrev = $umls->getStAbr($st);
+	    if($abbrev eq $opt_st) {
+		$flag = 1;
+	    }
+	}
+    }
+
+    #  if --sg, check to make certain the cui is of the 
+    #  appropriate semantic group
+    if(defined $opt_sg) {
+	$flag = 0;
+	my @sgs = $umls->getSemanticGroup($cui);
+	foreach my $sg (@sgs) { 
+	    if($sg eq $opt_sg) { 
+		$flag = 1;
+	    }
+	}
+    }
+    
+    if($flag == 0) { next; }
+
+    if(defined $opt_term) {
+	my @terms = $umls->getTermList($cui); 
+	my $termlist = join "|", @terms;
+	print "$cui $termlist\n";
+    }
+    else {
+	print "$cui\n";
+    }
 }
 
 ##############################################################################
@@ -224,6 +275,14 @@ sub showHelp() {
     print "Usage: getCuiList.pl [OPTIONS] CONFIGFILE\n\n";
 
     print "Options:\n\n";
+    
+    print "--term                   Returns CUIs associated terms\n\n";
+
+    print "--st <semantic type>     Returns CUIs with specified semantic\n";
+    print "                         type\n\n";
+
+    print "--sg <semantic group>    Returns CUIs with specified semantic\n";
+    print "                         group\n\n";
 
     print "--debug                  Sets the debug flag for testing\n\n";
 
@@ -246,7 +305,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getCuiList.pl,v 1.4 2010/11/03 14:41:25 btmcinnes Exp $';
+    print '$Id: getCuiList.pl,v 1.5 2011/04/04 13:50:12 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

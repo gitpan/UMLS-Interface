@@ -1,6 +1,6 @@
 
 # UMLS::Interface::CuiFinder
-# (Last Updated $Id: CuiFinder.pm,v 1.62 2011/03/28 19:23:05 btmcinnes Exp $)
+# (Last Updated $Id: CuiFinder.pm,v 1.64 2011/04/04 13:50:11 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -2772,6 +2772,7 @@ sub _getPreferredTerm {
         $tr =~ s/\s+/ /g;
         $term = $tr;
     }
+    
     #  return the strings
     return $term;
 }
@@ -3110,7 +3111,7 @@ sub _getDefConceptList {
 	$arrRef = $db->selectcol_arrayref("select distinct CUI from MRCONSO where STR='$term'");
     }
     elsif($sabdefsources ne "") {
-        $arrRef = $db->selectcol_arrayref("select distinct CUI from MRCONSO where STR='$term' and ($sources)");
+        $arrRef = $db->selectcol_arrayref("select distinct CUI from MRCONSO where STR='$term' and ($sabdefsources)");
     }
     else {
         $errorhandler->_error($pkg, $function, "Error with sources from configuration file.", 5);
