@@ -1,6 +1,9 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 1.05 to 1.07
+    1. modified test cases for getCuiDef
+
   Changes from version 1.03 to 1.05
     1. modified the getDefConceptList to use the sabdef source(s) rather
     than the sab source(s).

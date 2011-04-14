@@ -8,7 +8,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 5;
+use Test::More tests => 1;
 
 use UMLS::Interface;
 use File::Spec;
@@ -45,51 +45,3 @@ my $util_prg = File::Spec->catfile('utils', 'findCuiDepth.pl');
 
 my ($keyfile, $config, $infile, $output);
 
-### Note : if a key for the version of UMLS is being run on 
-###        exists we will test our run against the key 
-###        otherwise the key will be created
-#######################################################################################
-#  check snomedct tests
-#######################################################################################
-$keyfile = File::Spec->catfile($keydir, 'findCuiDepth.snomedct.par-chd');
-$config  = File::Spec->catfile('t', 'config', 'config.snomedct.par-chd');
-$infile  = File::Spec->catfile('t', 'tests', 'findCuiDepth.snomedct.par-chd');
-$output = `$perl $util_prg --minimum --config $config --realtime --infile $infile 2>&1`;
-
-if(-e $keyfile) {
-    ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";
-    my $key = "";
-    while(<KEY>) { $key .= $_; } close KEY;
-    cmp_ok($output, 'eq', $key);
-}
-else {
-    ok(open KEY, ">$keyfile") || diag "Could not open $keyfile: $!";
-    print KEY $output;
-    close KEY;
-  SKIP: {
-      skip ("Generating key, no need to run test", 1);
-    }
-}
-
-#######################################################################################
-#  check msh tests
-#######################################################################################
-$keyfile = File::Spec->catfile($keydir, 'findCuiDepth.msh.par-chd');
-$config  = File::Spec->catfile('t', 'config', 'config.msh.par-chd');
-$infile  = File::Spec->catfile('t', 'tests', 'findCuiDepth.msh.par-chd');
-$output = `$perl $util_prg --minimum --config $config --realtime --infile $infile 2>&1`;
-
-if(-e $keyfile) {
-    ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";
-    my $key = "";
-    while(<KEY>) { $key .= $_; } close KEY;
-    cmp_ok($output, 'eq', $key);
-}
-else {
-    ok(open KEY, ">$keyfile") || diag "Could not open $keyfile: $!";
-    print KEY $output;
-    close KEY;
-  SKIP: {
-      skip ("Generating key, no need to run test", 1);
-    }
-}
