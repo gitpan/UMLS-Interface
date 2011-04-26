@@ -291,20 +291,21 @@ else {
 foreach my $input (@inputarray) {
     my $term  = $input;
 
-    my @c = ();
+    my $c = undef;
     if($input=~/C[0-9]+/) {
-	push @c, $input;
-	($term) = $umls->getTermList($input);
+	push @{$c}, $input;
+	$term = shift @{$umls->getTermList($input)};
+	
     }
     else {
-	@c = $umls->getConceptList($input);
+	$c = $umls->getConceptList($input);
     }
     
     my $printFlag = 0; 
     my $precision = 4;
     my $floatformat = join '', '%', '.', $precision, 'f';
    
-    foreach my $cui (@c) {
+    foreach my $cui (@{$c}) {
 		
 	#  make certain cui exists in this view
 	if($umls->exists($cui) == 0) { next; }
@@ -321,7 +322,7 @@ foreach my $input (@inputarray) {
 	    print "  => ";
 	    foreach my $i (0..$#array){
 		my $element = $array[$i];
-		my ($t) = $umls->getTermList($element); 
+		my ($t) = shift @{$umls->getTermList($element)}; 
 		print "$element ($t) ";
 		if(defined $opt_icpropagation) {
 		    my $value = $umls->getIC($element);
@@ -330,8 +331,8 @@ foreach my $input (@inputarray) {
 		}
 		if( (defined $opt_info) and ($i < $#array) ) {
 		    my $second = $array[$i+1];
-		    my @relations = $umls->getRelationsBetweenCuis($element, $second);
-		    print " => @relations => ";
+		    my $relations = $umls->getRelationsBetweenCuis($element, $second);
+		    print " => @{$relations} => ";
 		}
 	    } print "\n";
 	    
@@ -418,7 +419,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findPathToRoot.pl,v 1.22 2010/11/01 13:10:11 btmcinnes Exp $';
+    print '$Id: findPathToRoot.pl,v 1.23 2011/04/26 12:19:28 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

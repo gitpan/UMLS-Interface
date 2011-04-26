@@ -187,12 +187,12 @@ my $st = shift;
 
 my $def = $umls->getStDef($st);
 
-if($def=~/^\s*$/) {
+if($#{$def} < 0) { 
     print "There are no definitions for the semantic type ($st)\n";
 }
 else {
     print "The definition of the semantic type ($st):\n";
-    print "$def\n"; 
+    print "@{$def}\n"; 
 }
 
 ##############################################################################
@@ -239,7 +239,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getStDef.pl,v 1.10 2011/02/11 13:23:08 btmcinnes Exp $';
+    print '$Id: getStDef.pl,v 1.11 2011/04/26 12:19:28 btmcinnes Exp $';
     print "\nCopyright (c) 2011, Ted Pedersen & Bridget McInnes\n";
 }
 

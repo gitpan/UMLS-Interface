@@ -299,13 +299,13 @@ if($opt_debugpath) {
 }
 
 #  get the first set of children and start the dfs
-my @children= $umls->getChildren($root); 
+my $children= $umls->getChildren($root); 
 
 #  update the branching variables
-$max_branch = $#children + 1;
+$max_branch = $#{$children} + 1;
 $branch_hash{$root} = $max_branch;
 
-foreach my $child (@children) {
+foreach my $child (@{$children}) {
     my @array = (); 
     push @array, $root;
     my $path  = \@array;
@@ -314,7 +314,7 @@ foreach my $child (@children) {
 }
 
 #  set the node count for the root
-if($#children >= 0) { 
+if($#{$children} >= 0) { 
     $nodes{$root}++;
 }
 else {
@@ -466,12 +466,12 @@ sub _depthFirstSearch
     $paths_to_root++;
 
     #  get all the children
-    my @children = $umls->getChildren($concept);
+    my $children = $umls->getChildren($concept);
 
     
     my $branches = 0;
     #  search through the children
-    foreach my $child (@children) {
+    foreach my $child (@{$children}) {
 	
 	#  check if child cui has already in the path
 	my $flag = 0;
@@ -565,7 +565,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findDFS.pl,v 1.21 2010/10/08 19:26:04 btmcinnes Exp $';
+    print '$Id: findDFS.pl,v 1.22 2011/04/26 12:19:28 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

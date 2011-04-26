@@ -263,6 +263,8 @@ my $floatformat = join '', '%', '.', $precision, 'f';
 
 my %option_hash = ();
 
+#$option_hash{"debug"} = 1;
+
 if(defined $opt_propagation) {
     $option_hash{"propagation"} = $opt_propagation;
 }
@@ -314,27 +316,26 @@ foreach my $element (@fileArray) {
     
     my ($input1, $input2) = split/<>/, $element;
     
-    my @c1 = ();
-    my @c2 = ();
+    my $c1; my $c2;
 
     #  check if the input are CUIs or terms
     if( ($input1=~/C[0-9]+/)) {
-	push @c1, $input1; 
+	push @{$c1}, $input1; 
     }
     else {
-	@c1 = $umls->getConceptList($input1); 
+	$c1 = $umls->getConceptList($input1); 
     }
     if( ($input2=~/C[0-9]+/)) {
-	push @c2, $input2; 
+	push @{$c2}, $input2; 
     }
     else {
-	@c2 = $umls->getConceptList($input2); 
+	$c2 = $umls->getConceptList($input2); 
     }
     
     my $printFlag = 0;
     
-    foreach $cui1 (@c1) {
-	foreach $cui2 (@c2) {
+    foreach $cui1 (@{$c1}) {
+	foreach $cui2 (@{$c2}) {
 
 	    my $t1 = $input1;
 	    my $t2 = $input2;
@@ -368,9 +369,9 @@ foreach my $element (@fileArray) {
 	    }
 	    
 	    
-	    my @lcses = $umls->findLeastCommonSubsumer($cui1, $cui2);
+	    my $lcses = $umls->findLeastCommonSubsumer($cui1, $cui2);
 	    	    
-	    foreach my $lcs (@lcses) {
+	    foreach my $lcs (@{$lcses}) {
 		
 		my ($t) = $umls->getAllPreferredTerm($lcs);
 		
@@ -469,7 +470,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findLeastCommonSubsumer.pl,v 1.19 2010/08/16 21:29:21 btmcinnes Exp $';
+    print '$Id: findLeastCommonSubsumer.pl,v 1.20 2011/04/26 12:19:28 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

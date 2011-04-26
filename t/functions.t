@@ -135,9 +135,8 @@ else             { print "ok 19\n";    }
 
 #  check the findLeastCommonSubsumer() function
 $expected = "C0015385";
-my @lcses = $umls->findLeastCommonSubsumer("C0015385", "C0018563");
-my $lcs = join " ", @lcses;
-print "STDERR : $lcs ($expected)\n";
+my $lcses = $umls->findLeastCommonSubsumer("C0015385", "C0018563");
+my $lcs = join " ", @{$lcses};
 if($lcs=~/$expected/) { print "ok 20\n"; }
 else                  { print "no ok 20\n";    }
 
@@ -154,8 +153,8 @@ else                       { print "ok 22\n";    }
 
 #  check the getSt() function
 $expected = "T023";
-my @sts = $umls->getSt("C0018563");
-$obtained = join " ", @sts;
+my $sts = $umls->getSt("C0018563");
+$obtained = join " ", @{$sts};
 if($obtained ne $expected) { print "no ok 23\n"; }
 else                       { print "ok 23\n";    }
 

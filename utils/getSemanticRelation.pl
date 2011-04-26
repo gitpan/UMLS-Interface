@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-getSemanticGroup.pl - This program returns a concepts semantic relation(s) 
+getSemanticRelation.pl - This program returns a concepts semantic relation(s) 
 between two semantic types
 
 =head1 SYNOPSIS
@@ -215,14 +215,14 @@ else {
 foreach my $input (@pairs) {
     my ($st1, $st2) = split/<>/, $input;
     
-    my @relations = $umls->getSemanticRelation($st1, $st2);
+    my $relations = $umls->getSemanticRelation($st1, $st2);
 	
-    if($#relations < 0) {
+    if($#{$relations} < 0) {
 	print "There are no semantic relations between $st1 and $st2\n";
     }
     else {
 	print "The semantic relations between $st1 and $st2:\n";
-	foreach my $rel (@relations) {
+	foreach my $rel (@{$relations}) {
 	    print "  $rel\n";
 	}
     }
@@ -247,7 +247,7 @@ sub showHelp() {
     print "This is a utility that takes as input two semantic types in their\n";
     print "abbreviation form and returns all of its semantic relations.\n\n";
   
-    print "Usage: getSemanticGroup.pl [OPTIONS] [ST1] [ST2]\n\n";
+    print "Usage: getSemanticRelation.pl [OPTIONS] [ST1] [ST2]\n\n";
 
     print "Options:\n\n";
     
@@ -275,7 +275,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getSemanticRelation.pl,v 1.1 2011/02/11 13:26:15 btmcinnes Exp $';
+    print '$Id: getSemanticRelation.pl,v 1.2 2011/04/26 12:19:28 btmcinnes Exp $';
     print "\nCopyright (c) 2011, Ted Pedersen & Bridget McInnes\n";
 }
 

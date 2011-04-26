@@ -277,19 +277,21 @@ else {
 
 foreach my $input (@array) { 
     my $term  = $input;
-    my @c = ();
+    my $c     = undef;
+
     if($input=~/C[0-9]+/) {
 	push @c, $input;
-	($term) = $umls->getConceptList($input);
+	my $terms = $umls->getConceptList($input);
+	$term = shift @{$terms};
     }
     else {
-	@c = $umls->getConceptList($input);
+	$c = $umls->getConceptList($input);
     }
     
     my $printFlag = 0;
     my $precision = 4;
     my $floatformat = join '', '%', '.', $precision, 'f';
-    foreach my $cui (@c) {
+    foreach my $cui (@{$c}) {
 	#  make certain cui exists in this view
 	if($umls->exists($cui) == 0) { print STDERR "$cui\n"; next; }	
 	
@@ -355,7 +357,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getIC.pl,v 1.14 2010/11/03 14:41:25 btmcinnes Exp $';
+    print '$Id: getIC.pl,v 1.15 2011/04/26 12:19:28 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

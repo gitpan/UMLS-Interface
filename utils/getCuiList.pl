@@ -220,8 +220,8 @@ foreach my $cui (sort keys %{$hashref}) {
     #  appropriate semantic type
     if(defined $opt_st) {
 	$flag = 0;
-	my @sts = $umls->getSt($cui);
-	foreach my $st (@sts) { 
+	my $sts = $umls->getSt($cui);
+	foreach my $st (@{$sts}) { 
 	    my $abbrev = $umls->getStAbr($st);
 	    if($abbrev eq $opt_st) {
 		$flag = 1;
@@ -233,8 +233,8 @@ foreach my $cui (sort keys %{$hashref}) {
     #  appropriate semantic group
     if(defined $opt_sg) {
 	$flag = 0;
-	my @sgs = $umls->getSemanticGroup($cui);
-	foreach my $sg (@sgs) { 
+	my $sgs = $umls->getSemanticGroup($cui);
+	foreach my $sg (@{$sgs}) { 
 	    if($sg eq $opt_sg) { 
 		$flag = 1;
 	    }
@@ -244,8 +244,8 @@ foreach my $cui (sort keys %{$hashref}) {
     if($flag == 0) { next; }
 
     if(defined $opt_term) {
-	my @terms = $umls->getTermList($cui); 
-	my $termlist = join "|", @terms;
+	my $terms = $umls->getTermList($cui); 
+	my $termlist = join "|", @{$terms};
 	print "$cui $termlist\n";
     }
     else {
@@ -305,7 +305,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getCuiList.pl,v 1.5 2011/04/04 13:50:12 btmcinnes Exp $';
+    print '$Id: getCuiList.pl,v 1.6 2011/04/26 12:19:28 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

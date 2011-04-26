@@ -223,29 +223,29 @@ my $term  = $input;
 my @c = ();
 if($input=~/C[0-9]+/) {
     push @c, $input;
-    ($term) = $umls->getTermList($input);
+    ($term) = shift @{$umls->getTermList($input)};
 }
 else {
-    @c = $umls->getConceptList($input);
+    $c = $umls->getConceptList($input);
 }
 
 my $printFlag = 0;
 
-foreach my $cui (@c) {
+foreach my $cui (@{$c}) {
 
-    my @defs = ();
+    my $defs = undef;
     
     if(defined $opt_sab) { 
-	@defs = $umls->getCuiDef($cui, $opt_sab); 
+	$defs = $umls->getCuiDef($cui, $opt_sab); 
     }
     else {
-	@defs = $umls->getCuiDef($cui); 
+	$defs = $umls->getCuiDef($cui); 
     }
 
-    if($#defs >= 0) {
+    if($#{$defs} >= 0) {
 	print "The definition(s) of $term ($cui):\n";
 	my $i = 1;
-	foreach $def (@defs) {
+	foreach $def (@{$defs}) {
 	    print "  $i. $def\n"; $i++;
 	}
     }
@@ -310,7 +310,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getCuiDef.pl,v 1.13 2011/01/14 19:24:25 btmcinnes Exp $';
+    print '$Id: getCuiDef.pl,v 1.14 2011/04/26 12:19:28 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

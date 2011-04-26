@@ -231,26 +231,26 @@ die "Unable to create UMLS::Interface object.\n" if(!$umls);
 my $input = shift;
 my $term  = $input;
 
-my @c = ();
+my $c = undef;
 if($input=~/C[0-9]+/) {
-    push @c, $input;
-    ($term) = $umls->getDefTermList($input);
+    push @{$c}, $input;
+    my $terms = $umls->getDefTermList($input);
+    $term = shift @{$terms};
 }
 else {
-    @c = $umls->getConceptList($input);
+    $c = $umls->getConceptList($input);
 }
 
 my $printFlag = 0;
 
-foreach my $cui (@c) {
+foreach my $cui (@{$c}) {
 
-    my $rdef = $umls->getExtendedDefinition($cui); 
-    my @defs = @{$rdef}; 
+    my $defs = $umls->getExtendedDefinition($cui); 
 
-    if($#defs >= 0) {
+    if($#{$defs} >= 0) {
 	print "The definition(s) of $term ($cui):\n";
 	my $i = 1;
-	foreach $def (@defs) {
+	foreach $def (@{$defs}) {
 	    print "  $i. $def\n"; $i++;
 	}
     }
@@ -312,7 +312,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getExtendedDef.pl,v 1.10 2011/01/14 19:24:25 btmcinnes Exp $';
+    print '$Id: getExtendedDef.pl,v 1.11 2011/04/26 12:19:28 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

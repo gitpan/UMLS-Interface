@@ -1,6 +1,6 @@
 
 # UMLS::Interface::CuiFinder
-# (Last Updated $Id: CuiFinder.pm,v 1.64 2011/04/04 13:50:11 btmcinnes Exp $)
+# (Last Updated $Id: CuiFinder.pm,v 1.67 2011/04/26 15:28:52 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -2554,7 +2554,7 @@ sub _debug {
 
 #  Method to check if a concept ID exists in the database.
 #  input : $concept <- string containing a cui
-#  output: 1 | 0    <- integers indicating if the cui exists
+#  output: $bool    <- string indicating if the cui exists
 sub _exists {
 
     my $self = shift;
@@ -2609,7 +2609,7 @@ sub _exists {
 #  to a concept $concept through a relation $rel
 #  input : $concept <- string containing cui
 #          $rel     <- string containing a relation
-#  output: @array   <- array of cuis
+#  output: $array   <- reference to an array of cuis
 sub _getRelated {
 
     my $self    = shift;
@@ -2654,12 +2654,12 @@ sub _getRelated {
     #  check for errors
     $errorhandler->_checkDbError($pkg, $function, $db);
 
-    return @{$arrRef};
+    return $arrRef;
 }
 
 #  method that returns the preferred term of a cui from the UMLS
 #  input : $concept <- string containing cui
-#  output: $term    <- string containing the preferred term
+#  output: $string  <- string containing the preferred term
 sub _getAllPreferredTerm {
     my $self = shift;
     my $concept = shift;
@@ -2687,7 +2687,8 @@ sub _getAllPreferredTerm {
     #  if the concept is the root return the root string
     if($concept eq $umlsRoot) {
         $retHash{"**UMLS ROOT**"}++;
-        return keys(%retHash);
+        my @array = keys(%retHash);
+	return \@array;
     }
 
     #  set the database
@@ -2716,7 +2717,7 @@ sub _getAllPreferredTerm {
 #  method that returns the preferred term of a cui from
 #  sources specified in the configuration file
 #  input : $concept <- string containing cui
-#  output: $term    <- string containing the preferred term
+#  output: $string  <- string containing the preferred term
 sub _getPreferredTerm {
     my $self = shift;
     my $concept = shift;
@@ -2744,7 +2745,8 @@ sub _getPreferredTerm {
     #  if the concept is the root return the root string
     if($concept eq $umlsRoot) {
         $retHash{"**UMLS ROOT**"}++;
-        return keys(%retHash);
+	my @array =  keys(%retHash);
+	return \@array;
     }
 
     #  set the database
@@ -2782,7 +2784,7 @@ sub _getPreferredTerm {
 #  method that maps terms to cuis in the sources specified in
 #  in the configuration file by the user using the SAB parameter
 #  input : $concept <- string containing cui
-#  output: @array   <- array of terms (strings)
+#  output: $array   <- reference to an array of terms (strings)
 sub _getTermList {
     my $self = shift;
     my $concept = shift;
@@ -2810,7 +2812,8 @@ sub _getTermList {
     #  if the concept is the root return the root string
     if($concept eq $umlsRoot) {
         $retHash{"**UMLS ROOT**"}++;
-        return keys(%retHash);
+	my @array = keys(%retHash);
+        return \@array;
     }
 
     #  set the database
@@ -2837,14 +2840,16 @@ sub _getTermList {
         $retHash{lc($tr)} = 1;
     }
 
+    my @array = keys(%retHash);
+
     #  return the strings
-    return keys(%retHash);
+    return \@array;
 }
 
 #  method that maps terms to cuis in the sources specified in
 #  in the configuration file by the user using the SABDEF parameter
 #  input : $concept <- string containing cui
-#  output: @array   <- array of terms (strings)
+#  output: $array   <- reference to an array of terms
 sub _getDefTermList {
     my $self = shift;
     my $concept = shift;
@@ -2872,7 +2877,8 @@ sub _getDefTermList {
     #  if the concept is the root return the root string
     if($concept eq $umlsRoot) {
         $retHash{"**UMLS ROOT**"}++;
-        return keys(%retHash);
+        my @array =  keys(%retHash);
+	return \@array;
     }
 
     #  set the database
@@ -2900,13 +2906,14 @@ sub _getDefTermList {
     }
 
     #  return the strings
-    return keys(%retHash);
+    my @array = keys(%retHash);
+    return \@array;
 }
 
 #  method that maps terms to cuis in the sources specified in
 #  in the configuration file by the user
 #  input : $concept <- string containing cui
-#  output: @array   <- array of terms and their sources (strings)
+#  output: $array   <- reference to an array of terms and their sources 
 sub _getTermSabList {
     my $self = shift;
     my $concept = shift;
@@ -2935,7 +2942,8 @@ sub _getTermSabList {
     #  if the concept is the root return the root string
     if($concept eq $umlsRoot) {
         $retHash{"**UMLS ROOT**"}++;
-        return keys(%retHash);
+        my @array =  keys(%retHash);
+	return \@array;
     }
 
     #  otherwise, set up the db
@@ -2965,13 +2973,15 @@ sub _getTermSabList {
     $errorhandler->_checkDbError($pkg, $function, $sth);
     $sth->finish();
 
-    return keys(%retHash);
+    #  return keys
+    my @array = keys(%retHash);
+    return \@array;
 }
 
 
 #  method to map terms to any concept in the umls
 #  input : $concept <- string containing cui
-#  output: @array   <- array containing terms (strings)
+#  output: $array   <- reference to an array containing terms (strings)
 sub _getAllTerms {
     my $self = shift;
     my $concept = shift;
@@ -3000,7 +3010,8 @@ sub _getAllTerms {
     #  if the concept is the root return the root string
     if($concept eq $umlsRoot) {
         $retHash{"**UMLS ROOT**"}++;
-        return keys(%retHash);
+        my @array =  keys(%retHash);
+	return \@array;
     }
 
     #  otherwise, set up the db
@@ -3031,13 +3042,15 @@ sub _getAllTerms {
         $retHash{$index}++;
     }
 
-    return keys(%retHash);
+    my @array = keys(%retHash);
+    
+    return \@array;
 }
 
 #  method to map CUIs to a terms in the sources and the relations
 #  specified in the configuration file by SAB and REL
 #  input : $term  <- string containing a term
-#  output: @array <- array containing cuis
+#  output: $array <- reference to an array containing cuis
 sub _getConceptList {
 
     my $self = shift;
@@ -3076,13 +3089,13 @@ sub _getConceptList {
     #  check for database errors
     $errorhandler->_checkDbError($pkg, $function, $db);
 
-    return @{$arrRef};
+    return $arrRef;
 }
 
 #  method to map CUIs to a terms in the sources and the relations
 #  specified in the configuration file by SABDEF and RELDEF
 #  input : $term  <- string containing a term
-#  output: @array <- array containing cuis
+#  output: $array <- reference to an array containing cuis
 sub _getDefConceptList {
 
     my $self = shift;
@@ -3119,13 +3132,13 @@ sub _getDefConceptList {
     #  check for database errors
     $errorhandler->_checkDbError($pkg, $function, $db);
 
-    return @{$arrRef};
+    return $arrRef;
 }
 
 #  method to map CUIs to a terms using the CUIs in the
 #  entire UMLS not just the sources in the config file
 #  input : $term  <- string containing a term
-#  output: @array <- array containing cuis
+#  output: $array <- reference to an array containing cuis
 sub _getAllConcepts {
 
     my $self = shift;
@@ -3153,7 +3166,7 @@ sub _getAllConcepts {
     #  check for database errors
     $errorhandler->_checkDbError($pkg, $function, $db);
 
-    return @{$arrRef};
+    return $arrRef;
 }
 
 #  method returns all the compounds in the sources 
@@ -3297,7 +3310,7 @@ sub _getCuisFromSource {
 
 #  returns all of the sources specified that contain the given cui
 #  input : $concept <- string containing the cui
-#  output: @array   <- array contain the sources (abbreviations)
+#  output: $array   <- reference to an array contain the sources (abbreviations)
 sub _getSab {
 
     my $self = shift;
@@ -3330,7 +3343,7 @@ sub _getSab {
     #  check the database for errors
     $errorhandler->_checkDbError($pkg, $function, $db);
 
-    return @{$arrRef};
+    return $arrRef;
 }
 
 #  returns the child relations
@@ -3355,7 +3368,7 @@ sub _getParentRelations {
 #  are considered children are predefined by the user.
 #  the default are the RN and CHD relations
 #  input : $concept <- string containing a cui
-#  output: @array   <- array containing a list of cuis
+#  output: $array   <- reference to an array containing a list of cuis
 sub _getChildren {
 
     my $self    = shift;
@@ -3386,7 +3399,8 @@ sub _getChildren {
     #  if the concept is the umls root node cui return
     #  the source's cuis
     if($concept eq $umlsRoot) {
-        return (keys %sabHash);
+	my @array = (keys %sabHash);
+        return \@array;
     }
 
     #  otherwise everything is normal so return its children
@@ -3410,7 +3424,7 @@ sub _getChildren {
         else {
             @array = @{$arrRef};
         }
-        return @array;
+        return \@array;
     }
 }
 
@@ -3419,7 +3433,7 @@ sub _getChildren {
 #  are considered parents are predefined by the user.
 #  the default are the PAR and RB relations.
 #  input : $concept <- string containing cui
-#  outupt: @array   <- array containing a list of cuis
+#  outupt: $array   <- reference to an array containing a list of cuis
 sub _getParents {
 
     my $self    = shift;
@@ -3449,11 +3463,13 @@ sub _getParents {
     #  if the cui is a root return an empty array
     if($concept eq $umlsRoot) {
         my @returnarray = ();
-        return @returnarray;  # empty array
+        return \@returnarray;  # empty array
     }
     #  if the cui is a source cui but not a root return the umls root
     elsif( (exists $sabHash{$concept}) and ($concept ne $umlsRoot)) {
-        return "$umlsRoot";
+	my @returnarray = ();
+	push @returnarray, $umlsRoot;
+        return \@returnarray;
     }
     #  otherwise everything is normal so return its parents
     else {
@@ -3476,13 +3492,13 @@ sub _getParents {
         else {
             @array = @{$arrRef};
         }
-        return @array;
+        return \@array;
     }
 }
 
 #  returns the relations of a concept given a specified source
 #  input : $concept <- string containing a cui
-#  output: @array   <- array containing strings of relations
+#  output: $array   <- reference to an array containing strings of relations
 sub _getRelations {
 
     my $self    = shift;
@@ -3522,13 +3538,13 @@ sub _getRelations {
     #  check the database for errors
     $errorhandler->_checkDbError($pkg, $function, $db);
 
-    return @{$arrRef};
+    return $arrRef;
 }
 
 #  returns the relations and its source between two concepts
 #  input : $concept1 <- string containing a cui
 #        : $concept2 <- string containing a cui
-#  output: @array    <- array containing the relations
+#  output: $array    <- reference to an array containing the relations
 sub _getRelationsBetweenCuis {
 
     my $self     = shift;
@@ -3566,7 +3582,7 @@ sub _getRelationsBetweenCuis {
 
     if($concept1 eq $umlsRoot) {
         push @array, "CHD (source)";
-        return @array;
+        return \@array;
     }
 
     #  get the relations
@@ -3589,12 +3605,12 @@ sub _getRelationsBetweenCuis {
         push @array, $str;
     } $sth->finish();
 
-    return @array;
+    return \@array;
 }
 
 #  checks to see a concept is forbidden
 #  input : $concept <- string containing a cui
-#  output: 0 | 1    <- integer indicating true or false
+#  output: $string  <- integer indicating true or false
 sub _forbiddenConcept  {
 
     my $self = shift;
@@ -3642,8 +3658,8 @@ sub _forbiddenConcept  {
 
 # Subroutine to get the semantic type's tui of a concept
 # input : $cui   <- string containing a concept
-# output: @array <- array containing the semantic type's TUIs
-#                   associated with the concept
+# output: $array <- reference to an array containing the semantic 
+#                   type's TUIs associated with the concept
 sub _getSt {
 
     my $self = shift;
@@ -3677,19 +3693,18 @@ sub _getSt {
     #  check for database errors
     $errorhandler->_checkDbError($pkg, $function, $db);
 
-    return (@{$arrRef});
+    return $arrRef;
 }
 
 #  subroutine to get the relation(s) between two semantic types
-#  input : $st1  <- semantic type abbreviation
-#          $st2  <- semantic type abbreviation
-#  output: @rels <- array of semantic relation(s)
+#  input : $st1   <- semantic type abbreviation
+#          $st2   <- semantic type abbreviation
+#  output: $array <- reference to an array of semantic relation(s)
 sub _getSemanticRelation {
 
     my $self = shift;
     my $st1  = shift;
     my $st2  = shift;
-
 
     my $function = "_getSemanticRelation";
     &_debug($function);
@@ -3720,7 +3735,8 @@ sub _getSemanticRelation {
     #  check database errors
     $errorhandler->_checkDbError($pkg, $function, $db);
 
-    return (shift @{$arrRef});
+    my @rarray = shift @{$arrRef};
+    return \@rarray;;
 }
 
 #  subroutine to get the name of a semantic type given its abbreviation
@@ -3824,12 +3840,12 @@ sub _getStDef {
     #  check database errors
     $errorhandler->_checkDbError($pkg, $function, $db);
 
-    return (shift @{$arrRef});
+    return $arrRef;
 }
 
 #  method returns the semantic group(s) associated with the concept
 #  input : $concept <- string containing cuis
-#  output: @array   <- array containing semantic groups
+#  output: $array   <- reference to an array containing semantic groups
 sub _getSemanticGroup {
     my $self = shift;
     my $concept = shift;
@@ -3847,10 +3863,10 @@ sub _getSemanticGroup {
         $errorhandler->_error($pkg, $function, "Error with input variable \$concept.", 4);
     }
 
-    my @sts = $self->_getSt($concept);
+    my $sts = $self->_getSt($concept);
 	
     my %groups = ();
-    foreach my $st (@sts) {
+    foreach my $st (@{$sts}) {
 	my $abr = $self->_getStAbr($st);
 	my $string = $self->_getStString($abr);
 	foreach my $group (@{$semanticGroups{$string}}) { 
@@ -3861,7 +3877,7 @@ sub _getSemanticGroup {
     my @array = ();
     foreach my $group (sort keys %groups) { push @array, $group; }
     
-    return @array;
+    return \@array;
 }
 
 	    
@@ -3869,14 +3885,14 @@ sub _getSemanticGroup {
 #  to a concept $concept through a relation $rel
 #  input : $concept <- string containing cui
 #          $rel     <- string containing a relation
-#  output: @array   <- array of cuis
+#  output: $array   <- reference to an array of cuis
 sub _getExtendedRelated {
 
     my $self    = shift;
     my $concept = shift;
     my $rel     = shift;
 
-    my $function = "_getRelated";
+    my $function = "_getExtendedRelated";
     &_debug($function);
 
     #  check self
@@ -3922,7 +3938,7 @@ sub _getExtendedRelated {
     #  check for errors
     $errorhandler->_checkDbError($pkg, $function, $db);
 
-    return @{$arrRef};
+    return $arrRef;
 }
 
 #  subroutine to get the extended definition of a concept from
@@ -3963,19 +3979,19 @@ sub _getExtendedDefinition {
     my $dkeys = keys %relDefHash;
 
     if( ($dkeys <= 0) or (exists $relDefHash{"ST"}) ) {
-        my @sts = $self->_getSt($concept);
-        foreach my $st (@sts) {
+        my $sts = $self->_getSt($concept);
+        foreach my $st (@{$sts}) {
             my $abr = $self->_getStAbr($st);
             my $def = $self->_getStDef($abr);
-            my $str = "$concept ST $abr STDEF : $def";
+            my $str = "$concept ST $abr STDEF : @{$def}";
             push @defs, $str;
         }
     }
     if( ($dkeys <= 0) or (exists $relDefHash{"PAR"}) ) {
-        my @parents   = $self->_getExtendedRelated($concept, "PAR");
-        foreach my $parent (@parents) {
-            my @odefs = $self->_getCuiDef($parent, $sabflag);
-            foreach my $d (@odefs) {
+        my $parents   = $self->_getExtendedRelated($concept, "PAR");
+        foreach my $parent (@{$parents}) {
+            my $odefs = $self->_getCuiDef($parent, $sabflag);
+            foreach my $d (@{$odefs}) {
                 my @darray = split/\s+/, $d;
                 my $sab = shift @darray;
                 my $def = "$concept PAR $parent $sab : " . (join " ", @darray);
@@ -3984,10 +4000,10 @@ sub _getExtendedDefinition {
         }
     }
     if( ($dkeys <= 0) or (exists $relDefHash{"CHD"}) ) {
-        my @children   = $self->_getExtendedRelated($concept, "CHD");
-        foreach my $child (@children) {
-            my @odefs = $self->_getCuiDef($child, $sabflag);
-            foreach my $d (@odefs) {
+        my $children   = $self->_getExtendedRelated($concept, "CHD");
+        foreach my $child (@{$children}) {
+            my $odefs = $self->_getCuiDef($child, $sabflag);
+            foreach my $d (@{$odefs}) {
                 my @darray = split/\s+/, $d;
                 my $sab = shift @darray;
                 my $def = "$concept CHD $child $sab : " . (join " ", @darray);
@@ -3996,10 +4012,10 @@ sub _getExtendedDefinition {
         }
     }
     if( ($dkeys <= 0) or (exists $relDefHash{"SIB"}) ) {
-        my @siblings   = $self->_getExtendedRelated($concept, "SIB");
-        foreach my $sib (@siblings) {
-            my @odefs = $self->_getCuiDef($sib, $sabflag);
-            foreach my $d (@odefs) {
+        my $siblings   = $self->_getExtendedRelated($concept, "SIB");
+        foreach my $sib (@{$siblings}) {
+            my $odefs = $self->_getCuiDef($sib, $sabflag);
+            foreach my $d (@{$odefs}) {
                 my @darray = split/\s+/, $d;
                 my $sab = shift @darray;
                 my $def = "$concept SIB $sib $sab : " . (join " ", @darray);
@@ -4008,10 +4024,10 @@ sub _getExtendedDefinition {
         }
     }
     if( ($dkeys <= 0) or (exists $relDefHash{"SYN"}) ) {
-        my @syns   = $self->_getExtendedRelated($concept, "SYN");
-        foreach my $syn (@syns) {
-            my @odefs = $self->_getCuiDef($syn, $sabflag);
-            foreach my $d (@odefs) {
+        my $syns   = $self->_getExtendedRelated($concept, "SYN");
+        foreach my $syn (@{$syns}) {
+            my $odefs = $self->_getCuiDef($syn, $sabflag);
+            foreach my $d (@{$odefs}) {
                 my @darray = split/\s+/, $d;
                 my $sab = shift @darray;
                 my $def = "$concept SYN $syn $sab : " . (join " ", @darray);
@@ -4020,11 +4036,11 @@ sub _getExtendedDefinition {
         }
     }
     if( ($dkeys <= 0) or (exists $relDefHash{"RB"}) ) {
-        my @rbs    = $self->_getExtendedRelated($concept, "RB");
-        foreach my $rb (@rbs) {
-            my @odefs = $self->_getCuiDef($rb, $sabflag);
-            foreach my $d (@odefs) {
-                my @darray = split/\s+/, $d;
+        my $rbs    = $self->_getExtendedRelated($concept, "RB");
+        foreach my $rb (@{$rbs}) {
+            my $odefs = $self->_getCuiDef($rb, $sabflag);
+            foreach my $d (@{$odefs}) {
+		my @darray = split/\s+/, $d;
                 my $sab = shift @darray;
                 my $def = "$concept RB $rb $sab : " . (join " ", @darray);
                 push @defs, $def;
@@ -4032,10 +4048,10 @@ sub _getExtendedDefinition {
         }
     }
     if( ($dkeys <= 0) or (exists $relDefHash{"RN"}) ) {
-        my @rns    = $self->_getExtendedRelated($concept, "RN");
-        foreach my $rn (@rns) {
-            my @odefs = $self->_getCuiDef($rn, $sabflag);
-            foreach my $d (@odefs) {
+        my $rns    = $self->_getExtendedRelated($concept, "RN");
+        foreach my $rn (@{$rns}) {
+            my $odefs = $self->_getCuiDef($rn, $sabflag);
+            foreach my $d (@{$odefs}) {
                 my @darray = split/\s+/, $d;
                 my $sab = shift @darray;
                 my $def = "$concept RN $rn $sab : " . (join " ", @darray);
@@ -4044,10 +4060,10 @@ sub _getExtendedDefinition {
         }
     }
     if( ($dkeys <= 0) or (exists $relDefHash{"RO"}) ) {
-        my @ros    = $self->_getExtendedRelated($concept, "RO");
-        foreach my $ro (@ros) {
-            my @odefs = $self->_getCuiDef($ro, $sabflag);
-            foreach my $d (@odefs) {
+        my $ros    = $self->_getExtendedRelated($concept, "RO");
+        foreach my $ro (@{$ros}) {
+            my $odefs = $self->_getCuiDef($ro, $sabflag);
+            foreach my $d (@{$odefs}) {
                 my @darray = split/\s+/, $d;
                 my $sab = shift @darray;
                 my $def = "$concept RO $ro $sab : " . (join " ", @darray);
@@ -4056,8 +4072,8 @@ sub _getExtendedDefinition {
         }
     }
     if( ($dkeys <= 0) or (exists $relDefHash{"CUI"}) ) {
-        my @odefs   = $self->_getCuiDef($concept, $sabflag);
-        foreach my $d (@odefs) {
+        my $odefs   = $self->_getCuiDef($concept, $sabflag);
+        foreach my $d (@{$odefs}) {
             my @darray = split/\s+/, $d;
             my $sab = shift @darray;
             my $def = "$concept CUI $concept $sab : " . (join " ", @darray);
@@ -4065,8 +4081,8 @@ sub _getExtendedDefinition {
         }
     }
     if( ($dkeys <= 0) or (exists $relDefHash{"TERM"}) ) {
-        my @odefs = $self->_getTermSabList($concept);
-        foreach my $item (@odefs) {
+        my $odefs = $self->_getTermSabList($concept);
+        foreach my $item (@{$odefs}) {
             my ($sab, $term) = split/\s*\:\s*/, $item;
             my $def = "$concept TERM $concept $sab : $term";
             push @defs, $def;
@@ -4077,7 +4093,7 @@ sub _getExtendedDefinition {
 
 #  subroutine to get a CUIs definition
 #  input : $concept <- string containing a cui
-#  output: @array   <- array of definitions (strings)
+#  output: $array   <- reference to an array of definitions (strings)
 sub _getCuiDef {
 
     my $self    = shift;
@@ -4129,14 +4145,14 @@ sub _getCuiDef {
         else                 { push @defs, $def; }
     } $sth->finish();
 
-    return (@defs);
+    return \@defs;
 }
 
 
 #  returns the table names in both human readable and hex form
 #  input :
-#  output: $hash <- reference to a hash containin the table names
-#          in human readable and hex form
+#  output: $hash <- reference to a hash containin the table 
+#                   names in human readable and hex form
 sub _returnTableNames {
     my $self = shift;
 
@@ -4157,6 +4173,9 @@ sub _returnTableNames {
     return \%hash;
 }
 
+#  sets the semantic groups
+#  input: 
+#  output: 
 sub _setSemanticGroups {
 
     %semanticGroups = ();
@@ -4400,7 +4419,7 @@ sub _removeConfigFiles {
 
 #  checks to see if the cui is in the parent taxonomy
 #  input : $concept <- string containing a cui
-#  output: 1|0      <- indicating if the cui exists in
+#  output: $bool    <- indicating if the cui exists in
 #                      the upper level taxonamy
 sub _inParentTaxonomy {
 
@@ -4431,7 +4450,7 @@ sub _inParentTaxonomy {
 
 #  checks to see if the cui is in the child taxonomy
 #  input : $concept <- string containing a cui
-#  output: 1|0      <- indicating if the cui exists in
+#  output: $bool    <- indicating if the cui exists in
 #                      the upper level taxonamy
 sub _inChildTaxonomy {
 
@@ -4567,48 +4586,45 @@ For more information please see the UMLS::Interface.pm documentation.
  print "The UMLS version is: $version\n";
 
  $concept = "C0018563"; $rel = "SIB";
- @array = $cuifinder->_getRelated($concept, $rel);
+ $array = $cuifinder->_getRelated($concept, $rel);
  print "The sibling(s) of $concept is:\n";
- foreach my $s (@array) { print "  => $s\n"; }
+ foreach my $s (@{$array}) { print "  => $s\n"; }
  print "\n";
 
- @array = $cuifinder->_getTermList($concept);
- @array = $cuifinder->_getDefTermList($concept);
- @array = $cuifinder->_getAllTerms($concept);
- print "The terms of $concept are: @array\n";
+ $array = $cuifinder->_getTermList($concept);
+ $array = $cuifinder->_getDefTermList($concept);
+ $array = $cuifinder->_getAllTerms($concept);
+ print "The terms of $concept are: @{$array}\n";
 
- $term = shift @array;
- @array = $cuifinder->_getConceptList($term);
- @array = $cuifinder->_getDefConceptList($term);
- @array = $cuifinder ->_getAllConcepts($term);
- print "The possible CUIs of the $term are: @array\n";
+ $term = shift @{$array};
+ $array = $cuifinder->_getConceptList($term);
+ $array = $cuifinder->_getDefConceptList($term);
+ $array = $cuifinder ->_getAllConcepts($term);
+ print "The possible CUIs of the $term are: @{$array}\n";
 
  $hash = $cuifinder->_getCuiList();
 
  $sab = "MSH";
  $array = $cuifinder->_getCuisFromSource($sab);
 
- @array = $cuifinder->_getSab($concept);
+ $array = $cuifinder->_getSab($concept);
  print "$concept exists in the following sources:\n";
- foreach my $sab (@array) {  print "  => $sab\n"; }
+ foreach my $sab (@{$array}) {  print "  => $sab\n"; }
  print "\n";
 
- @array = $cuifinder->_getChildren($concept);
- print "Children of $concept @array\n";
+ $array = $cuifinder->_getChildren($concept);
+ print "Children of $concept @{$array}\n";
 
- @array = $cuifinder->_getParents($concept);
- print "Parents of $concept: @array\n\n";
+ $array = $cuifinder->_getParents($concept);
+ print "Parents of $concept: @{$array}\n\n";
 
- @array = $cuifinder->_getRelations($concept);
- print "The relations of $concept: @array\n";
+ $array = $cuifinder->_getRelations($concept);
+ print "The relations of $concept: @{$array}\n";
 
  $concept1 = "C0018563"; $concept2 = "C0037303";
 
- @array = $cuifinder->_getRelationsBetweenCuis($concept1, $concept2);
- print "Relation(s) between $concept1 and $concept2: @array\n\n";
-
- @array = $cuifinder->_getSt($concept);
- print "The semantic type of $concept: @array\n";
+ $array = $cuifinder->_getSt($concept);
+ print "The semantic type of $concept: @{$array}\n";
 
  $abr = "bpoc";
  $string = $cuifinder->_getStString($abr);
@@ -4617,12 +4633,12 @@ For more information please see the UMLS::Interface.pm documentation.
  $string = $cuifinder->_getStAbr($tui);
 
  $definition = $cuifinder->_getStDef($abr);
- print "Definition of semantic type ($abr): $definition\n\n";
+ print "Definition of semantic type ($abr): @{$definition}\n\n";
 
 
- @array = $cuifinder->_getCuiDef($concept, $sabflag);
+ $array = $cuifinder->_getCuiDef($concept, $sabflag);
  print "Definition of $concept: \n";
- foreach my $el (@array) {
+ foreach my $el (@{$array}) {
     print "  =>$el\n";
  } 
  print "\n";

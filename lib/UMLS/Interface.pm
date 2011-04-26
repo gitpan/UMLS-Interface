@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.107 2011/04/14 00:55:06 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.110 2011/04/26 15:28:52 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -60,7 +60,7 @@ my $pkg = "UMLS::Interface";
 
 use vars qw($VERSION);
 
-$VERSION = '1.07';
+$VERSION = '1.09';
 
 my $debug = 0;
 
@@ -298,22 +298,22 @@ sub getRelaString {
 #  to a concept $concept through a relation $rel
 #  input : $concept <- string containing cui
 #          $rel     <- string containing a relation
-#  output: @array   <- array of cuis
+#  output: $array   <- reference to an array of cuis
 sub getRelated {
 
     my $self    = shift;
     my $concept = shift;
     my $rel     = shift;
 
-    my @array = $cuifinder->_getRelated($concept, $rel);
+    my $array = $cuifinder->_getRelated($concept, $rel);
 
-    return @array;
+    return $array;
 }
 
 #  method that returns the preferred term of a cui from 
 #  the sources specified in the configuration file
 #  input : $concept <- string containing cui
-#  output: $term    <- string containing the preferred term
+#  output: $string  <- string containing the preferred term
 sub getPreferredTerm {
     my $self    = shift;
     my $concept = shift;
@@ -324,7 +324,7 @@ sub getPreferredTerm {
 
 #  method that returns the preferred term of a cui from entire umls
 #  input : $concept <- string containing cui
-#  output: $term    <- string containing the preferred term
+#  output: $string  <- string containing the preferred term
 sub getAllPreferredTerm {
     my $self    = shift;
     my $concept = shift;
@@ -335,97 +335,97 @@ sub getAllPreferredTerm {
 #  method to map terms to a given cui from the sources 
 #  specified in the configuration file using SAB
 #  input : $concept <- string containing cui
-#  output: @array   <- array of terms (strings)
+#  output: $array   <- reference to an array of terms (strings)
 sub getTermList {
 
     my $self    = shift;
     my $concept = shift;
     
-    my @array = $cuifinder->_getTermList($concept);
+    my $array = $cuifinder->_getTermList($concept);
 
-    return @array;
+    return $array;
 }
 
 #  method to map terms to a given cui from the sources 
 #  specified in the configuration file using SABDEF
 #  input : $concept <- string containing cui
-#  output: @array   <- array of terms (strings)
+#  output: $array   <- reference to an array of terms (strings)
 sub getDefTermList {
 
     my $self    = shift;
     my $concept = shift;
     
-    my @array = $cuifinder->_getDefTermList($concept);
+    my $array = $cuifinder->_getDefTermList($concept);
 
-    return @array;
+    return $array;
 }
 
 #  method to map terms from the entire UMLS to a given cui
 #  input : $concept <- string containing cui
-#  output: @array   <- array containing terms (strings)
+#  output: $array   <- reference to an array containing terms (strings)
 sub getAllTerms {
 
     my $self = shift;
     my $concept = shift;
 
-    my @array = $cuifinder->_getAllTerms($concept);
+    my $array = $cuifinder->_getAllTerms($concept);
 
-    return @array;
+    return $array;
 }
 
 #  method to maps a given term to a set cuis in the sources
 #  specified in the configuration file by SAB
 #  input : $term  <- string containing a term
-#  output: @array <- array containing cuis
+#  output: $array <- reference to an array containing cuis
 sub getConceptList {
 
     my $self = shift;
     my $term = shift;
 
-    my @array = $cuifinder->_getConceptList($term);
+    my $array = $cuifinder->_getConceptList($term);
 
-    return @array;
+    return $array;
 }
 
 #  method to maps a given term to a set cuis in the sources
 #  specified in the configuration file by SABDEF
 #  input : $term  <- string containing a term
-#  output: @array <- array containing cuis
+#  output: $array <- reference to an array containing cuis
 sub getDefConceptList {
 
     my $self = shift;
     my $term = shift;
 
-    my @array = $cuifinder->_getDefConceptList($term);
+    my $array = $cuifinder->_getDefConceptList($term);
 
-    return @array;
+    return $array;
 }
 
 #  method to maps a given term to a set cuis in the sources
 #  specified in the configuration file by SABDEF
 #  input : $term  <- string containing a term
-#  output: @array <- array containing cuis
+#  output: $array <- reference to an array containing cuis
 sub getSabDefConcepts {
 
     my $self = shift;
     my $term = shift;
 
-    my @array = $cuifinder->_getSabDefConcepts($term);
+    my $array = $cuifinder->_getSabDefConcepts($term);
 
-    return @array;
+    return $array;
 }
 
 #  method to maps a given term to a set cuis all the sources
 #  input : $term  <- string containing a term
-#  output: @array <- array containing cuis
+#  output: $array <- reference to an array containing cuis
 sub getAllConcepts {
 
     my $self = shift;
     my $term = shift;
 
-    my @array = $cuifinder->_getAllConcepts($term);
+    my $array = $cuifinder->_getAllConcepts($term);
 
-    return @array;
+    return $array;
 }
 
 #  method returns all the compounds in the sources 
@@ -470,30 +470,30 @@ sub getCuisFromSource {
 #  takes as input a cui and returns all of the sources in which 
 #  it originated from 
 #  input : $concept <- string containing the cui 
-#  output: @array   <- array contain the sources (abbreviations)
+#  output: $array   <- reference to an array contain the sources (abbreviations)
 sub getSab {
 
     my $self = shift;
     my $concept = shift;
 
-    my @array = $cuifinder->_getSab($concept);
+    my $array = $cuifinder->_getSab($concept);
 
-    return @array;
+    return $array;
 }
 
 #  returns the children of a concept - the relations that 
 #  are considered children are predefined by the user in 
 #  the configuration file. The default is the CHD relation.
 #  input : $concept <- string containing cui
-#  outupt: @array   <- array containing a list of cuis
+#  outupt: $array   <- reference to an array containing a list of cuis
 sub getChildren {
 
     my $self    = shift;
     my $concept = shift;
 
-    my @array = $cuifinder->_getChildren($concept);
+    my $array = $cuifinder->_getChildren($concept);
 
-    return @array;
+    return $array;
 }
 
 
@@ -501,87 +501,87 @@ sub getChildren {
 #  are considered parents are predefined by the user in 
 #  the configuration file.The default is the PAR relation.
 #  input : $concept <- string containing cui
-#  outupt: @array   <- array containing a list of cuis
+#  outupt: $array   <- reference to an array containing a list of cuis
 sub getParents {
 
     my $self    = shift;
     my $concept = shift;
 
-    my @array = $cuifinder->_getParents($concept);
+    my $array = $cuifinder->_getParents($concept);
 
-    return @array;
+    return $array;
     
 }
 
 #  returns the relations of a concept in the source specified 
 #  by the user in the configuration file
 #  input : $concept <- string containing a cui
-#  output: @array   <- array containing strings of relations
+#  output: $array   <- reference to an array containing strings of relations
 sub getRelations {
 
     my $self    = shift;
     my $concept = shift;
     
-    my @array = $cuifinder->_getRelations($concept);
+    my $array = $cuifinder->_getRelations($concept);
 
-    return @array;
+    return $array;
 }
 
 #  returns the relations and its source between two concepts
 #  input : $concept1 <- string containing a cui
 #        : $concept2 <- string containing a cui
-#  output: @array    <- array containing the relations
+#  output: $array    <- reference to an array containing the relations
 sub getRelationsBetweenCuis {
 
     my $self     = shift;
     my $concept1 = shift;
     my $concept2 = shift;
 
-    my @array = $cuifinder->_getRelationsBetweenCuis($concept1, $concept2);
+    my $array = $cuifinder->_getRelationsBetweenCuis($concept1, $concept2);
 
-    return @array;
+    return $array;
 }
 
 #  subroutine to get the relation(s) between two semantic types
-#  input : $st1  <- semantic type abbreviation
-#          $st2  <- semantic type abbreviation
-#  output: @rels <- array of semantic relation(s)
+#  input : $st1   <- semantic type abbreviation
+#          $st2   <- semantic type abbreviation
+#  output: $array <- reference to an array of semantic relation(s)
 sub getSemanticRelation {
     
     my $self = shift;
     my $st1  = shift;
     my $st2  = shift;
 
-    my @array = $cuifinder->_getSemanticRelation($st1, $st2);
+    my $array = $cuifinder->_getSemanticRelation($st1, $st2);
 
-    return @array;
+    return $array;
 }
  
 #  returns the semantic type(s) of a given cui
-# input : $cui   <- string containing a concept
-# output: @array <- array containing the semantic type's TUIs
-#                   associated with the concept
+# input : $concept <- string containing a concept
+# output: $array   <- reference to an array containing the semantic type's TUIs
+#                     associated with the concept
 sub getSt {
 
     my $self = shift;
-    my $cui   = shift;
+    my $concept   = shift;
 
-    my @array = $cuifinder->_getSt($cui);
+    my $array = $cuifinder->_getSt($concept);
     
-    return @array;
+    return $array;
 }
 
 #  method returns the semantic group(s) associated with the concept
 #  input : $concept <- string containing cuis
-#  output: @array   <- @array reference containing semantic groups
+#  output: $array   <- $array reference containing semantic groups
 sub getSemanticGroup {
 
     my $self = shift;
     my $cui  = shift;
     
-    my @array = $cuifinder->_getSemanticGroup($cui);
+    my $array = $cuifinder->_getSemanticGroup($cui);
 
-    return @array;
+    return $array;
 }
 
 #  returns the full name of a semantic type given its abbreviation
@@ -643,16 +643,16 @@ sub getExtendedDefinition {
 #  input : $concept <- string containing a cui
 #          $sabflag <- 0 | 1 whether to include the source in 
 #                      with the definition 
-#  output: @array   <- array of definitions (strings)
+#  output: $array   <- reference to an array of definitions (strings)
 sub getCuiDef {
 
     my $self    = shift;
     my $concept = shift;
     my $sabflag = shift;
 
-    my @array = $cuifinder->_getCuiDef($concept, $sabflag);
+    my $array = $cuifinder->_getCuiDef($concept, $sabflag);
 
-    return @array;
+    return $array;
 }
 
 #  checks to see a CUI is valid
@@ -742,7 +742,7 @@ sub depth {
 #  output: $array   <- array reference containing the paths
 sub pathsToRoot
 {
-    my $self = shift;
+    my $self    = shift;
     my $concept = shift;
 
     my $array = $pathfinder->_pathsToRoot($concept);
@@ -752,14 +752,14 @@ sub pathsToRoot
 
 #  function returns the minimum depth of a concept given the
 #  sources and relations specified in the configuration file
-#  input : $cui   <- string containing the cui
-#  output: $depth <- string containing the depth of the cui
+#  input : $concept <- string containing the cui
+#  output: $int      <- string containing the depth of the cui
 sub findMinimumDepth {
 
-    my $self = shift;
-    my $cui  = shift;
+    my $self     = shift;
+    my $concept  = shift;
     
-    my $depth = $pathfinder->_findMinimumDepth($cui);
+    my $depth = $pathfinder->_findMinimumDepth($concept);
 
     return $depth;
 }
@@ -767,14 +767,14 @@ sub findMinimumDepth {
 
 #  function returns the maximum depth of a concept given the 
 #  sources and relations specified in the configuration file
-#  input : $cui   <- string containing the cui
-#  output: $depth <- string containing the depth of the cui
+#  input : $concept <- string containing the cui
+#  output: $int     <- string containing the depth of the cui
 sub findMaximumDepth {
 
-    my $self = shift;
-    my $cui  = shift;
+    my $self    = shift;
+    my $concept = shift;
     
-    my $depth = $pathfinder->_findMaximumDepth($cui);
+    my $depth = $pathfinder->_findMaximumDepth($concept);
 
     return $depth;
 }    
@@ -782,7 +782,7 @@ sub findMaximumDepth {
 #  method that finds the number of cuis closer to concept1 than concept2
 #  input : $concept1  <- the first concept
 #          $concept2  <- the second concept
-#  output: $number    <- number of cuis closer to concept1 than concept2
+#  output: $int       <- number of cuis closer to concept1 than concept2
 sub findNumberOfCloserConcepts {
 
     my $self = shift;
@@ -798,7 +798,7 @@ sub findNumberOfCloserConcepts {
 #  method that finds the length of the shortest path
 #  input : $concept1  <- the first concept
 #          $concept2  <- the second concept
-#  output: $length    <- the length of the shortest path between them
+#  output: $int       <- the length of the shortest path between them
 sub findShortestPathLength {
 
     my $self = shift;
@@ -814,32 +814,32 @@ sub findShortestPathLength {
 #  sources and relations specified in the configuration file
 #  input : $concept1 <- string containing the first cui
 #          $concept2 <- string containing the second
-#  output: @array    <- array containing the shortest path(s)
+#  output: $array    <- reference to an array containing the shortest path(s)
 sub findShortestPath {
 
     my $self     = shift;
     my $concept1 = shift;
     my $concept2 = shift;
 
-    my @array = $pathfinder->_findShortestPath($concept1, $concept2);
+    my $array = $pathfinder->_findShortestPath($concept1, $concept2);
 
-    return @array;
+    return $array;
 }
    
 #   returns the least common subsummer between two concepts given 
 #   the sources and relations specified in the configuration file
 #  input : $concept1 <- string containing the first cui
 #          $concept2 <- string containing the second
-#  output: @array    <- array containing the lcs(es)
+#  output: $array    <- reference to an array containing the lcs(es)
 sub findLeastCommonSubsumer {   
 
     my $self = shift;
     my $concept1 = shift;
     my $concept2 = shift;
     
-    my @array = $pathfinder->_findLeastCommonSubsumer($concept1, $concept2);
+    my $array = $pathfinder->_findLeastCommonSubsumer($concept1, $concept2);
 
-    return @array;
+    return $array;
 }    
 
 #####################################################################
@@ -964,53 +964,48 @@ UMLS::Interface - Perl interface to the Unified Medical Language System (UMLS)
 
  my $root = $umls->root();
 
- my $term1    = "blood";
+ my $term1    = "skull";
 
- my @tList1   = $umls->getConceptList($term1);
- my $cui1     = pop @tList1;
+ my $tList1   = $umls->getConceptList($term1);
+ my $cui1     = pop @{$tList1};
 
- if($umls->exists($cui1) == 0) { 
-    print "This concept ($cui1) doesn't exist\n";
- } else { print "This concept ($cui1) does exist\n"; }
+ my $term2    = "hand";
+ my $tList2   = $umls->getDefConceptList($term2);
 
- my $term2    = "cell";
- my @tList2   = $umls->getDefConceptList($term2);
-
- my $cui2     = pop @tList2;
+ my $cui2     = shift @{$tList2};
  my $exists1  = $umls->exists($cui1);
  my $exists2  = $umls->exists($cui2);
 
- if($exists1) { print "$term1($cui1) exists in your UMLS view.\n"; }
- else         { print "$term1($cui1) does not exist in your UMLS view.\n"; }
+ if($exists1) { print "The concept $term1 ($cui1) exists in your UMLS view.\n"; }
+ else         { print "The concept $term1 ($cui1) does not exist in your UMLS view.\n"; }
 
- if($exists2) { print "$term2($cui2) exists in your UMLS view.\n"; }
- else         { print "$term2($cui2) does not exist in your UMLS view.\n"; }
+ if($exists2) { print "The concept $term2 ($cui2) exists in your UMLS view.\n"; }
+ else         { print "The concept $term2 ($cui2) does not exist in your UMLS view.\n"; }
  print "\n";
 
- my @cList1   = $umls->getTermList($cui1);
- my @cList2   = $umls->getDefTermList($cui2);
+ my $cList1   = $umls->getTermList($cui1);
+ my $cList2   = $umls->getDefTermList($cui2);
 
  print "The terms associated with $term1 ($cui1) using the SAB parameter:\n";
- foreach my $c1 (@cList1) {
+ foreach my $c1 (@{$cList1}) {
     print " => $c1\n";
  } print "\n";
 
  print "The terms associated with $term2 ($cui2) using the SABDEF parameter:\n";
- foreach my $c2 (@cList2) {
+ foreach my $c2 (@{$cList2}) {
     print " => $c2\n";
  } print "\n";
 
  my $lcs = $umls->findLeastCommonSubsumer($cui1, $cui2);
- print "The least common subsumer between $term1 ($cui1) and \n";
- print "$term2 ($cui2) is $lcs\n\n";
+ print "The least common subsumer between $term1 ($cui1) and ";
+ print "$term2 ($cui2) is @{$lcs}\n\n";
 
- my @shortestpath = $umls->findShortestPath($cui1, $cui2);
+ my $shortestpath = $umls->findShortestPath($cui1, $cui2);
  print "The shortest path between $term1 ($cui1) and $term2 ($cui2):\n";
- print "  => @shortestpath\n\n";
+ print "  => @{$shortestpath}\n\n";
 
  my $pathstoroot   = $umls->pathsToRoot($cui1);
  print "The paths from $term1 ($cui1) and the root:\n";
-
  foreach  $path (@{$pathstoroot}) {
     print "  => $path\n";
  } print "\n";
@@ -1020,43 +1015,38 @@ UMLS::Interface - Perl interface to the Unified Medical Language System (UMLS)
  print "The minimum depth of $term1 ($cui1) is $mindepth\n";
  print "The maximum depth of $term1 ($cui1) is $maxdepth\n\n";
 
- my @children = $umls->getChildren($cui2); 
- print "The child(ren) of $term2 ($cui2) are: @children\n\n";
+ my $children = $umls->getChildren($cui2); 
+ print "The child(ren) of $term2 ($cui2) are: @{$children}\n\n";
 
- my @parents = $umls->getParents($cui2);
- print "The parent(s) of $term2 ($cui2) are: @parents\n\n";
+ my $parents = $umls->getParents($cui2);
+ print "The parent(s) of $term2 ($cui2) are: @{$parents}\n\n";
 
- my @relations = $umls->getRelations($cui2);
- print "The relation(s) of $term2 ($cui2) are: @relations\n\n";
+ my $relations = $umls->getRelations($cui2);
+ print "The relation(s) of $term2 ($cui2) are: @{$relations}\n\n";
 
- my @rel_sab = $umls->getRelationsBetweenCuis($cui1, "C1524024");
- print "The relation (source) between $cui1 and $cui2: @rel_sab\n";
+ my $rels = $umls->getRelated($cui2, "PAR");
+ print "The parents(s) of $term2 ($cui2) are: @{$rels}\n\n";
 
- my @rels = $umls->getRelated($cui2, "PAR");
- print "The parents(s) of $term2 ($cui2) are: @rels\n\n";
-
- my @definitions = $umls->getCuiDef($cui1);
+ my $definitions = $umls->getCuiDef($cui1);
  print "The definition(s) of $term1 ($cui1) are:\n";
-
- foreach $def (@definitions) {
+ foreach $def (@{$definitions}) {
     print "  => $def\n"; $i++;
  } print "\n";
 
- my @sabs = $umls->getSab($cui1);
+ my $sabs = $umls->getSab($cui1);
 
- print "The sources containing $term1 ($cui1) are: @sabs\n";
+ print "The sources containing $term1 ($cui1) are: @{$sabs}\n\n";
 
  print "The semantic type(s) of $term1 ($cui1) and the semantic\n";
 
  print "definition are:\n";
- my @sts = $umls->getSt($cui1);
-
- foreach my $st (@sts) {
+ my $sts = $umls->getSt($cui1);
+ foreach my $st (@{$sts}) {
 
     my $abr = $umls->getStAbr($st);
     my $string = $umls->getStString($abr);
     my $def    = $umls->getStDef($abr);
-    print "  => $string ($abr) : $def\n";
+    print "  => $string ($abr) : @{$def}\n";
 
  } print "\n";
 

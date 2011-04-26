@@ -101,6 +101,7 @@ else {
 $keyfile = File::Spec->catfile($keydir, 'findPathToRoot.msh.par-chd');
 $config  = File::Spec->catfile('t', 'config', 'config.msh.par-chd');
 $infile  = File::Spec->catfile('t', 'tests', 'findPathToRoot.msh.par-chd');
+
 $output = `$perl $util_prg --config $config --realtime --infile $infile 2>&1`;
 
 if(-e $keyfile) {

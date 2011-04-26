@@ -221,18 +221,18 @@ my $term  = $input;
 
 $term=~s/\'/\\\'/g;
 
-my @cuis = $umls->getConceptList($term); 
+my $cuis = $umls->getConceptList($term); 
 
-if($#cuis < 0) {
+if($#{$cuis} < 0) {
     print "No CUIs are associated with $input.\n";
 }
 else {
     print "The CUIs associated with $term are:\n";
     my $i = 1;
-    foreach my $cui (@cuis) {
+    foreach my $cui (@{$cuis}) {
 	if(defined $opt_sab) {
-	    my @sabs = $umls->getSab($cui);
-	    print "$i. $cui (@sabs)\n"; $i++;
+	    my $sabs = $umls->getSab($cui);
+	    print "$i. $cui (@{$sabs})\n"; $i++;
 	}
 	else {
 	    print "$i. $cui\n"; $i++;
@@ -288,7 +288,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getAssociatedCuis.pl,v 1.7 2010/05/24 17:57:16 btmcinnes Exp $';
+    print '$Id: getAssociatedCuis.pl,v 1.8 2011/04/26 12:19:28 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

@@ -220,35 +220,35 @@ die "Unable to create UMLS::Interface object.\n" if(!$umls);
 my $input = shift;
 my $term  = $input;
 
-my @c = ();
+my $c = undef;
 if($input=~/C[0-9]+/) {
-    push @c, $input;
+    push @{$c}, $input;
     ($term) = $umls->getAllPreferredTerm($input);
 }
 else {
-    @c = $umls->getConceptList($input);
+    $c = $umls->getConceptList($input);
 }
 
 my $printFlag = 0;
 
-foreach my $cui (@c) {
+foreach my $cui (@{$c}) {
 
     #  make certain cui exists in this view
     if($umls->exists($cui) == 0) { next; }	
 
-    my @parents= $umls->getParents($cui); 
+    my $parents= $umls->getParents($cui); 
 
-    if($#parents < 0) {
+    if($#{$parents} < 0) {
 	print "The term $term ($cui) does not have any parents\n";
     }
     else {
 	print "The parents of $term ($cui) are: \n";
-	foreach my $parent (@parents) {
-	    my ($t) = $umls->getTermList($parent);
+	foreach my $parent (@{$parents}) {
+	    my ($t) = shift @{$umls->getTermList($parent)};
 	    print "  $t($parent) ";
 	    if(defined $opt_info) {
-		my @relations = $umls->getRelationsBetweenCuis($cui, $parent);
-		print " => @relations";
+		my $relations = $umls->getRelationsBetweenCuis($cui, $parent);
+		print " => @{$relations}";
 	    }
 	    print "\n";
 	} 
@@ -310,7 +310,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getParents.pl,v 1.11 2010/09/17 18:54:31 btmcinnes Exp $';
+    print '$Id: getParents.pl,v 1.12 2011/04/26 12:19:28 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

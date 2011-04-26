@@ -213,27 +213,28 @@ else {
 
 foreach my $input (@terms) {
 
-    my @c = ();
+    my $c = undef;
     if($input=~/C[0-9]/) {
-	push @c, $input;
-	($term) = $umls->getTermList($input);
+	push @{$c}, $input;
+	my $ts = $umls->getTermList($input);
+	$term = shift @{$ts};
     }
     else {
-	@c = $umls->getConceptList($input);
+	$c = $umls->getConceptList($input);
     }
     
     my $printFlag = 0;
     
-    foreach my $cui (@c) {
+    foreach my $cui (@{$c}) {
 	
-	my @sts = $umls->getSt($cui);
+	my $sts = $umls->getSt($cui);
 	
-	if($#sts < 0) {
+	if($#{$sts} < 0) {
 	    print "There are no semantic types associated with $term ($cui)\n";
 	}
 	else {
 	    print "The semantic types associated with $term ($cui):\n";
-	foreach my $st (@sts) {
+	foreach my $st (@{$sts}) {
 	    my $abr = $umls->getStAbr($st);
 	    my $string = $umls->getStString($abr);
 	    print "  $string ($abr)\n";
@@ -294,7 +295,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getSts.pl,v 1.13 2011/02/11 13:23:08 btmcinnes Exp $';
+    print '$Id: getSts.pl,v 1.14 2011/04/26 12:19:28 btmcinnes Exp $';
     print "\nCopyright (c) 2011, Ted Pedersen & Bridget McInnes\n";
 }
 

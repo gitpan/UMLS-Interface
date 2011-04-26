@@ -262,22 +262,22 @@ foreach my $element (@fileArray) {
     my $flag1 = "cui";
     my $flag2 = "cui";
 
-    my @c1 = ();
-    my @c2 = ();
+    my $c1 = undef;
+    my $c2 = undef;
 
     #  check if the input are CUIs or terms
     if( ($input1=~/C[0-9]+/)) {
-	push @c1, $input1;
+	push @{$c1}, $input1;
     }
     else {
-	@c1 = $umls->getConceptList($input1); 
+	$c1 = $umls->getConceptList($input1); 
 	$flag1 = "term";
     }
     if( ($input2=~/C[0-9]+/)) {
-	push @c2, $input2; 
+	push @{$c2}, $input2; 
     }
     else {
-	@c2 = $umls->getConceptList($input2); 
+	$c2 = $umls->getConceptList($input2); 
 	$flag2 = "term";
     }
     
@@ -285,8 +285,8 @@ foreach my $element (@fileArray) {
     my $printFlag = 0;
     my $precision = 4;      
     my $floatformat = join '', '%', '.', $precision, 'f';    
-    foreach $cui1 (@c1) {
-	foreach $cui2 (@c2) {
+    foreach $cui1 (@{$c1}) {
+	foreach $cui2 (@{$c2}) {
 	   
 	    if(! ($umls->exists($cui1)) ) { next; }
 	    if(! ($umls->exists($cui2)) ) { next; }
@@ -294,8 +294,12 @@ foreach my $element (@fileArray) {
 	    my $t1 = $input1;
 	    my $t2 = $input2;
 	    
-	    if($flag1 eq "cui") { ($t1) = $umls->getTermList($cui1); }
-	    if($flag2 eq "cui") { ($t2) = $umls->getTermList($cui2); }
+	    if($flag1 eq "cui") { 
+		my $ts1 = $umls->getTermList($cui1); $t1 = shift @{$ts1};
+	    }
+	    if($flag2 eq "cui") { 
+		my $ts2 = $umls->getTermList($cui2); $t2 = shift @{$ts2}; 
+	    }
 
 	    my $number = $umls->findNumberOfCloserConcepts($cui1, $cui2);
 	    
@@ -358,7 +362,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findNumberOfCloserConcepts.pl,v 1.1 2010/11/29 22:59:20 btmcinnes Exp $';
+    print '$Id: findNumberOfCloserConcepts.pl,v 1.2 2011/04/26 12:19:28 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

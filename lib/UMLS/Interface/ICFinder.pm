@@ -1,5 +1,5 @@
 # UMLS::Interface::ICFinder
-# (Last Updated $Id: ICFinder.pm,v 1.21 2011/03/28 19:23:05 btmcinnes Exp $)
+# (Last Updated $Id: ICFinder.pm,v 1.22 2011/04/26 12:19:28 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -856,10 +856,10 @@ sub _propagation {
     }
 
     #  get all the children
-    my @children = $cuifinder->_getChildren($concept);
+    my $children = $cuifinder->_getChildren($concept);
 
     #  search through the children   
-    foreach my $child (@children) {
+    foreach my $child (@{$children}) {
 
 	my $flag = 0;
 	

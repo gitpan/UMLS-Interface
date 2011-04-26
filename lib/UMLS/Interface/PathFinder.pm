@@ -1,5 +1,5 @@
 # UMLS::Interface::PathFinder
-# (Last Updated $Id: PathFinder.pm,v 1.51 2011/03/28 19:23:05 btmcinnes Exp $)
+# (Last Updated $Id: PathFinder.pm,v 1.53 2011/04/26 15:28:52 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -252,7 +252,7 @@ sub _setOptions  {
 
 #  method to return the maximum depth of a taxonomy.
 #  input :
-#  output: $string <- string containing the max depth
+#  output: $int <- string containing the max depth
 sub _depth {
 
     my $self = shift;
@@ -338,7 +338,7 @@ sub _depth {
 #          $d       <- string containing the depth of the cui
 #          $array   <- reference to an array containing the current path
 #  output: $concept <- string containing cui
-#          $d       <- string containing the depth of the cui
+#          $int     <- string containing the depth of the cui
 #          $array   <- reference to an array containing the current path
 sub _getMaxDepth {
 
@@ -396,10 +396,10 @@ sub _getMaxDepth {
 
     
     #  get all the children
-    my @children = $cuifinder->_getChildren($concept);
+    my $children = $cuifinder->_getChildren($concept);
        
     #  search through the children
-    foreach my $child (@children) {
+    foreach my $child (@{$children}) {
 	
 	#  check if child cui has already in the path
 	if($series=~/$child/)  { next; }
@@ -724,10 +724,10 @@ sub _initializeDepthFirstSearch {
     }
     
     #  get the children
-    my @children = $cuifinder->_getChildren($concept);
+    my $children = $cuifinder->_getChildren($concept);
     
     #  foreach of the children continue down the taxonomy
-    foreach my $child (@children) {
+    foreach my $child (@{$children}) {
 	my @array = (); 
 	push @array, $concept; 
 	my $path  = \@array;
@@ -827,17 +827,17 @@ sub _getPathsToRootInRealtime {
 	}
 	
 	#  get all the parents
-	my @parents = $cuifinder->_getParents($concept);
-
+	my $parents = $cuifinder->_getParents($concept);
+	
 	#  if there are no children we are finished with this concept
-	if($#parents < 0) {
+	if($#{$parents} < 0) {
 	    pop @stack; pop @paths;
 	    next;
 	}
 
 	#  search through the children
 	my $stackflag = 0;
-	foreach my $parent (@parents) {
+	foreach my $parent (@{$parents}) {
 	    
 	    #  check if concept is already in the path
 	    if($series=~/$parent/)  { next; }
@@ -937,10 +937,10 @@ sub _depthFirstSearch {
     }
     
     #  get all the children
-    my @children = $cuifinder->_getChildren($concept);
+    my $children = $cuifinder->_getChildren($concept);
 
     #  search through the children
-    foreach my $child (@children) {
+    foreach my $child (@{$children}) {
 	
 	#  check if child cui has already in the path
 	if($series=~/$child/)  { next; }
@@ -952,8 +952,8 @@ sub _depthFirstSearch {
 }
 
 #  function returns the minimum depth of a concept
-#  input : $cui   <- string containing the cui
-#  output: $depth <- string containing the depth of the cui
+#  input : $concept <- string containing the cui
+#  output: $int     <- string containing the depth of the cui
 sub _findMinimumDepth {
 
     my $self = shift;
@@ -1008,8 +1008,8 @@ sub _findMinimumDepth {
 }
 
 #  function returns maximum depth of a concept
-#  input : $cui   <- string containing the cui
-#  output: $depth <- string containing the depth of the cui
+#  input : $concept <- string containing the cui
+#  output: $int     <- string containing the depth of the cui
 sub _findMaximumDepth {
 
     my $self = shift;
@@ -1094,7 +1094,7 @@ sub _findMaximumDepth {
 #  find the shortest path between two concepts
 #  input : $concept1 <- string containing the first cui
 #          $concept2 <- string containing the second
-#  output: @array    <- array containing the shortest path(s)
+#  output: $array    <- reference to an array containing the shortest path(s)
 sub _findShortestPath {
 
     my $self     = shift;
@@ -1138,7 +1138,7 @@ sub _findShortestPath {
 #  this function returns the shortest path between two concepts
 #  input : $concept1 <- string containing the first cui
 #          $concept2 <- string containing the second
-#  output: @array    <- array containing the lcs(es)
+#  output: $array    <- reference to an array containing the lcs(es)
 sub _findShortestPathThroughLCS {
     
     my $self = shift;
@@ -1179,16 +1179,16 @@ sub _findShortestPathThroughLCS {
 	    push @paths, $path;
 	}
     } 
-    
+        
     #  return the shortest paths (all of them)
-    return @paths;
+    return \@paths;
 }
 
 
 #  this function returns the least common subsummer between two concepts
 #  input : $concept1 <- string containing the first cui
 #          $concept2 <- string containing the second
-#  output: @array    <- array containing the lcs(es)
+#  output: $array    <- reference to an array containing the lcs(es)
 sub _findLeastCommonSubsumer {
 
     my $self = shift;
@@ -1219,9 +1219,6 @@ sub _findLeastCommonSubsumer {
 	$errorhandler->_error($pkg, $function, "Concept ($concept2) in not valid.", 6);
     }    
     
-    #  initialize the array that will contain the lcses
-    my @lcses = (); 
-
     #  get the relations from the configuration file
     my $configrel = $cuifinder->_getRelString();
     $configrel=~/(REL) (\:\:) (include|exclude) (.*?)$/;
@@ -1238,10 +1235,14 @@ sub _findLeastCommonSubsumer {
 
     #  get the LCSes
     if($option_realtime) {
-	@lcses = $self->_findLeastCommonSubsumerInRealTime($concept1, $concept2);
+	return $self->_findLeastCommonSubsumerInRealTime($concept1, $concept2);
     }
     else {
 
+	#  initialize the array that will contain the lcses
+	my @lcses = (); 
+	
+	#  get the lcs using the index
 	my $hash = $self->_shortestPath($concept1, $concept2);
 	if($debug) { print STDERR "done with _shortestPath\n"; }
 	my %lcshash = ();
@@ -1252,23 +1253,23 @@ sub _findLeastCommonSubsumer {
 	    }
 	}
 	foreach my $lcs (sort keys %lcshash) { push @lcses, $lcs; }
-	}
     
-    #  return the lcses
-    return @lcses;
+	#  return the lcses
+	return \@lcses;
+    }
 }
 
 #  this function returns the least common subsummer between two concepts
 #  input : $concept1 <- string containing the first cui
 #          $concept2 <- string containing the second
-#  output: @array    <- array containing the lcs(es)
+#  output: $array    <- reference to an array containing the lcs(es)
 sub _findLeastCommonSubsumerInRealTime {
 
     my $self = shift;
     my $concept1 = shift;
     my $concept2 = shift;
     
-    my $function = "_findLeastCommonSubsumer";
+    my $function = "_findLeastCommonSubsumerInRealTime";
     &_debug($function);
 
     #  check self
@@ -1293,7 +1294,7 @@ sub _findLeastCommonSubsumerInRealTime {
     }    
     
     #  get the shorest paths
-    my @paths = $self->_findShortestPathInRealTime($concept1, $concept2);
+    my $paths = $self->_findShortestPathInRealTime($concept1, $concept2);
     
     #  get the child relations
     my $childstring = $cuifinder->_getChildRelations();
@@ -1302,7 +1303,7 @@ sub _findLeastCommonSubsumerInRealTime {
     my %lcses = ();
  
    #  check for the lcs in each of the paths
-    foreach my $p (@paths) {
+    foreach my $p (@{$paths}) {
 	#  get the path and the first concept
 	my @path     = split/\s+/, $p;
 	my $concept1 = shift @path;
@@ -1316,8 +1317,8 @@ sub _findLeastCommonSubsumerInRealTime {
 
 	#  loop through the rest of the concepts looking for the first child relation
 	foreach my $concept2 (@path) {
-	    my @relations = $cuifinder->_getRelationsBetweenCuis($concept1, $concept2);
-	    foreach my $item (@relations) {
+	    my $relations = $cuifinder->_getRelationsBetweenCuis($concept1, $concept2);
+	    foreach my $item (@{$relations}) {
 		$item=~/([A-Z]+) \([A-Z0-9\.]+\)/;
 		my $rel = $1;
 
@@ -1347,7 +1348,7 @@ sub _findLeastCommonSubsumerInRealTime {
     foreach my $lcs (sort keys %lcses) { push @unique, $lcs; }
 
     #  return the unique lcses
-    return @unique;
+    return \@unique;
 }
 
 #  method to get the Least Common Subsumer of two 
@@ -1400,7 +1401,7 @@ sub _getLCSfromTrees {
 #  method to find the shortest path between two concepts in realtime
 #  input : $concept1 <- first concept
 #          $concept2 <- second concept
-#  output: @paths    <- array containing the shortest paths
+#  output: $array    <- reference to an array containing the shortest paths
 sub _findShortestPathInRealTime {
     
     my $self = shift;
@@ -1470,7 +1471,7 @@ sub _findShortestPathInRealTime {
     }
 
      
-    return @paths;
+    return \@paths;
 }
 
 #  method that takes two partial paths nad joins them
@@ -1540,11 +1541,11 @@ sub _joinPathsToCenter {
 			my $cc1 = $path[$i];
 			my $cc2 = $path[$i+1];
 			#  get the relationships the concepts
-			my @ccr = $cuifinder->_getRelationsBetweenCuis($cc1, $cc2);
+			my $ccr = $cuifinder->_getRelationsBetweenCuis($cc1, $cc2);
 			#  determine whether that relation is a 
 			#  parent or a child relation
 			my $pr = 0; my $cr = 0;
-			foreach my $item (@ccr) {
+			foreach my $item (@{$ccr}) {
 			    $item=~/([A-Z]+) \([A-Za-z0-9\.]+\)/;
 			    my $rel = $1; 
 			    if($childstring=~/($rel)/)  { $cr++; }
@@ -1639,19 +1640,18 @@ sub _findPathsToCenter {
     my @directions = ();
     my @relations  = ();
     my @paths      = ();
-    my @stack      = ();
     
-    @stack = $cuifinder->_getParents($start);
-    foreach my $element (@stack) {
+    my $parentstack = $cuifinder->_getParents($start);
+    foreach my $element (@{$parentstack}) {
 	my @array      = (); 
 	push @paths, \@array;
 	push @directions, 0;
 	push @relations, "PAR";
     }
     
-    my @childrenstack = $cuifinder->_getChildren($start);
-    @stack = (@stack, @childrenstack);
-    foreach my $element (@childrenstack) {
+    my $childrenstack = $cuifinder->_getChildren($start);
+    my @stack = (@{$parentstack}, @{$childrenstack});
+    foreach my $element (@{$childrenstack}) {
 	my @array      = (); 
 	push @paths, \@array;
 	push @directions, 0;
@@ -1731,8 +1731,8 @@ sub _findPathsToCenter {
 	#  if we have not had more than a single direction change
 	if($dchange < 2) {
 	    #  search through the parents
-	    my @parents  = $cuifinder->_getParents($concept);		
-	    foreach my $parent (@parents) {
+	    my $parents  = $cuifinder->_getParents($concept);		
+	    foreach my $parent (@{$parents}) {
 		
 		#  check if concept is already in the path
 		if($series=~/$parent/)  { next; }
@@ -1758,8 +1758,8 @@ sub _findPathsToCenter {
 	#  if we have not had more than a single direction change
 	if($dchange < 2) {
 	    #  now search through the children
-	    my @children = $cuifinder->_getChildren($concept);
-	    foreach my $child (@children) {
+	    my $children = $cuifinder->_getChildren($concept);
+	    foreach my $child (@{$children}) {
 		
 		#  check if child cui has already in the path
 		if($series=~/$child/)  { next; }
@@ -1787,7 +1787,7 @@ sub _findPathsToCenter {
 
 #  method that finds the minimum depth
 #  input : $concept  <- the first concept
-#  output: $length    <- the minimum depth
+#  output: $int      <- the minimum depth
 sub _findMinimumDepthInRealTime {
 
     my $self = shift;
@@ -1815,13 +1815,14 @@ sub _findMinimumDepthInRealTime {
     
     #  set the stack with the roots children
     my @paths      = ();
-    my @stack = $cuifinder->_getChildren($root);
-    
+    my $rstack = $cuifinder->_getChildren($root);
+    my @stack  = @{$rstack};
+
     foreach my $element (@stack) {
 	my @array      = (); 
 	push @paths, \@array;
     }
-
+    
     #  now loop through the stack
     while($#stack >= 0) {
 	
@@ -1848,8 +1849,8 @@ sub _findMinimumDepthInRealTime {
 	}
 	
 	#  now search through the children
-	my @children = $cuifinder->_getChildren($cui);
-	foreach my $child (@children) {
+	my $children = $cuifinder->_getChildren($cui);
+	foreach my $child (@{$children}) {
 	    #  check if child cui has already in the path
 	    if($series=~/$child/)  { next; }
 	    if($child eq $cui) { next; }
@@ -1866,7 +1867,7 @@ sub _findMinimumDepthInRealTime {
 
 #  method that finds the maximum depth
 #  input : $concept  <- the first concept
-#  output: $length    <- the minimum depth
+#  output: $int      <- the minimum depth
 sub _findMaximumDepthInRealTime {
 
     my $self    = shift;
@@ -1932,17 +1933,17 @@ sub _findMaximumDepthInRealTime {
 	}
 	
 	#  get all the parents
-	my @parents = $cuifinder->_getParents($cui);
+	my $parents = $cuifinder->_getParents($cui);
 
 	#  if there are no children we are finished with this concept
-	if($#parents < 0) {
+	if($#{$parents} < 0) {
 	    pop @stack; pop @paths;
 	    next;
 	}
 
 	#  search through the children
 	my $stackflag = 0;
-	foreach my $parent (@parents) {
+	foreach my $parent (@{$parents}) {
 	
 	    #  check if concept has already in the path
 	    if($series=~/$parent/)  { next; }
@@ -1964,7 +1965,7 @@ sub _findMaximumDepthInRealTime {
 #  method that finds the length of the shortest path
 #  input : $concept1  <- the first concept
 #          $concept2  <- the second concept
-#  output: $length    <- the length of the shortest path between them
+#  output: $int       <- the length of the shortest path between them
 sub _findShortestPathLength {
 
     my $self = shift;
@@ -1993,8 +1994,8 @@ sub _findShortestPathLength {
     }
     else {
 	
-	my @paths = $self->_findShortestPathThroughLCS($concept1, $concept2);
-	my $path = shift @paths;
+	my $paths = $self->_findShortestPathThroughLCS($concept1, $concept2);
+	my $path = shift @{$paths};
 	if(defined $path) { 
 	    my @cuis = split/\s+/, $path;
 	    my $length = $#cuis + 1;
@@ -2131,6 +2132,7 @@ sub _findShortestPathLengthInRealTime {
     #return $l1 < $l2 ? $l1 : $l2;
 
     my $length = $self->_findShortestPathLengthInRealTimeBFS2($concept1, $concept2);
+
     return $length;
 }
 	
@@ -2157,9 +2159,10 @@ sub _findShortestPathLengthInRealTimeBFS2 {
     my %visited1 = ();    my %visited2 = ();
     
     #  set the stack
-    my @stack1 = $cuifinder->_getParents($concept1);
+    my $rstack1 = $cuifinder->_getParents($concept1);
+    my $rstack2 = $cuifinder->_getParents($concept2);
+    my @stack1 = @{$rstack1}; my @stack2 = @{$rstack2};
 
-    my @stack2 = $cuifinder->_getParents($concept2);
     my @directions1  = ();    my @directions2  = ();
     my @relations1   = ();    my @relations2   = ();
     my @paths1       = ();    my @paths2       = ();
@@ -2178,7 +2181,7 @@ sub _findShortestPathLengthInRealTimeBFS2 {
 	push @directions2, 0;
 	push @relations2, "PAR";
     }
-   
+
     #  now loop through the stack
     while($#stack1 >= 0 || $#stack2 >= 0) {
 	
@@ -2216,7 +2219,7 @@ sub _findShortestPathLengthInRealTimeBFS2 {
 	    $distance2 = $#intermediate2;
 	    $cui2flag++;
 	}
-	
+
 	#  check if it is our concept2
 	if($c1 eq $concept2) { 
 	    $path_length1 = $distance1 + 2;
@@ -2254,8 +2257,6 @@ sub _findShortestPathLengthInRealTimeBFS2 {
 	if($cui1flag == 0) { $flag1++; }
 	if($cui2flag == 0) { $flag2++; }
 
-
-
 	#  check that the concept is not one of the forbidden concepts
 	if($cui1flag > 0 && $cuifinder->_forbiddenConcept($c1)) { $flag1++; }
 	if($cui2flag > 0 && $cuifinder->_forbiddenConcept($c2)) { $flag2++; }
@@ -2275,15 +2276,15 @@ sub _findShortestPathLengthInRealTimeBFS2 {
 	}
 	
 	#  if we have not had more than a single direction change
-	my @parents1 = (); my @parents2 = ();
+	my $parents1; my $parents2;
 	if($flag1 == 0 && $dchange1 < 2)  {
-	    @parents1  = $cuifinder->_getParents($c1);		
+	    $parents1  = $cuifinder->_getParents($c1);		
 	}
 	if($flag2 == 0 && $dchange2 < 2)  {
-	    @parents2  = $cuifinder->_getParents($c2);		
+	    $parents2  = $cuifinder->_getParents($c2);		
 	}
 	
-	foreach my $parent1 (@parents1) {
+	foreach my $parent1 (@{$parents1}) {
 	    #  check if concept has already in the path
 	    if($series1=~/$parent1/) { next; }
 	    if($parent1 eq $c1)      { next; }
@@ -2293,7 +2294,7 @@ sub _findShortestPathLengthInRealTimeBFS2 {
 	    unshift @directions1, $dchange1;
 	}
 
-	foreach my $parent2 (@parents2) {
+	foreach my $parent2 (@{$parents2}) {
 	    #  check if concept has already in the path
 	    if($series2=~/$parent2/) { next; }
 	    if($parent2 eq $c2)      { next; }
@@ -2321,16 +2322,16 @@ sub _findShortestPathLengthInRealTimeBFS2 {
 
 	#  if we have not had more than a single direction change
 	#  now search through the children
-	my @children1 = (); my @children2 = ();
+	my $children1 = undef; my $children2 = undef;
 	if($flag1 == 0 && $dchange1 < 2) {
-	    @children1 = $cuifinder->_getChildren($c1);
+	    $children1 = $cuifinder->_getChildren($c1);
 	}
 
 	if($flag2 == 0 && $dchange2 < 2) {
-	    @children2 = $cuifinder->_getChildren($c2);
+	    $children2 = $cuifinder->_getChildren($c2);
 	}
 	
-	foreach my $child1 (@children1) {
+	foreach my $child1 (@{$children1}) {
 	    #  check if child cui has already in the path
 	    if($series1=~/$child1/)  { next; }
 	    if($child1 eq $c1) { next; }
@@ -2342,7 +2343,7 @@ sub _findShortestPathLengthInRealTimeBFS2 {
 	    unshift @directions1, $dchange1;
 	}
 
-	foreach my $child2 (@children2) {
+	foreach my $child2 (@{$children2}) {
 	    #  check if child cui has already in the path
 	    if($series2=~/$child2/)  { next; }
 	    if($child2 eq $c2) { next; }
@@ -2382,7 +2383,8 @@ sub _findShortestPathLengthInRealTimeBFS {
     my %visited = ();
     
     #  set the stack
-    my @stack = $cuifinder->_getParents($concept1);
+    my $rstack     = $cuifinder->_getParents($concept1);
+    my @stack      = @{$rstack};
     my @directions = ();
     my @relations  = ();
     my @paths      = ();
@@ -2446,8 +2448,8 @@ sub _findShortestPathLengthInRealTimeBFS {
 	#  if we have not had more than a single direction change
 	if($dchange < 2) {
 	    #  search through the parents
-	    my @parents  = $cuifinder->_getParents($concept);		
-	    foreach my $parent (@parents) {
+	    my $parents  = $cuifinder->_getParents($concept);		
+	    foreach my $parent (@{$parents}) {
 		#  check if concept has already in the path
 		if($series=~/$parent/) { next; }
 		if($parent eq $concept) { next; }
@@ -2470,8 +2472,8 @@ sub _findShortestPathLengthInRealTimeBFS {
 	#  if we have not had more than a single direction change
 	if($dchange < 2) {
 	    #  now search through the children
-	    my @children = $cuifinder->_getChildren($concept);
-	    foreach my $child (@children) {
+	    my $children = $cuifinder->_getChildren($concept);
+	    foreach my $child (@{$children}) {
 		
 		#  check if child cui has already in the path
 		if($series=~/$child/)  { next; }
@@ -2614,7 +2616,7 @@ sub _shortestPath {
 #  method that finds the length of the shortest path
 #  input : $concept1  <- the first concept
 #          $concept2  <- the second concept
-#  output: $number    <- number cuis closer to concept1 than concept2
+#  output: $int       <- number cuis closer to concept1 than concept2
 sub _findNumberOfCloserConcepts {
 
     my $self = shift;
@@ -2637,9 +2639,10 @@ sub _findNumberOfCloserConcepts {
     my %visited1 = ();    my %visited2 = ();
     
     #  set the stack
-    my @stack1 = $cuifinder->_getParents($concept1);
+    my $rstack1 = $cuifinder->_getParents($concept1);
+    my $rstack2 = $cuifinder->_getParents($concept2);
+    my @stack1 = @{$rstack1}; my @stack2 = @{$rstack2};
 
-    my @stack2 = $cuifinder->_getParents($concept2);
     my @directions1  = ();    my @directions2  = ();
     my @relations1   = ();    my @relations2   = ();
     my @paths1       = ();    my @paths2       = ();
@@ -2765,15 +2768,15 @@ sub _findNumberOfCloserConcepts {
 	}
 	
 	#  if we have not had more than a single direction change
-	my @parents1 = (); my @parents2 = ();
+	my $parents1 = undef; my $parents2 = undef;
 	if($flag1 == 0 && $dchange1 < 2)  {
-	    @parents1  = $cuifinder->_getParents($c1);		
+	    $parents1  = $cuifinder->_getParents($c1);		
 	}
 	if($flag2 == 0 && $dchange2 < 2)  {
-	    @parents2  = $cuifinder->_getParents($c2);		
+	    $parents2  = $cuifinder->_getParents($c2);		
 	}
 	
-	foreach my $parent1 (@parents1) {
+	foreach my $parent1 (@{$parents1}) {
 	    #  check if concept has already in the path
 	    if($series1=~/$parent1/) { next; }
 	    if($parent1 eq $c1)      { next; }
@@ -2783,7 +2786,7 @@ sub _findNumberOfCloserConcepts {
 	    unshift @directions1, $dchange1;
 	}
 
-	foreach my $parent2 (@parents2) {
+	foreach my $parent2 (@{$parents2}) {
 	    #  check if concept has already in the path
 	    if($series2=~/$parent2/) { next; }
 	    if($parent2 eq $c2)      { next; }
@@ -2811,16 +2814,16 @@ sub _findNumberOfCloserConcepts {
 
 	#  if we have not had more than a single direction change
 	#  now search through the children
-	my @children1 = (); my @children2 = ();
+	my $children1 = undef; my $children2 = undef;
 	if($flag1 == 0 && $dchange1 < 2) {
-	    @children1 = $cuifinder->_getChildren($c1);
+	    $children1 = $cuifinder->_getChildren($c1);
 	}
 
 	if($flag2 == 0 && $dchange2 < 2) {
-	    @children2 = $cuifinder->_getChildren($c2);
+	    $children2 = $cuifinder->_getChildren($c2);
 	}
 	
-	foreach my $child1 (@children1) {
+	foreach my $child1 (@{$children1}) {
 	    #  check if child cui has already in the path
 	    if($series1=~/$child1/)  { next; }
 	    if($child1 eq $c1) { next; }
@@ -2832,7 +2835,7 @@ sub _findNumberOfCloserConcepts {
 	    unshift @directions1, $dchange1;
 	}
 
-	foreach my $child2 (@children2) {
+	foreach my $child2 (@{$children2}) {
 	    #  check if child cui has already in the path
 	    if($series2=~/$child2/)  { next; }
 	    if($child2 eq $c2) { next; }
@@ -2859,7 +2862,6 @@ sub _findNumberOfCloserConcepts {
 	}
     }
 
-    
     #  no path was found return -1
     return $counter;
 }
@@ -2919,18 +2921,17 @@ documentation.
  $length = $pathfinder->_findShortestPathLength($concept1, $concept2);
  print "The length of the shortest path between $concept1 and $concept2 is $length\n";
 
- @array = $pathfinder->_findLeastCommonSubsumer($concept1, $concept2);
+ $array = $pathfinder->_findLeastCommonSubsumer($concept1, $concept2);
  print "The LCS(es) between $concept1 and $concept2 are: \n";
- foreach my $lcs (@array) { 
-    print "  => $lcs: \n";
+ foreach my $lcs (@{$array}) { 
+    print "  => $lcs \n";
  }
  
- @array  = $pathfinder->_findShortestPath($concept1, $concept2);
- print "The shortest pahts between $concept1 and $concept2 are:\n";
- foreach my $path (@array) { 
+ $array  = $pathfinder->_findShortestPath($concept1, $concept2);
+ print "The shortest paths between $concept1 and $concept2 are:\n";
+ foreach my $path (@{$array}) { 
     print "  => $path\n";
  }
-
 
 =head1 INSTALL
 

@@ -211,27 +211,30 @@ else {
 
 foreach my $input (@terms) {
 
-    my @c = ();
+    my $c = undef;
+    my $term = $input;
+
     if($input=~/C[0-9]/) {
-	push @c, $input;
-	($term) = $umls->getTermList($input);
+	push @{$c}, $input;
+	my $terms = $umls->getTermList($input);
+	$term = shift @{$terms};
     }
     else {
-	@c = $umls->getConceptList($input);
+	$c = $umls->getConceptList($input);
     }
     
     my $printFlag = 0;
     
-    foreach my $cui (@c) {
+    foreach my $cui (@{$c}) {
 	
-	my @groups = $umls->getSemanticGroup($cui);
+	my $groups = $umls->getSemanticGroup($cui);
 	
-	if($#groups < 0) {
+	if($#{$groups} < 0) {
 	    print "There are no semantic groups associated with $term ($cui)\n";
 	}
 	else {
 	    print "The semantic groups associated with $term ($cui):\n";
-	    foreach my $group (@groups) {
+	    foreach my $group (@{$groups}) {
 		print "  $group\n";
 		$printFlag = 1;
 	    }
@@ -290,7 +293,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getSemanticGroup.pl,v 1.3 2011/02/11 13:23:08 btmcinnes Exp $';
+    print '$Id: getSemanticGroup.pl,v 1.4 2011/04/26 12:19:28 btmcinnes Exp $';
     print "\nCopyright (c) 2008-2011, Ted Pedersen & Bridget McInnes\n";
 }
 

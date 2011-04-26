@@ -1,6 +1,14 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 1.07 to 1.09
+    1. modified the input and output of the perl modules to pass everything
+    by reference
+
+    2. modified the .pl programs to account for this
+
+    3. updated the synopsis code
+
   Changes from version 1.05 to 1.07
     1. modified test cases for getCuiDef
 

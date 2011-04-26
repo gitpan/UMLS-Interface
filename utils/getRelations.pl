@@ -215,30 +215,31 @@ die "Unable to create UMLS::Interface object.\n" if(!$umls);
 my $input = shift;
 my $term  = $input;
 
-my @c = ();
+my $c = undef;
 if($input=~/C[0-9]+/) {
-    push @c, $input;
-    ($term) = $umls->getTermList($input);
+    push @{$c}, $input;
+    my $terms = $umls->getTermList($input);
+    $term = shift @{$terms};
 }
 else {
-    @c = $umls->getConceptList($input);
+    $c = $umls->getConceptList($input);
 }
 
 my $printFlag = 0;
 
-foreach my $cui (@c) {
+foreach my $cui (@{$c}) {
 
     #  make certain cui exists in this view
     if($umls->exists($cui) == 0) { next; }	
     
-    my @relations= $umls->getRelations($cui); 
+    my $relations= $umls->getRelations($cui); 
     
-    if($#relations < 0) {
+    if($#{$relations} < 0) {
 	print "The term $term ($cui) does not have any relations in this source\n";
     }
     else {
 	print "The relations of $term ($cui) are: \n";
-	foreach my $rel (@relations) {
+	foreach my $rel (@{$relations}) {
 	    print " $rel\n";
 	} 
     }
@@ -296,7 +297,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getRelations.pl,v 1.9 2010/05/24 17:57:16 btmcinnes Exp $';
+    print '$Id: getRelations.pl,v 1.10 2011/04/26 12:19:28 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

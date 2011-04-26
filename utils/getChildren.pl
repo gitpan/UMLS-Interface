@@ -238,34 +238,36 @@ foreach my $input (@terms) {
     
     my $term = $input;
 
-    my @c = ();
+    my $c = undef;
     if($input=~/C[0-9]+/) {
-	push @c, $input;
-	($term) = $umls->getAllPreferredTerm($input);
+	push @{$c}, $input;
+	$term = $umls->getAllPreferredTerm($input);
     }
     else {
-	@c = $umls->getConceptList($input);
+	$c = $umls->getConceptList($input);
     }
         
     my $printFlag = 0;
     
-    foreach my $cui (@c) {
-
+    foreach my $cui (@{$c}) {
 	if($umls->exists($cui) == 0) { next; }	
 
-	my @children= $umls->getChildren($cui); 
+	my $rchildren= $umls->getChildren($cui); 
 	
+	my @children  = @{$rchildren};
+
 	if($#children < 0) {
 	    print "The term $term ($cui) does not have any children\n";
 	}
 	else {
 	    print "The children of $term ($cui) are: \n";
 	    foreach my $child (@children) {
-		my ($t) = $umls->getTermList($child);
+		my $list = $umls->getTermList($child);
+		my $t = shift @{$list};
 		print "  $t ($child) ";
 		if(defined $opt_info) {
-		    my @relations = $umls->getRelationsBetweenCuis($cui, $child);
-		    print " => @relations";
+		    my $relations = $umls->getRelationsBetweenCuis($cui, $child);
+		    print " => @{$relations}";
 		}
 		print "\n";
 	    } 
@@ -328,7 +330,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getChildren.pl,v 1.15 2010/11/01 13:10:11 btmcinnes Exp $';
+    print '$Id: getChildren.pl,v 1.16 2011/04/26 12:19:28 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

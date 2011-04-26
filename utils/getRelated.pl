@@ -220,31 +220,34 @@ my $input  = shift;
 my $rel    = shift;
 my $term   = $input;
 
-my @c = ();
+my $c = undef;
+
 if($input=~/C[0-9]+/) {
-    push @c, $input;
-    ($term) = $umls->getTermList($input);
+    push @{$c}, $input;
+    my $terms = $umls->getTermList($input);
+    $term = shift @{$terms};
 }
 else {
-    @c = $umls->getConceptList($input);
+    $c = $umls->getConceptList($input);
 }
 
 my $printFlag = 0;
 
-foreach my $cui (@c) {
+foreach my $cui (@{$c}) {
 
     #  make certain cui exists in this view
     if($umls->exists($cui) == 0) { next; }	
     
-    my @cuis = $umls->getRelated($cui, $rel); 
-    
-    if($#cuis < 0) {
+    my $related = $umls->getRelated($cui, $rel); 
+
+    if($#{$related} < 0) {
 	print "No CUIs are associated with $term ($cui) given the relation ($rel).\n";
     }
     else {
 	print "The related ($rel) CUIs to $term ($cui):\n";
-	foreach my $related_cui (@cuis) {
-	    my ($t) = $umls->getTermList($related_cui);
+	foreach my $related_cui (@{$related}) {
+	    my $ts = $umls->getTermList($related_cui); 
+	    my $t  = shift @{$ts};
 	    print "  $t ($related_cui)\n";
 	}
     }
@@ -304,7 +307,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getRelated.pl,v 1.11 2010/05/24 17:57:16 btmcinnes Exp $';
+    print '$Id: getRelated.pl,v 1.12 2011/04/26 12:19:28 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

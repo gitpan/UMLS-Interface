@@ -342,15 +342,16 @@ foreach my $input (@inputarray) {
     my @c = ();
     if($input=~/C[0-9]+/) {
 	push @c, $input;
-	($term) = $umls->getTermList($input);
+	my $termlist = $umls->getTermList($input);
+	$term = shift @{$termlist};
     }
     else {
-	@c = $umls->getConceptList($input);
+	$c = $umls->getConceptList($input);
     }
 
     my $printFlag = 0;
 
-    foreach my $cui (@c) {
+    foreach my $cui (@{$c}) {
 	
 	#  make certain cui exists in this view
 	if(! ($umls->exists($cui)) ) {
@@ -460,7 +461,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findCuiDepth.pl,v 1.13 2010/08/22 20:15:36 btmcinnes Exp $';
+    print '$Id: findCuiDepth.pl,v 1.14 2011/04/26 12:19:28 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

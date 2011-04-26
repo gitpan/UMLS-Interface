@@ -261,31 +261,31 @@ else {
 }
 
 foreach my $cui (@cuis) { 
-    my @terms = ();
+    my $terms;
     if(defined $opt_config) {
 	if(defined $opt_preferred) {             
-	    my $t = $umls->getPreferredTerm($cui); push @terms, $t;
+	    my $t = $umls->getPreferredTerm($cui); push @{$terms}, $t;
 	}
 	else {
-	    @terms = $umls->getTermList($cui); 
+	    $terms = $umls->getTermList($cui); 
 	}
     }
     else {
 	if(defined $opt_preferred) { 
-	    my $t = $umls->getAllPreferredTerm($cui); push @terms, $t;
+	    my $t = $umls->getAllPreferredTerm($cui); push @{$terms}, $t;
 	}
 	else {
-	    @terms = $umls->getAllTerms($cui);
+	    $terms = $umls->getAllTerms($cui);
 	}
     }
     
-    if($#terms < 0) {
+    if($#{$terms} < 0) {
 	print "There are no terms associated with $cui\n";
     }
     else {
 	print "The terms for CUI ($cui) are :\n";
 	my $i = 1;
-	foreach $term (@terms) {
+	foreach $term (@{$terms}) {
 	    print "$i. $term\n"; $i++;
 	}
     }
@@ -342,7 +342,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getAssociatedTerms.pl,v 1.12 2011/04/01 19:55:18 btmcinnes Exp $';
+    print '$Id: getAssociatedTerms.pl,v 1.13 2011/04/26 12:19:28 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

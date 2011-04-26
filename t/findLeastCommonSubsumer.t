@@ -57,8 +57,6 @@ $infile  = "t/tests/findLeastCommonSubsumer.mth.rb-rn";
 
 $output = `$perl $util_prg --config $config --realtime --infile $infile 2>&1`;
 
-
-
 if(-e $keyfile) {
     ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";
     my $key = "";
