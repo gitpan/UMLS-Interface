@@ -18,7 +18,6 @@ PathFinder User Options:
   --realtime option set
 
 
-
 The shortest path between brain tissue structure (C0459385) and infratentorial brain structure (C0228067):
   => C0459385 (Brain tissue) C1284114 (Entire infratentorial brain) C0228067 (Infratentorial brain structure) 
 

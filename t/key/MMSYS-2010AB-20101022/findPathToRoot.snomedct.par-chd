@@ -17,7 +17,6 @@ UMLS-Interface Configuration Information
 PathFinder User Options:
   --realtime option set
 
-
 The paths between brain tissue structure (C0459385) and the root:
   => C0000000 (**UMLS ROOT**) C2720507 (© 2002-2009 international health terminology standards development organisation (ihtsdo). all rights reserved. snomed ct®, was originally created by the college of american pathologists. "snomed" and "snomed ct" are registered trademarks of the ihtsdo.) C1268086 (body structures) C2711400 (anatomical or acquired body structure) C0700276 (anatomical structure) C0229983 (body organ, nos) C0504215 (organ part) C0445620 (brain part) C0459385 (brain tissue structure) 
   => C0000000 (**UMLS ROOT**) C2720507 (© 2002-2009 international health terminology standards development organisation (ihtsdo). all rights reserved. snomed ct®, was originally created by the college of american pathologists. "snomed" and "snomed ct" are registered trademarks of the ihtsdo.) C1268086 (body structures) C0506706 (physical anatomical entity) C0700276 (anatomical structure) C0229983 (body organ, nos) C0504215 (organ part) C0445620 (brain part) C0459385 (brain tissue structure) 

@@ -18,6 +18,5 @@ PathFinder User Options:
   --realtime option set
 
 
-
 The shortest path between elbow (C0013769) and hand (C0018563):
   => C0013769 (Elbow(s)) C0446516 (Upper arm) C0018563 (Hand, NOS) 

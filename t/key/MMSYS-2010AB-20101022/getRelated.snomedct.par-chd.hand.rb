@@ -14,7 +14,6 @@ UMLS-Interface Configuration Information
 
 
 
-
 The related (rb) CUIs to hand (C0018563):
   entire upper limb (body structure) (C1269078)
 The related (rb) CUIs to hand (C1281583):

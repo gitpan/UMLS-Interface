@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.110 2011/04/26 15:28:52 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.112 2011/05/03 19:04:57 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -60,7 +60,7 @@ my $pkg = "UMLS::Interface";
 
 use vars qw($VERSION);
 
-$VERSION = '1.09';
+$VERSION = '1.11';
 
 my $debug = 0;
 
@@ -181,11 +181,6 @@ sub _checkOptions {
     my $realtime     = $params->{'realtime'};
     my $debugpath    = $params->{'debugpath'};
 
-    #  icfinder options
-    my $icpropagation = $params->{'icpropagation'};
-    my $icfrequency   = $params->{'icfrequency'};
-    my $icsmooth      = $params->{'smooth'};
-
     #  general options
     my $debugoption  = $params->{'debug'};
     my $verbose      = $params->{'verbose'};
@@ -207,12 +202,6 @@ sub _checkOptions {
 	$errorhandler->_error($pkg, $function, $str, 10);
     }
 	
-    if( (defined $icpropagation) && (defined $icfrequency) ) {
-	my $str = "The --icpropagation and --icfrequency ";
-	$str   .= "option can not be set at the same time.";
-    	$errorhandler->_error($pkg, $function, $str, 10);
-    }
-
 }
 
 #####################################################################
@@ -846,6 +835,21 @@ sub findLeastCommonSubsumer {
 #  methods located in ICFinder.pm
 #####################################################################
 
+#  sets the propagation counts 
+#  input : $hash <- reference to hash containing parameters
+#                   debug         -> turn debug option on 
+#                   icpropagation -> file containing icpropagation counts
+#                   icfrequency   -> file containing icfrequency counts
+#                   smooth        -> whether you want to smooth the 
+#                                    the frequency counts
+sub setPropagationParameters {
+    
+    my $self       = shift;
+    my $parameters = shift;
+    
+    $icfinder->_setPropagationParameters($parameters);
+}
+
 #  returns the information content of a given cui
 #  input : $concept <- string containing a cui
 #  output: $double  <- double containing its IC
@@ -1180,9 +1184,7 @@ of the Interface.pm module.
 				  "realtime"      => "1",
 				  "cuilist"       => "file",  
 				  "verbose"       => "1", 
-                                  "debugpath"     => "file", 
-                                  "icpropagation" => "file", 
-                                  "icfrequency"   => "file"});
+                                  "debugpath"     => "file"});
 
   'forcerun'     -> This parameter will bypass any command prompts such 
                     as asking if you would like to continue with the index 
@@ -1203,15 +1205,6 @@ of the Interface.pm module.
   'debugpath'    -> This prints out the path information to a file during
                     any of the realtime runs
 
-  'icpropagation'-> This parameter contains a file consisting of the  
-                    information content (IC) of a list of CUIs. This 
-                    file can be created using the program called: 
-                    create-propagation-file.pl in the UMLS-Similarity 
-                    package.
-  'icfrequency'  -> This parameter contains a file consisting of frequency
-                    counts of a CUIs. Then the information content is 
-                    created on the fly (in realtime). 
-
 
 You can also reconfigure these options by calling the reConfig 
 method. 
@@ -1219,8 +1212,7 @@ method.
     $umls->reConfig({"forcerun"      => "1",
 		     "realtime"      => "1",
 		     "verbose"       => "1", 
-                     "debugpath"     => "file", 
-                     "icfrequency"   => "file"});
+                     "debugpath"     => "file"});
 
 
 =head1 CONFIGURATION FILE

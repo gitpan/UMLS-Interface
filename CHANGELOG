@@ -1,6 +1,11 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 1.09 to 1.11
+    1. modified the ICFinder module to include a setPropagationParameters
+    function to set the propagation parameters outside of initialization of
+    the interface package.
+
   Changes from version 1.07 to 1.09
     1. modified the input and output of the perl modules to pass everything
     by reference

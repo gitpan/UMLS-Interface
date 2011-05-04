@@ -1,5 +1,5 @@
 # UMLS::Interface::ICFinder
-# (Last Updated $Id: ICFinder.pm,v 1.22 2011/04/26 12:19:28 btmcinnes Exp $)
+# (Last Updated $Id: ICFinder.pm,v 1.24 2011/05/03 19:13:30 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -60,9 +60,10 @@ my $frequencyFile    = "";
 
 my %frequencyHash = ();
 
-my $option_icpropagation = 0;
-my $option_icfrequency   = 0;
-my $option_t             = 0;
+my $option_realtime      = undef;
+my $option_icpropagation = undef;
+my $option_icfrequency   = undef;
+my $option_t             = undef;
 my $smooth               = 0;
 my $configN              = 0;
 
@@ -99,14 +100,11 @@ sub new {
     # bless the object.
     bless($self, $className);
 
-    # initialize the object.
-    $self->_initialize($params);
-
     return $self;
 }
 
 # Method to initialize the UMLS::Interface::ICFinder object.
-sub _initialize
+sub _setPropagationParameters
 {
     my $self      = shift;
     my $params    = shift;
@@ -133,10 +131,10 @@ sub _initialize
 
     #  load the propagation hash if the option is specified
     if($option_icpropagation) { 
-	$self->_loadPropagationHash();
+	$self->_loadPropagationHashFromFile();
     }
 
-    #  load hte frequency hash if hte option is specified
+    #  load the frequency hash if hte option is specified
     if($option_icfrequency) { 
 	$self->_loadFrequencyHash();
     }
@@ -604,11 +602,11 @@ sub _checkHierarchicalRelations {
 #  load the propagation hash
 #  input :
 #  output: 
-sub _loadPropagationHash {
+sub _loadPropagationHashFromFile {
 
     my $self = shift;
         
-    my $function = "_loadPropagationHash";
+    my $function = "_loadPropagationHashFromFile";
     &_debug($function);
 
     #  check self
@@ -953,8 +951,6 @@ documentation.
  print "to create it and then add the following line above:\n\n";
  print "           \$params{\"icpropgation\"} = <icpropagation file>;\n\n";
  print "\n";
-
- $hash = $icfinder->_getPropagationCuis();
 
 =head1 INSTALL
 

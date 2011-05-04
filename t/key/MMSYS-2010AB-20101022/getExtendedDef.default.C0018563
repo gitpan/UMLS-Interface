@@ -14,7 +14,6 @@ UMLS-Interface Configuration Information:
   Relations (RELDEF):
      UMLS_ALL
 
-
 The definition(s) of mano (C0018563):
   1. C0018563 ST bpoc STDEF : A collection of cells and tissues which are localized to a specific area or combine and carry out one or more specialized functions of an organism. This ranges from gross structures to small components of complex organs. These structures are relatively localized in comparison to tissues.
   2. C0018563 PAR C1140618 MSH : The region of the upper limb in animals, extending from the deltoid region to the HAND, and including the ARM; AXILLA; and SHOULDER.
