@@ -18,12 +18,18 @@ Usage: findShortestPath.pl [OPTIONS] [CUI1|TERM1] [CUI2|TERM2]
 
 =head2 Required Arguments:
 
-=head3 [CUI1|TERM1] [CUI2|TERM2]
+=head3 [CUI1|TERM1|ST1] [CUI2|TERM2|ST2]
 
-A TERM or CUI (or some combination) from the Unified 
-Medical Language System
+A TERM or CUI (or some combination), or two semantic types (with the --st option) 
+from the Unified Medical Language System
 
 =head2 Optional Arguments:
+
+=head3 --st 
+
+The input is two seamntic types and the shortest path between them comes 
+from the semantic network. This can either be a TUI or the Abbreviation 
+of the semantic type.    
 
 =head3 --config FILE
 
@@ -221,7 +227,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-eval(GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui", "infile=s", "forcerun", "verbose", "debugpath=s", "cuilist=s", "realtime", "debug", "icpropagation=s", "length", "info", "undirected")) or die ("Please check the above mentioned option(s).\n");
+eval(GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui", "infile=s", "forcerun", "verbose", "debugpath=s", "cuilist=s", "realtime", "debug", "icpropagation=s", "length", "info", "undirected", "st")) or die ("Please check the above mentioned option(s).\n");
 
 
 #  if help is defined, print out help
@@ -235,6 +241,13 @@ if( defined $opt_help ) {
 if( defined $opt_version ) {
     $opt_version = 1;
     &showVersion();
+    exit;
+}
+
+#  the --info option is only available for the CUI heirarchy
+if( (defined $opt_st) && (defined $opt_info) ) {
+    print STDERR "The --info option is not available for the semantic network.\n";
+    &minimalUsageNotes();
     exit;
 }
 
@@ -330,23 +343,22 @@ foreach my $element (@fileArray) {
     
     my $flag1 = "cui";
     my $flag2 = "cui";
-
+    
     my $c1 = undef; my $c2 = undef;
 
-    #  check if the input are CUIs or terms
-    if( ($input1=~/C[0-9]+/)) {
-	push @{$c1}, $input1;
+    if(defined $opt_st) { 
+	if($input1=~/T[0-9]+/) { push @{$c1}, $input1; }
+       	else { push @{$c1}, $umls->getStTui($input1); $flag1 = "term"; }
+
+	if($input2=~/T[0-9]+/) { push @{$c2}, $input2; }
+	else { push @{$c2}, $umls->getStTui($input2); $flag2 = "term"; }
     }
     else {
-	$c1 = $umls->getConceptList($input1); 
-	$flag1 = "term";
-    }
-    if( ($input2=~/C[0-9]+/)) {
-	push @{$c2}, $input2; 
-    }
-    else {
-	$c2 = $umls->getConceptList($input2); 
-	$flag2 = "term";
+	if( ($input1=~/C[0-9]+/)) { push @{$c1}, $input1; }
+	else { $c1 = $umls->getConceptList($input1); $flag1 = "term"; }
+
+	if( ($input2=~/C[0-9]+/)) { push @{$c2}, $input2; }
+	else { $c2 = $umls->getConceptList($input2); $flag2 = "term"; }
     }
     
     
@@ -360,24 +372,27 @@ foreach my $element (@fileArray) {
 	    my $t2 = $input2;
 	    
 	    if($flag1 eq "cui") { 
-		my $ts1 = $umls->getTermList($cui1); $t1 = shift @{$ts1}; 
+		if($opt_st) { $t1 = $umls->getStAbr($cui1); }
+		else { my $ts1 = $umls->getTermList($cui1); $t1 = shift @{$ts1}; }
 	    }
 	    if($flag2 eq "cui") { 
-		my $ts2 = $umls->getTermList($cui2); $t2 = shift @{$ts2}; 
+		if($opt_st) { $t2 = $umls->getStAbr($cui2); }
+		else { my $ts2 = $umls->getTermList($cui2); $t2 = shift @{$ts2}; }
 	    }
-		    
+	    
 	    my @shortestpaths = ();
 	    if($cui1 eq $cui2) { 
 		my $path = "$cui1 $cui2";
 		push @shortestpaths, $path;
 	    }
 	    else {
-		$shortestpaths = $umls->findShortestPath($cui1, $cui2);
+		if(defined $opt_st) { $shortestpaths = $umls->stFindShortestPath($cui1, $cui2); }
+		else                { $shortestpaths = $umls->findShortestPath($cui1, $cui2); }
 	    }
-
+	    
 	    foreach my $path (@{$shortestpaths}) {
 		my @shortestpath = split/\s+/, $path;
-
+		
 		
 		my $length = $#shortestpath + 1;
 		print "\nThe shortest path ";
@@ -390,25 +405,33 @@ foreach my $element (@fileArray) {
 		    #  get the concept
 		    my $concept = $shortestpath[$i];
 		
-		    #  get one of the terms associated with the concept
-		    my $t = $umls->getAllPreferredTerm($concept); 
+		    #  get one of the terms associated with the concept/st
+		    my $t = "";
+		    if(defined $opt_st) { $t = $umls->getStAbr($concept); }
+		    else { $t = $umls->getAllPreferredTerm($concept); }
+		    
 		    #  print out the concept
 		    print "$concept ($t) "; 
 		    
 		    #  if the propagation option was defined print out 
 		    #  the propagation count and IC count
 		    if(defined $opt_icpropagation) { 
-			my $value = $umls->getIC($concept);          
+			my $value = "";
+			if(defined $opt_st) { $value = $umls->getStIC($concept); }
+			else                { $value = $umls->getIC($concept);   }
+       
 			my $ic = sprintf $floatformat, $value;
 			print "($ic) ";
 		    }     
 		    
 		    #  if the info option was defined print out 
 		    #  the relation and source information
-		    if( (defined $opt_info) and ($i < $#shortestpath) ) {
-			my $second = $shortestpath[$i+1];
-			my $relations = $umls->getRelationsBetweenCuis($concept, $second);
-			print " => @{$relations} => ";
+		    if(!defined $opt_st) { 
+			if( (defined $opt_info) and ($i < $#shortestpath) ) {
+			    my $second = $shortestpath[$i+1];
+			    my $relations = $umls->getRelationsBetweenCuis($concept, $second);
+			    print " => @{$relations} => ";
+			}
 		    }
 		}
 		print "\n";
@@ -500,7 +523,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findShortestPath.pl,v 1.23 2011/04/26 12:19:28 btmcinnes Exp $';
+    print '$Id: findShortestPath.pl,v 1.24 2011/05/10 20:59:43 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

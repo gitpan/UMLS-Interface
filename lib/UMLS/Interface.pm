@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.112 2011/05/03 19:04:57 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.117 2011/05/12 17:21:22 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -49,18 +49,20 @@ use bytes;
 use UMLS::Interface::CuiFinder;
 use UMLS::Interface::PathFinder;
 use UMLS::Interface::ICFinder;
+use UMLS::Interface::STFinder;
 use UMLS::Interface::ErrorHandler;
 
 my $cuifinder    = "";
 my $pathfinder   = "";
 my $icfinder     = "";
+my $stfinder     = "";
 my $errorhandler = "";
 
 my $pkg = "UMLS::Interface";
 
 use vars qw($VERSION);
 
-$VERSION = '1.11';
+$VERSION = '1.13';
 
 my $debug = 0;
 
@@ -128,11 +130,17 @@ sub _initialize {
 	$errorhandler->_error($pkg, $function, $str, 8);
     }
     
-
     #  set the icfinder
     $icfinder = UMLS::Interface::ICFinder->new($params, $cuifinder);
     if(! defined $icfinder) { 
 	my $str = "The UMLS::Interface::ICFinder object was not created.";
+	$errorhandler->_error($pkg, $function, $str, 8);
+    }
+
+    #  set the stfinder
+    $stfinder = UMLS::Interface::STFinder->new($params, $cuifinder);
+    if(! defined $stfinder) { 
+	my $str = "The UMLS::Interface::STFinder object was not created.";
 	$errorhandler->_error($pkg, $function, $str, 8);
     }
     
@@ -600,6 +608,18 @@ sub getStAbr {
     return $abr;
 } 
 
+# subroutine to get the name of a semantic type's TUI given its abbrevation
+#  input : $string <- string containing the semantic type's abbreviation
+#  output: $tui    <- string containing the semantic type's TUI
+sub getStTui {
+    my $self   = shift;
+    my $abbrev = shift;
+
+    my $tui = $cuifinder->_getStTui($abbrev);
+
+    return $tui;
+} 
+
 
 #  returns the definition of the semantic type - expecting abbreviation
 #  input : $st     <- string containing the semantic type's abbreviation
@@ -875,8 +895,8 @@ sub getProbability {
 }
 
 #  returns the total number of CUIs (N)
-#  input : $concept <- string containing a cui
-#  output: $double  <- double containing frequency
+#  input : 
+#  output: $int  <- integer containing frequency
 sub getN {
     my $self     = shift;
     
@@ -948,6 +968,134 @@ sub propagateCounts
     my $hash = $icfinder->_propagateCounts($fhash);
 
     return $hash;
+}
+
+#####################################################################
+#  methods located in STFinder.pm
+#####################################################################
+#  returns the minimum depth of a semantic type in the network
+#  input : $st  <- string containing the semantic type
+#  output: $int <- minimum depth of hte semantic type
+#sub getMinStDepth {
+#    my $self = shift;
+#    my $st   = shift;
+#    
+#    my $depth = $stfinder->_getMinDepth($st);
+#
+#    return $depth;
+#}
+
+#  returns the maximum depth of a semantic type in the network
+#  input : $st  <- string containing the semantic type
+#  output: $int <- maximum depth of hte semantic type
+#sub getMaxStDepth {
+#    my $self = shift;
+#    my $st   = shift;
+#    
+#    my $depth = $stfinder->_getMaxDepth($st);
+#
+#    return $depth;
+#}
+
+#  load the propagation hash
+#  input : $hash  <- reference to a hash containin probability counts
+#  output: 
+sub loadStPropagationHash {
+    my $self = shift;
+    my $hash = shift;
+    
+    $stfinder->_loadStPropagationHash($hash);
+}
+
+#  returns the information content of a given semantic type
+#  input : $concept <- string containing a semantic type
+#  output: $double  <- double containing its IC
+sub getStIC {
+    my $self = shift;
+    my $st   = shift;
+    
+    my $ic = $stfinder->_getStIC($st);
+
+    return $ic;    
+}
+
+#  returns the probability of a given semantic type
+#  input : $concept <- string containing a semantic type
+#  output: $double  <- double containing its probability
+sub getStProbability {
+    my $self     = shift;
+    my $st       = shift;
+    
+    my $prob = $stfinder->_getStProbability($st);
+
+    return $prob;
+}
+
+#  propagates the given frequency counts of the semantic types
+#  input : $hash <- reference to the hash containing 
+#                   the frequency counts
+#  output: $hash <- containing the propagation counts of all
+#                   the semantic types
+sub propagateStCounts
+{
+
+    my $self = shift;
+    my $fhash = shift;
+    
+    my $hash = $stfinder->_propagateStCounts($fhash);
+
+    return $hash;
+}
+
+#  returns the total number of semantic types (N)
+#  input : 
+#  output: $int  <- double containing frequency
+sub getStN {
+    my $self     = shift;
+    
+    my $n = $stfinder->_getStN();
+
+    return $n;
+}
+#  method to set the smoothing parameter
+#  input  
+#  output: 
+sub setStSmoothing
+{
+    my $self      = shift;
+    
+    $stfinder->_setStSmoothing();
+    
+}
+
+#  method to find all the paths from a semantic type (tui) to 
+#  the root node of the is-a taxonomy in the semantic network
+#  input : $tui     <- string containing tui
+#  output: $array   <- array reference containing the paths
+sub stPathsToRoot
+{
+    my $self  = shift;
+    my $tui   = shift;
+
+    my $array = $stfinder->_pathsToRoot($tui);
+
+    return $array;  
+}
+
+
+#  this function returns the shortest path between two semantic type TUIs
+#  input : $st1   <- string containing the first tui
+#          $st2   <- string containing the second tui
+#  output: $array <- reference to an array containing paths
+sub stFindShortestPath 
+{
+    my $self = shift;
+    my $st1  = shift;
+    my $st2  = shift;
+    
+    my $array = $stfinder->_findShortestPath($st1, $st2);
+    
+    return $array;
 }
 
 1;
@@ -1053,6 +1201,21 @@ UMLS::Interface - Perl interface to the Unified Medical Language System (UMLS)
     print "  => $string ($abr) : @{$def}\n";
 
  } print "\n";
+
+ my $cell = "T025";
+ my $bpoc = "T023";
+
+ my $paths = $umls->stPathsToRoot($cell);
+ print "The paths between cell ($cell) and the root:\n"; 
+ foreach my $path (@{$paths}) { 
+    print " => $path\n";
+ } print "\n\n";
+
+ my $spaths = $umls->stFindShortestPath($cell, $bpoc);
+ print "The paths between cell ($cell) and bpoc ($bpoc): \n";
+ foreach my $path (@{$spaths}) { 
+    print " => $path\n";
+ }
 
  $umls->removeConfigFiles();
 

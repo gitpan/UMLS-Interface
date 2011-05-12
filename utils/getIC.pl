@@ -280,7 +280,7 @@ foreach my $input (@array) {
     my $c     = undef;
 
     if($input=~/C[0-9]+/) {
-	push @c, $input;
+	push @{$c}, $input;
 	my $terms = $umls->getConceptList($input);
 	$term = shift @{$terms};
     }
@@ -357,7 +357,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getIC.pl,v 1.15 2011/04/26 12:19:28 btmcinnes Exp $';
+    print '$Id: getIC.pl,v 1.16 2011/05/05 15:43:14 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

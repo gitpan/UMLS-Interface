@@ -71,12 +71,10 @@ else {
 }
 
 #######################################################################################
-#  check snomedct par-chd test
+#  check semantic type test
 #######################################################################################
-$keyfile = File::Spec->catfile($keydir, 'findShortestPath.snomedct.par-chd');
-$config  = File::Spec->catfile('t', 'config', 'config.snomedct.par-chd');
-$infile  = "t/tests/findShortestPath.snomedct.par-chd";
-$output = `$perl $util_prg --config $config --realtime --infile $infile 2>&1`;
+$keyfile = File::Spec->catfile($keydir, 'findShortestPath.st');
+$output = `$perl $util_prg --st bpoc cell 2>&1`;
 
 if(-e $keyfile) {
     ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";
@@ -92,3 +90,4 @@ else {
       skip ("Generating key, no need to run test", 1);
     }
 }
+

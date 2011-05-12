@@ -1,5 +1,5 @@
 # UMLS::Interface::ICFinder
-# (Last Updated $Id: ICFinder.pm,v 1.24 2011/05/03 19:13:30 btmcinnes Exp $)
+# (Last Updated $Id: ICFinder.pm,v 1.25 2011/05/04 18:20:41 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -110,7 +110,7 @@ sub _setPropagationParameters
     my $params    = shift;
 
     #  set function name
-    my $function = "_initialize";
+    my $function = "_setPropagationParameters";
     &_debug($function);
     
     #  check self
@@ -291,7 +291,7 @@ sub _getProbability
     my $self     = shift;
     my $concept  = shift;
 
-    my $function = "_getIC";
+    my $function = "_getProbability";
     &_debug($function);
 
      #  check self

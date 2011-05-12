@@ -1,6 +1,6 @@
 
 # UMLS::Interface::CuiFinder
-# (Last Updated $Id: CuiFinder.pm,v 1.67 2011/04/26 15:28:52 btmcinnes Exp $)
+# (Last Updated $Id: CuiFinder.pm,v 1.69 2011/05/10 20:59:43 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -760,6 +760,28 @@ sub _getIndexDB {
 
     #  return the database
     return $sdb;
+}
+
+#  return the database connection to the umls database
+#  input :
+#  output: $db <- database handler
+sub _getDB {
+    my $self = shift;
+
+    my $function = "_getDB";
+    &_debug($function);
+
+    #  check self
+    if(!defined $self || !ref $self) {
+        $errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    #  get the databawse
+    my $db = $self->{'db'};
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
+
+    #  return the database
+    return $db;
 }
 
 #  this function creates the umlsinterfaceindex database connection
@@ -3782,7 +3804,7 @@ sub _getStAbr {
     my $self = shift;
     my $tui   = shift;
 
-    my $function = "_getStString";
+    my $function = "_getStAbr";
     &_debug($function);
 
     #  check self
@@ -3795,12 +3817,52 @@ sub _getStAbr {
         $errorhandler->_error($pkg, $function, "Error with input variable \$tui.", 4);
     }
 
+    #  if tui is the root return ROOT
+    if($tui eq "T000") { 
+	return "ST ROOT";
+    }
+
     #  set the database
     my $db = $self->{'db'};
     if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
 
     #  obtain the abbreviation
     my $arrRef = $db->selectcol_arrayref("select ABR from SRDEF where UI=\'$tui\'");
+
+    #  check database errors
+    $errorhandler->_checkDbError($pkg, $function, $db);
+
+    return (shift @{$arrRef});
+}
+
+
+# subroutine to get the name of a semantic type's TUI given its abbrevation
+#  input : $string <- string containing the semantic type's abbreviation
+#  output: $tui    <- string containing the semantic type's TUI
+sub _getStTui {
+
+    my $self   = shift;
+    my $abbrev = shift;
+
+    my $function = "_getStTui";
+    &_debug($function);
+
+    #  check self
+    if(!defined $self || !ref $self) {
+        $errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    #  check parameter exists
+    if(!defined $abbrev) {
+        $errorhandler->_error($pkg, $function, "Error with input variable \$abbrev.", 4);
+    }
+
+    #  set the database
+    my $db = $self->{'db'};
+    if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
+
+    #  obtain the abbreviation
+    my $arrRef = $db->selectcol_arrayref("select UI from SRDEF where ABR=\'$abbrev\'");
 
     #  check database errors
     $errorhandler->_checkDbError($pkg, $function, $db);

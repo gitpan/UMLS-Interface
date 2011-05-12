@@ -12,17 +12,24 @@ paths to the root.
 
 =head1 USAGE
 
-Usage: findPathToRoot.pl [OPTIONS] [CUI|TERM]
+Usage: findPathToRoot.pl [OPTIONS] [CUI|TERM|ST]
 
 =head1 INPUT
 
 =head2 Required Arguments:
 
-=head3 [CUI|TERM]
+=head3 [CUI|TERM|ST]
 
-A concept (CUI) or a term from the Unified Medical Language System
+A concept (CUI), a term or a semantic type (using the --st option) from the 
+Unified Medical Language System. 
 
 =head2 Optional Arguments:
+
+=head3 --st 
+
+The input is a semantic type and the path to root information is obtained 
+from the semantic network. This can either be a TUI or the Abbrevation of 
+the semantic type. 
 
 =head3 --config FILE
 
@@ -115,7 +122,8 @@ sources and relations
 =head3 --info
 
 This prints out the relation and source information between the 
-CUIs in the path
+CUIs in the path. This option is only available for the CUI 
+network. 
 
 =head3 --icpropagation FILE
 
@@ -192,7 +200,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-eval(GetOptions( "version", "help", "forcerun", "debug", "infile=s", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "verbose", "debugpath=s", "cuilist=s", "realtime", "icpropagation=s", "info")) or die ("Please check the above mentioned option(s).\n");
+eval(GetOptions( "version", "help", "forcerun", "debug", "infile=s", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "verbose", "debugpath=s", "cuilist=s", "realtime", "icpropagation=s", "info", "st")) or die ("Please check the above mentioned option(s).\n");
 
 
 #  if help is defined, print out help
@@ -216,6 +224,12 @@ if( (!(defined $opt_infile)) and (scalar(@ARGV) < 1) ) {
     exit;
 }
 
+if( (defined $opt_info) && (defined $opt_st) ) {
+    print STDERR "The --info option is not available for the semantic network.\n";
+    &minimalUsageNotes();
+    exit;
+}
+    
 my $database = "umls";
 if(defined $opt_database) { $database = $opt_database; }
 my $hostname = "localhost";
@@ -290,15 +304,25 @@ else {
 
 foreach my $input (@inputarray) {
     my $term  = $input;
-
+    
     my $c = undef;
-    if($input=~/C[0-9]+/) {
-	push @{$c}, $input;
-	$term = shift @{$umls->getTermList($input)};
-	
+    if(defined $opt_st) { 
+	if($input=~/T[0-9]+/) { 
+	    push @{$c}, $input;
+	    $term = $umls->getStAbr($input);
+	}
+	else { 
+	    push @{$c}, $umls->getStTui($input);
+	}
     }
     else {
-	$c = $umls->getConceptList($input);
+	if($input=~/C[0-9]+/) {
+	    push @{$c}, $input;
+	    $term = shift @{$umls->getTermList($input)};
+	}
+	else {
+	    $c = $umls->getConceptList($input);
+	}
     }
     
     my $printFlag = 0; 
@@ -308,12 +332,20 @@ foreach my $input (@inputarray) {
     foreach my $cui (@{$c}) {
 		
 	#  make certain cui exists in this view
-	if($umls->exists($cui) == 0) { next; }
 	
-	my $paths = $umls->pathsToRoot($cui);
+	if( (!defined $opt_st) && ($umls->exists($cui) == 0) ) { next; }
+	
+	my $paths = "";
+	if(defined $opt_st) { 
+	    $paths = $umls->stPathsToRoot($cui);
+	}
+	else {
+	    $paths = $umls->pathsToRoot($cui);
+	}
 	
 	if($#{$paths} < 0) {
 	    print "There are no paths between $term ($cui) and the root.\n";
+	    $printFlag = 1;
 	}
 	else {
 	    print "The paths between $term ($cui) and the root:\n";
@@ -322,7 +354,13 @@ foreach my $input (@inputarray) {
 	    print "  => ";
 	    foreach my $i (0..$#array){
 		my $element = $array[$i];
-		my ($t) = shift @{$umls->getTermList($element)}; 
+		my $t = "";
+		if(defined $opt_st) { 
+		    $t = $umls->getStAbr($element);
+		}
+		else {
+		    ($t) = shift @{$umls->getTermList($element)}; 
+		}
 		print "$element ($t) ";
 		if(defined $opt_icpropagation) {
 		    my $value = $umls->getIC($element);
@@ -342,7 +380,7 @@ foreach my $input (@inputarray) {
     }
     
     if(! ($printFlag) ) {
-	print "There are not a path from the given $input to the root.\n";
+	print "There are no paths from the given $input to the root.\n";
     }
 }
 
@@ -368,7 +406,9 @@ sub showHelp() {
     print "Usage: findPathToRoot.pl [OPTIONS] [CUI|TERM]\n\n";
 
     print "Options:\n\n";
-    
+                                     
+    print "--st                     The input is a semantic type\n\n";
+
     print "--debug                  Sets the debug flag for testing\n\n";
 
     print "--username STRING        Username required to access mysql\n\n";
@@ -419,7 +459,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findPathToRoot.pl,v 1.23 2011/04/26 12:19:28 btmcinnes Exp $';
+    print '$Id: findPathToRoot.pl,v 1.24 2011/05/10 20:59:43 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

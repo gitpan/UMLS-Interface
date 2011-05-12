@@ -1,5 +1,5 @@
 # UMLS::Interface::ErrorHandler
-# (Last Updated $Id: ErrorHandler.pm,v 1.8 2011/03/21 23:58:35 btmcinnes Exp $)
+# (Last Updated $Id: ErrorHandler.pm,v 1.9 2011/05/10 20:59:43 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -58,6 +58,7 @@ my $e8  = "UMLS Package Error (Error Code 8).";
 my $e9  = "Index Error (Error Code 9).";
 my $e10 = "Option Error (Error Code 10).";
 my $e11 = "Unsupported Option Error (Error Code 11).";
+my $e12 = "Invalid TUI (Error Code 12).";
 
 #  throws an error and exits the program
 #  input : $pkg       <- package the error originated
@@ -86,6 +87,7 @@ sub _error {
     if($errorcode eq 9)  { $errorstring = $e9;  }
     if($errorcode eq 10) { $errorstring = $e10; }
     if($errorcode eq 11) { $errorstring = $e11; }
+    if($errorcode eq 12) { $errorstring = $e12; }
 
     print STDERR "ERROR: $pkg->$function\n";
     print STDERR "$errorstring\n";
@@ -133,6 +135,22 @@ sub _validCui {
     }
 }
 
+#  subroutine to check if TUI is valid
+#  input : $tui           <- string containing a tui
+#  output: true | false   <- integer indicating if the tui is valid
+sub _validTui {
+
+    my $self = shift;
+    my $st   = shift;
+    
+    if($st=~/T[0-9][0-9][0-9]/) { 
+	return 1;
+    }
+    else {
+	return 0;
+    }
+}
+
 #  sets up the error handler module
 #  input : $parameters <- reference to a hash
 #  output: $self
@@ -140,7 +158,7 @@ sub new {
 
     my $self = {};
     my $className = shift;
-
+ 
     # Bless the object.
     bless($self, $className);
 

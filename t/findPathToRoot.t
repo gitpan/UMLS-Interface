@@ -73,11 +73,12 @@ else {
 }
 
 #######################################################################################
-#  check snomedct tests
+#  check msh tests
 #######################################################################################
-$keyfile = File::Spec->catfile($keydir, 'findPathToRoot.snomedct.par-chd');
-$config  = File::Spec->catfile('t', 'config', 'config.snomedct.par-chd');
-$infile  = File::Spec->catfile('t', 'tests', 'findPathToRoot.snomedct.par-chd');
+$keyfile = File::Spec->catfile($keydir, 'findPathToRoot.msh.par-chd');
+$config  = File::Spec->catfile('t', 'config', 'config.msh.par-chd');
+$infile  = File::Spec->catfile('t', 'tests', 'findPathToRoot.msh.par-chd');
+
 $output = `$perl $util_prg --config $config --realtime --infile $infile 2>&1`;
 
 if(-e $keyfile) {
@@ -96,13 +97,10 @@ else {
 }
 
 #######################################################################################
-#  check msh tests
+#  check st test
 #######################################################################################
-$keyfile = File::Spec->catfile($keydir, 'findPathToRoot.msh.par-chd');
-$config  = File::Spec->catfile('t', 'config', 'config.msh.par-chd');
-$infile  = File::Spec->catfile('t', 'tests', 'findPathToRoot.msh.par-chd');
-
-$output = `$perl $util_prg --config $config --realtime --infile $infile 2>&1`;
+$keyfile = File::Spec->catfile($keydir, 'findPathToRoot.st');
+$output = `$perl $util_prg --st cell  2>&1`;
 
 if(-e $keyfile) {
     ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";

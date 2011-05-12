@@ -14,6 +14,7 @@ UMLS-Interface Configuration Information
 
 
 
+
 max_depth : 0
 avg_depth : 1
 sd_depth  : 0

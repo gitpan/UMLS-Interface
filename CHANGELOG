@@ -1,6 +1,19 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 1.11 to 1.13
+    1. added the STFinder module which returns the information content of a
+    semantic type using the isa relations in the semantic network to
+    propagate the counts
+
+    2. added the --st option to findPathToRoot.pl which finds all the paths
+    to the root given a semantic type (TUI or Abbreviation) using the isa
+    relations in the semantic network
+
+    3. added the --st option to findShortestPath.pl which finds the shortest
+    path between two semantic types (TUIs or Abbreviations) using the isa
+    relations in the semantic network
+
   Changes from version 1.09 to 1.11
     1. modified the ICFinder module to include a setPropagationParameters
     function to set the propagation parameters outside of initialization of
