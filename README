@@ -126,134 +126,210 @@ NAME
 
     The methods are as follows:
 
-     my $root = $interface->root();                
-         Returns the concept ID of the root of the tree.
+         my $root = $interface->root();                
+             Returns the concept ID of the root of the tree.
 
-     my $depth = $interface->depth();
-         Returns the depth of the tree.
+         my $depth = $interface->depth();
+             Returns the depth of the tree.
 
-     my $version = $interface->version();
-         Return the version of UMLS.
+         my $version = $interface->version();
+             Return the version of UMLS.
 
-     my $bool = $interface->exists($cui);
-         Determines if a CUI exists
+         my $bool = $interface->exists($cui);
+             Determines if a CUI exists
 
-     my $bool = $interface->validCui($cui);
-         Checks if CUI is a valid concept
+         my $bool = $interface->validCui($cui);
+             Checks if CUI is a valid concept
 
-     my @array = $interface->getSab($cui);
-         Returns the list of sources the concept exists in
+         my $array = $interface->getSab($cui);
+             Returns the list of sources the concept exists in
 
-     my @array = $interface->getConceptList($term);    
-         Returns the list of all CUIs of a given term
-         from the SAB parameter specified in the config 
-         file or the default 
+         my $array = $interface->getConceptList($term);    
+             Returns the list of all CUIs of a given term
+             from the SAB parameter specified in the config 
+             file or the default 
 
-     my @array = $interface->getDefConceptList($term);
-         Returns the list of all CUIs of a given term
-         from the SABDEF parameter specified in the 
-         config file or the default 
+         my $array = $interface->getDefConceptList($term);
+             Returns the list of all CUIs of a given term
+             from the SABDEF parameter specified in the 
+             config file or the default 
 
-     my $hash = $interface->getCuiList();              
-         Returns a list of CUIs from the source(s) specified 
-         in the configuration file
+         my $array = $interface->getAllConcepts($term);
+             Returns the list of all CUIs of a given term
+             in the entire UMLS. 
 
-     my $array = $interface->getCuisFromSource($sab);       
-         Returns a list of CUIs from a specific source
+         my $hash = $interface->getCuiList();              
+             Returns a list of CUIs from the source(s) specified 
+             in the configuration file
 
-     my @array = $interface->getTermList($cui);            
-         Returns the list of terms and their sources using 
-         the SAB parameter in the configuration file or the 
-         default
+         my $array = $interface->getCuisFromSource($sab);
+             Returns an list of CUIs in a specified source
 
-     my @array = $interface->getDefTermList($cui);            
-         Returns the list of terms and their sources using 
-         the SABDEF parameter in the configuration file or 
-         the default     
+         my $array = $interface->getCuisFromSource($sab);       
+             Returns a list of CUIs from a specific source
 
-     my @array = $interface->getAllTerms($cui);             
-         Returns the list of terms corresponding to a CUI 
-         for all sources 
+         my $array = $interface->getTermList($cui);            
+             Returns the list of terms and their sources using 
+             the SAB parameter in the configuration file or the 
+             default
 
-     my $term = $interface->getPreferredTerms($cui);             
-         Returns the preferred term of a CUI if that term 
-         exists in the sources specified by the SAB parameter 
-         in the configuration file or the default
+         my $array = $interface->getDefTermList($cui);            
+             Returns the list of terms and their sources using 
+             the SABDEF parameter in the configuration file or 
+             the default     
 
-     my $term = $interface->getPreferredTerms($cui);             
-         Returns the preferred term of a CUI regardless
-         of the source information in the configuration
-         file
+         my $array = $interface->getAllTerms($cui);             
+             Returns the list of terms corresponding to a CUI 
+             for all sources 
 
-     my @array = $interface->getParents($cui);              
-         Returns the parent of a given CUI
+         my $hash = $interface->getCompounds();
+             Returns all the compound terms in the sources specified in
+             the configuration file.
 
-     my @array = $interface->getChildren($cui);             
-         Returns the children of a given CUI
+         my $term = $interface->getPreferredTerms($cui);             
+             Returns the preferred term of a CUI if that term 
+             exists in the sources specified by the SAB parameter 
+             in the configuration file or the default
 
-     my @array = $interface->getRelated($cui, $rel);              
-         Returns the CUI relations of a given CUI and relation
+         my $term = $interface->getAllPreferredTerms($cui);             
+             Returns the preferred term of a CUI regardless
+             of the source information in the configuration
+             file
 
-     my @array = $interface->getRelationsBetweenCuis($cui1, $cui2);
-         Returns the relations between two CUIs.
+         my $array = $interface->getParents($cui);              
+             Returns the parent of a given CUI
 
-     my @array$interface->getRelations($cui);           
-         Returns all of the relations associated with a CUI in 
-         the sources specified in the configuration file 
+         my $array = $interface->getChildren($cui);             
+             Returns the children of a given CUI
 
-     my @array = $interface->getCuiDef($cui);               
-         Returns the definition(s) of a given CUI
+         my $array = $interface->getRelated($cui, $rel);              
+             Returns the CUI relations of a given CUI and relation
 
-     my $array = $interface->getExtendedDefinition($cui);
-         Returns the extended definition of a given CUI
+         my $array = $interface->getRelationsBetweenCuis($cui1, $cui2);
+             Returns the relations between two CUIs.
 
-     my @array = $interface->getSts($cui);                  
-         Returns the TUI(s) of the semantic type(s) associated 
-         with a CUI
+         my $array$interface->getRelations($cui);           
+             Returns all of the relations associated with a CUI in 
+             the sources specified in the configuration file 
 
-     my $abr = $interface->getStAbr($tui);                
-         Returns the abbreviation of a semantic type of a TUI
+         my $array = $interface->getCuiDef($cui);               
+             Returns the definition(s) of a given CUI
 
-     my $string = $interface->getStString($abr);             
-         Returns the name of the semantic type given its 
+         my $array = $interface->getExtendedDefinition($cui);
+             Returns the extended definition of a given CUI
 
-     my $def = $interface->getStDef($abr);                
-         Returns the definition of a semantic type given its 
-         abbreviation
 
-     my $array = $interface->pathsToRoot($cui);             
-         Returns a list of concept IDs that denote the path from 
-         the input CUI to the root using the source and relation 
-         information in the configuration file
+         my $array = $interface->getSt($cui);                  
+             Returns the TUI(s) of the semantic type(s) associated 
+             with a CUI
 
-     my @array = $interface->findShortestPath($cui1, $cui2);        
-         Returns the shortest path between two CUIs
+         my $abr = $interface->getStAbr($tui);                
+             Returns the abbreviation of a semantic type of a TUI
 
-     my @array = $interface->findLeastCommonSubsumer($cui1, $cui2); 
-         Returns the least common subsumer between two CUIs 
+         my $tui = $interface->getStTui($abr);
+             Returns the TUI of an abbreviation of a semantic type
 
-     my $min = $interface->findMinimumDepth($cui);        
-         Returns the minimum depth of a CUI given the sources
-         and relations specified in the configuration file
+         my $string = $interface->getStString($abr);             
+             Returns the name of the semantic type given its 
 
-     my $max = $interface->findMaximumDepth($cui);        
-         Returns the maximum depth of a CUI given the sources
-         and relations specified in the configuration file
+         my $def = $interface->getStDef($abr);                
+             Returns the definition of a semantic type given its 
+             abbreviation
 
-     my $double = $interface->getIC();                   
-         Returns the information content of a CUI 
+         my $array = $interface->getSemanticRelation($st1, $st2);
+             Returns a list of semantic relation between the two 
+             semantic types. 
 
-     my $hash = $interface->returnTableNames();        
-         Returns the mysql database table names in human and hex form 
-         created by the package for a given configuration
+         my $array = $interface->getSemanticGroup($cui1);
+             Returns a list of semantic groups of a given CUI
 
-     $interface->dropConfigTable();               
-         Drops the temporary table created by the UMLS-Interface 
-         module of path information for a specified set of sources 
+         my $array = $interface->getSemanticGroupOfSt($st);
+             Returns a list of semantic groups of a given semantic type
 
-     $interface->removeConfigFiles();
-         Removes the configuration files created by the 
-         verbose option
+         my $array = $interface->pathsToRoot($cui);             
+             Returns a list of concept IDs that denote the path from 
+             the input CUI to the root using the source and relation 
+             information in the configuration file
+
+         my $array = $interface->findShortestPath($cui1, $cui2);        
+             Returns the shortest path between two CUIs
+
+         my $array = $interface->findLeastCommonSubsumer($cui1, $cui2); 
+             Returns the least common subsumer between two CUIs 
+
+         my $min = $interface->findMinimumDepth($cui);        
+             Returns the minimum depth of a CUI given the sources
+             and relations specified in the configuration file
+
+         my $max = $interface->findMaximumDepth($cui);        
+             Returns the maximum depth of a CUI given the sources
+             and relations specified in the configuration file
+
+         my $int = $interface->findNumberOfCloserConcepts($cui1, $cui2);
+             Returns the number of concepts closer to cui1 than cui2
+
+         my $double = $interface->getIC($cui);                   
+             Returns the information content of a CUI 
+    
+         my $double = $interface->getProbability($cui);
+             Returns the probability of a concept
+
+         my $int = $interface->getFrequency($cui);
+             Returns the frequency of a CUI that was used to calculate
+             its information content and probability
+
+         my $N = $interface->getN();
+             Returns the total number of CUIs the probabilities were 
+             calculated with
+
+         my $hash = $interface->getPropagationCuis();
+             Returns a list of CUIs that the counts were propagated over
+
+         my $hash = $interface->propagateCounts(\%hash);
+             Returns the propagation counts of the input CUIs
+
+          my $array = $interface->stPathsToRoot($tui);
+             Returns all the path to the root information of the given
+             semantic type (TUI)
+
+         my $array = $interface->stFindShortestPath($tui1, $tui2);
+             Returns the shortest paths between the two semantic types
+             (TUIs)
+
+         my $double = $interface->getStIC($tui);
+             Returns the information content of a given semantic type (TUI)
+ 
+         my $double = $interface->getStProbability($tui);
+             Returns the probability of a given semantic type (TUI)
+
+         my $stN = $interface->getStN();
+             Returns the total number of semantic types used to 
+             obtain the probability of a semantic type
+
+         $interface->setPropagationParameters(\%parameters);
+             Sets the propagation parameters 
+
+         $interface->setStSmoothing();
+             Sets the smoothing parameter to smooth the input counts
+
+         my $hash = $interface->propagateStCounts(\%hash);
+             Returns the propagation counts of the input semantic types
+
+         $interface->loadStPropagationHash(\%hash);
+             Load the propagation hash with probability counts
+ 
+
+         my $hash = $interface->returnTableNames();        
+             Returns the mysql database table names in human and hex form 
+             created by the package for a given configuration
+
+         $interface->dropConfigTable();               
+             Drops the temporary table created by the UMLS-Interface 
+             module of path information for a specified set of sources 
+
+         $interface->removeConfigFiles();
+             Removes the configuration files created by the 
+             verbose option
 
     These methods essentially expose an interface as required by the
     UMLS::Similarity modules. The UMLS::Similarity modules require that any

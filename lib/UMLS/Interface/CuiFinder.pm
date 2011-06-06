@@ -1,6 +1,5 @@
-
 # UMLS::Interface::CuiFinder
-# (Last Updated $Id: CuiFinder.pm,v 1.69 2011/05/10 20:59:43 btmcinnes Exp $)
+# (Last Updated $Id: CuiFinder.pm,v 1.75 2011/06/06 16:15:28 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -3091,6 +3090,9 @@ sub _getConceptList {
         $errorhandler->_error($pkg, $function, "Error with input variable \$term.", 4);
     }
 
+    #  check that the ' are escaped if exist
+    $term=~s/\\?\'/\\\'/;
+
     #  set up the database
     my $db = $self->{'db'};
     if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
@@ -3135,6 +3137,9 @@ sub _getDefConceptList {
         $errorhandler->_error($pkg, $function, "Error with input variable \$term.", 4);
     }
 
+    #  check that the ' are escaped if exist
+    $term=~s/\\?\'/\\\'/;
+
     #  set up the database
     my $db = $self->{'db'};
     if(!$db) { $errorhandler->_error($pkg, $function, "Error with db.", 3); }
@@ -3177,6 +3182,9 @@ sub _getAllConcepts {
     if(!defined $term) {
         $errorhandler->_error($pkg, $function, "Error with input variable \$term.", 4);
     }
+
+    #  check that the ' are escaped if exist
+    $term=~s/\\?\'/\\\'/;
 
     #  set up the database
     my $db = $self->{'db'};
@@ -3906,7 +3914,7 @@ sub _getStDef {
 }
 
 #  method returns the semantic group(s) associated with the concept
-#  input : $concept <- string containing cuis
+#  input : $concept <- string containing a cui
 #  output: $array   <- reference to an array containing semantic groups
 sub _getSemanticGroup {
     my $self = shift;
@@ -3934,6 +3942,40 @@ sub _getSemanticGroup {
 	foreach my $group (@{$semanticGroups{$string}}) { 
 	    $groups{$group}++;
 	}
+    }
+    
+    my @array = ();
+    foreach my $group (sort keys %groups) { push @array, $group; }
+    
+    return \@array;
+}
+
+
+#  method returns the semantic group(s) associated with the concept
+#  input : $st      <- string containing a semantic type abbreviation
+#  output: $array   <- reference to an array containing semantic groups
+sub _getSemanticGroupOfSt {
+    my $self = shift;
+    my $st   = shift;
+
+   my $function = "_getSemanticGroupOfSt";
+    &_debug($function);
+
+    #  check self
+    if(!defined $self || !ref $self) {
+        $errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    #  check parameter exists
+    if(!defined $st) {
+        $errorhandler->_error($pkg, $function, "Error with input variable \$st.", 4);
+    }
+    
+    my $string = $self->_getStString($st);
+
+    my %groups = ();
+    foreach my $group (@{$semanticGroups{$string}}) { 
+	$groups{$group}++;
     }
     
     my @array = ();

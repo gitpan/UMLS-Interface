@@ -256,6 +256,7 @@ Stage 3 - Install MySQL, if already installed go to Stage 4
     <http://dev.mysql.com/doc/refman/5.1/en/adding-users.html>
 
 Stage 4 - Install UMLS, if already installed go to Stage 5
+
   VERSION
     The UMLS-Interface requires version UMLS 2008AA or higher
 
@@ -366,8 +367,7 @@ Stage 5 - Load UMLS into MySQL, if already installed go to Stage 6
   Step 1: Create the MySQL database
     Log into MySQL and create a database called 'umls' as follows:
 
-    CREATE DATABASE IF NOT EXISTS umls CHARACTER SET utf8 COLLATE
-    utf8_unicode_ci;
+    CREATE DATABASE IF NOT EXISTS umls CHARACTER SET utf8 COLLATE utf8_unicode_ci;
 
   Step 2: Modify the 'my.cnf' file.
     This has been put in a different place every version or distribution

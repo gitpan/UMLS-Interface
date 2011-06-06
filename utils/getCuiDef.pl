@@ -7,7 +7,10 @@ or a term.
 
 =head1 SYNOPSIS
 
-This program takes in a CUI or a term and returns its definitions.
+This program takes in a CUI or a term and returns its definitions. If a 
+term is specified, the associated CUI is obtained using the sources 
+specified in the configuration file. The definitions come from the entire 
+UMLS. 
 
 =head1 USAGE
 
@@ -169,6 +172,11 @@ if( defined $opt_version ) {
     exit;
 }
 
+#  check the config
+if( defined $opt_config) { 
+    checkConfigFile($opt_config);
+}
+
 # At least 1 CUI should be given on the command line.
 if(scalar(@ARGV) < 1) {
     print STDERR "No term was specified on the command line\n";
@@ -222,8 +230,9 @@ my $term  = $input;
 
 my @c = ();
 if($input=~/C[0-9]+/) {
-    push @c, $input;
-    ($term) = shift @{$umls->getTermList($input)};
+    push @{$c}, $input;
+    my $terms = $umls->getPreferredTerm($input); 
+    $term = shift @{$terms}; 
 }
 else {
     $c = $umls->getConceptList($input);
@@ -260,6 +269,28 @@ foreach my $cui (@{$c}) {
 if(! ($printFlag) ) {
     print "There are no definitions for $input\n";
 }
+
+##############################################################################
+#  check to make certain the config file contains the correct parameters
+##############################################################################
+sub checkConfigFile { 
+    my $configfile = shift;
+    open(CONFIG, $configfile) || die "Could not open config file ($config)\n";
+    while(<CONFIG>) { 
+	chomp;
+	if($_=~/SABDEF/) {
+	    print STDERR "SABDEF not valid parameter for getCuiDef.pl\n";
+	    &minimalUsageNotes();
+	    exit;
+	}
+	if($_=~/RELDEF/) { 
+	    print STDERR "RELDEF not valid parameter for getCuiDef.pl\n";
+	    &minimalUsageNotes();
+	    exit;
+	}
+    }
+}
+
 
 ##############################################################################
 #  function to output minimal usage notes
@@ -310,7 +341,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getCuiDef.pl,v 1.14 2011/04/26 12:19:28 btmcinnes Exp $';
+    print '$Id: getCuiDef.pl,v 1.16 2011/06/06 15:57:19 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

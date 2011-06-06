@@ -1,6 +1,22 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 1.13 to 1.15
+    1. updated README documentation
+
+    2. made a change in getCuiDef.pl. The definition was not being returned
+    when a CUI was used as input although the term was working just fine.
+
+    3. made a change in getExtendedDef.pl. If a term was entered the
+    associated CUI was obtained from the SAB variable rather than the SABDEF
+
+    4. added configuration checks to getCuiDef.pl and getExtendedDef.pl
+
+    5. added ability to use ' in the term without having to escape it. For
+    example:
+
+         findPathToRoot.pl "Alzheimer's Disease"
+
   Changes from version 1.11 to 1.13
     1. added the STFinder module which returns the information content of a
     semantic type using the isa relations in the semantic network to

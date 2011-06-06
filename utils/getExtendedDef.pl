@@ -180,6 +180,11 @@ if( defined $opt_version ) {
     exit;
 }
 
+#  check the config 
+if( defined $opt_config) { 
+    checkConfigFile($opt_config);
+}
+
 # At least 1 CUI should be given on the command line.
 if(scalar(@ARGV) < 1) {
     print STDERR "No term was specified on the command line\n";
@@ -238,7 +243,7 @@ if($input=~/C[0-9]+/) {
     $term = shift @{$terms};
 }
 else {
-    $c = $umls->getConceptList($input);
+    $c = $umls->getDefConceptList($input);
 }
 
 my $printFlag = 0;
@@ -265,6 +270,29 @@ foreach my $cui (@{$c}) {
 if(! ($printFlag) ) {
     print "There are no definitions for $input\n";
 }
+
+
+                                            
+##############################################################################  
+#  check to make certain the config file contains the correct parameters        
+##############################################################################  
+sub checkConfigFile {                                                           
+    my $configfile = shift;                                                     
+    open(CONFIG, $configfile) || die "Could not open config file ($config)\n";  
+    while(<CONFIG>) {                                                           
+        chomp;                                                                  
+        if($_=~/SAB\s*\:\:/) {                                                      
+            print STDERR "SAB not valid parameter for getExtendedDef.pl\n";
+            &minimalUsageNotes();                              
+            exit;                                                               
+        }                                                                       
+        if($_=~/REL\s*\:\:/) {                                                      
+            print STDERR "REL not valid parameter for getExtendedDef.pl\n";
+            &minimalUsageNotes(); 
+            exit;                                                               
+        }                                                                       
+    }            
+} 
 
 ##############################################################################
 #  function to output minimal usage notes
@@ -312,7 +340,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getExtendedDef.pl,v 1.11 2011/04/26 12:19:28 btmcinnes Exp $';
+    print '$Id: getExtendedDef.pl,v 1.12 2011/06/06 15:57:19 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

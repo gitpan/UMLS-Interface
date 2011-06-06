@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.117 2011/05/12 17:21:22 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.121 2011/06/06 17:23:32 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -62,7 +62,7 @@ my $pkg = "UMLS::Interface";
 
 use vars qw($VERSION);
 
-$VERSION = '1.13';
+$VERSION = '1.15';
 
 my $debug = 0;
 
@@ -998,7 +998,7 @@ sub propagateCounts
 #}
 
 #  load the propagation hash
-#  input : $hash  <- reference to a hash containin probability counts
+#  input : $hash  <- reference to a hash containing probability counts
 #  output: 
 sub loadStPropagationHash {
     my $self = shift;
@@ -1201,21 +1201,6 @@ UMLS::Interface - Perl interface to the Unified Medical Language System (UMLS)
     print "  => $string ($abr) : @{$def}\n";
 
  } print "\n";
-
- my $cell = "T025";
- my $bpoc = "T023";
-
- my $paths = $umls->stPathsToRoot($cell);
- print "The paths between cell ($cell) and the root:\n"; 
- foreach my $path (@{$paths}) { 
-    print " => $path\n";
- } print "\n\n";
-
- my $spaths = $umls->stFindShortestPath($cell, $bpoc);
- print "The paths between cell ($cell) and bpoc ($bpoc): \n";
- foreach my $path (@{$spaths}) { 
-    print " => $path\n";
- }
 
  $umls->removeConfigFiles();
 
