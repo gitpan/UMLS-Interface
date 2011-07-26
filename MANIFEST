@@ -186,5 +186,4 @@ utils/getStDef.pl
 utils/getSts.pl
 utils/getStString.pl
 utils/getTableNames.pl
-utils/reConfigTest.pl
 utils/removeConfigData.pl

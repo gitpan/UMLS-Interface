@@ -262,6 +262,8 @@ if(defined $opt_socket) {
 $umls = UMLS::Interface->new(\%option_hash); 
 die "Unable to create UMLS::Interface object.\n" if(!$umls);
 
+$umls->setPropagationParameters(\%option_hash);
+
 my @array = ();
 if(defined $opt_infile) { 
     open(FILE, $opt_infile) || die "Could not open $opt_infile\n";
@@ -357,7 +359,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getIC.pl,v 1.16 2011/05/05 15:43:14 btmcinnes Exp $';
+    print '$Id: getIC.pl,v 1.17 2011/07/12 18:24:29 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

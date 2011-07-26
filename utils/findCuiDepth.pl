@@ -341,7 +341,7 @@ foreach my $input (@inputarray) {
 
     my @c = ();
     if($input=~/C[0-9]+/) {
-	push @c, $input;
+	push @{$c}, $input;
 	my $termlist = $umls->getTermList($input);
 	$term = shift @{$termlist};
     }
@@ -461,7 +461,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findCuiDepth.pl,v 1.14 2011/04/26 12:19:28 btmcinnes Exp $';
+    print '$Id: findCuiDepth.pl,v 1.15 2011/07/12 18:24:29 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

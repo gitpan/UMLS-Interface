@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.121 2011/06/06 17:23:32 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.122 2011/07/26 17:22:02 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -62,7 +62,7 @@ my $pkg = "UMLS::Interface";
 
 use vars qw($VERSION);
 
-$VERSION = '1.15';
+$VERSION = '1.17';
 
 my $debug = 0;
 
@@ -1008,7 +1008,7 @@ sub loadStPropagationHash {
 }
 
 #  returns the information content of a given semantic type
-#  input : $concept <- string containing a semantic type
+#  input : $st      <- string containing a semantic type
 #  output: $double  <- double containing its IC
 sub getStIC {
     my $self = shift;
@@ -1020,7 +1020,7 @@ sub getStIC {
 }
 
 #  returns the probability of a given semantic type
-#  input : $concept <- string containing a semantic type
+#  input : $st      <- string containing a semantic type
 #  output: $double  <- double containing its probability
 sub getStProbability {
     my $self     = shift;

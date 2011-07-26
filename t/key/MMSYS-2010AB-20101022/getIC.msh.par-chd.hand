@@ -15,4 +15,8 @@ UMLS-Interface Configuration Information
 
 
 
-The information content of hand (C0018563) is 0
+
+ICFinder User Options:
+  --icpropagation t/options/icpropagation
+
+The information content of hand (C0018563) is 3.71084481255696

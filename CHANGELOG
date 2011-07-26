@@ -1,6 +1,12 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 1.15 to 1.17
+    1. modified getIC.pl and getCuiDepth.pl to take in a CUI as input
+    properly - there was an error
+
+    2. added the API documentation
+
   Changes from version 1.13 to 1.15
     1. updated README documentation
 
