@@ -1,6 +1,15 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 1.17 to 1.19
+    1. modified the getSemanticGroup.pl program to include an --st option
+    which returns the semantic group of a given semantic type
+
+    2. created an stGetSemanticGroup() function to return the semantic group
+    of a given semantic type in the Interface.pm module
+
+    3. Added API function information to the Interface.pm perldoc
+
   Changes from version 1.15 to 1.17
     1. modified getIC.pl and getCuiDepth.pl to take in a CUI as input
     properly - there was an error

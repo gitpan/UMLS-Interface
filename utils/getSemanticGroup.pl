@@ -23,6 +23,10 @@ Medical Language System (UMLS)
 
 =head2 Optional Arguments:
 
+=head3 --st 
+
+Input is a semantic type rather than a CUI
+
 =head3 --infile FILE
 
 A file containing a list of concepts or terms. The format requires 
@@ -131,7 +135,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-eval(GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "infile=s")) or die ("Please check the above mentioned option(s).\n");
+eval(GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "infile=s", "st")) or die ("Please check the above mentioned option(s).\n");
 
 
 #  if help is defined, print out help
@@ -209,40 +213,58 @@ else {
     push @terms, $term;
 }
 
-foreach my $input (@terms) {
-
-    my $c = undef;
-    my $term = $input;
-
-    if($input=~/C[0-9]/) {
-	push @{$c}, $input;
-	my $terms = $umls->getTermList($input);
-	$term = shift @{$terms};
-    }
-    else {
-	$c = $umls->getConceptList($input);
-    }
+if(defined $opt_st) { 
     
-    my $printFlag = 0;
+    foreach my $st (@terms) { 
+	
+	my $groups = $umls->stGetSemanticGroup($st);
     
-    foreach my $cui (@{$c}) {
-	
-	my $groups = $umls->getSemanticGroup($cui);
-	
 	if($#{$groups} < 0) {
-	    print "There are no semantic groups associated with $term ($cui)\n";
+	    print "There are no semantic groups associated with the semantic type $st\n";
 	}
 	else {
-	    print "The semantic groups associated with $term ($cui):\n";
+	    print "The semantic groups associated with $st are: \n";
 	    foreach my $group (@{$groups}) {
 		print "  $group\n";
 		$printFlag = 1;
 	    }
 	}
-	
     }
-    if(! ($printFlag) ) {
-	print "There are no semantic groups associated with $input\n";
+}
+else {  
+   
+    foreach my $input (@terms) {
+	
+	my $c = undef;
+	my $term = $input;
+	
+	if($input=~/C[0-9]/) {
+	    push @{$c}, $input;
+	    my $terms = $umls->getTermList($input);
+	    $term = shift @{$terms};
+	}
+	else {
+	    $c = $umls->getConceptList($input);
+	}
+	
+	my $printFlag = 0;
+	
+	foreach my $cui (@{$c}) {
+	    
+	    my $groups = $umls->getSemanticGroup($cui);
+	    
+	    if($#{$groups} < 0) {
+		print "There are no semantic groups associated with the term $term ($cui)\n";
+	    }
+	    else {
+		print "The semantic groups associated with $term ($cui):\n";
+		foreach my $group (@{$groups}) {
+		    print "  $group\n";
+		    $printFlag = 1;
+		}
+	    }
+	    
+	}
     }
 }
 
@@ -269,6 +291,8 @@ sub showHelp() {
 
     print "Options:\n\n";
     
+    print "--st                     Input is a semantic type (ST)\n\n";
+
     print "--infile FILE            A file containing a list of concepts \n";
     print "                         or terms.\n\n";
 
@@ -293,7 +317,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getSemanticGroup.pl,v 1.4 2011/04/26 12:19:28 btmcinnes Exp $';
+    print '$Id: getSemanticGroup.pl,v 1.5 2011/07/28 18:25:46 btmcinnes Exp $';
     print "\nCopyright (c) 2008-2011, Ted Pedersen & Bridget McInnes\n";
 }
 

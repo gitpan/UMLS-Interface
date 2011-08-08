@@ -1,5 +1,5 @@
 # UMLS::Interface::CuiFinder
-# (Last Updated $Id: CuiFinder.pm,v 1.75 2011/06/06 16:15:28 btmcinnes Exp $)
+# (Last Updated $Id: CuiFinder.pm,v 1.76 2011/07/28 18:25:45 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -3942,6 +3942,34 @@ sub _getSemanticGroup {
 	foreach my $group (@{$semanticGroups{$string}}) { 
 	    $groups{$group}++;
 	}
+    }
+    
+    my @array = ();
+    foreach my $group (sort keys %groups) { push @array, $group; }
+    
+    return \@array;
+}
+
+#  method returns the semantic group(s) associated with a semantic type
+#  input : $st      <- string containing a st
+#  output: $array   <- reference to an array containing semantic groups
+sub _stGetSemanticGroup {
+    my $self = shift;
+    my $st = shift;
+
+   my $function = "_stGetSemanticGroup";
+    &_debug($function);
+
+    #  check self
+    if(!defined $self || !ref $self) {
+        $errorhandler->_error($pkg, $function, "", 2);
+    }
+    my %groups = ();
+
+    my $string = $self->_getStString($st);
+
+    foreach my $group (@{$semanticGroups{$string}}) { 
+	$groups{$group}++;
     }
     
     my @array = ();
