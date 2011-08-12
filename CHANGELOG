@@ -1,6 +1,13 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 1.19 to 1.21
+    1. modified Interface.pm documentation
+
+    2. added the --parents and --children option to getCuiList in order
+    obtain the number of parents and children from given CUIs in a specified
+    source
+
   Changes from version 1.17 to 1.19
     1. modified the getSemanticGroup.pl program to include an --st option
     which returns the semantic group of a given semantic type

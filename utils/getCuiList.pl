@@ -1,13 +1,14 @@
-#!/usr/bin/perl 
+#!/usr/bin/perl
 
 =head1 NAME
 
-getCuiList.pl - This program returns a list of CUIs based on the configuration file. 
+getCuiList.pl - This program returns a list of CUIs based on the configuration 
+file. 
 
 =head1 SYNOPSIS
 
-This program returns a list of CUIs based on the sources and relations specified 
-in the configuration file.
+This program returns a list of CUIs based on the sources and relations 
+specified in the configuration file.
 
 =head1 USAGE
 
@@ -20,81 +21,104 @@ Usage: getCuiList.pl [OPTIONS] CONFIGFILE
 This is the configuration file. The format of the configuration 
 file is as follows:
 
-SAB :: <include|exclude> <source1, source2, ... sourceN>
-
-REL :: <include|exclude> <relation1, relation2, ... relationN>
-
-RELA :: <include|exclude> <rela1, rela2, .... relaN> (optional)
+ SAB :: <include|exclude> <source1, source2, ... sourceN>
+ REL :: <include|exclude> <relation1, relation2, ... relationN>
+ RELA :: <include|exclude> <rela1, rela2, .... relaN> (optional)
 
 For example, if we wanted to use the MSH vocabulary with only 
 the RB/RN relations, the configuration file would be:
 
-SAB :: include MSH
-REL :: include RB, RN
-RELA :: include inverse_isa, isa
+ SAB :: include MSH
+ REL :: include RB, RN
+ RELA :: include inverse_isa, isa
 
 or 
 
-SAB :: include MSH
-REL :: exclude PAR, CHD
+ SAB :: include MSH
+ REL :: exclude PAR, CHD
 
 If you go to the configuration file directory, there will 
 be example configuration files for the different runs that 
 you have performed.
 
-=head2 Optional Arguments:
+=head1 OUTPUT
 
-=head3 --term
+List of CUIs that are associated with the input term
+
+=head1 OPTIONAL ARGUMENTS: 
+
+=head2 --children 
+
+Returns the number of children of a given CUI. The format for just using 
+--children is:
+
+ CUI children
+
+=head2 --parents
+
+Returns the number of children of a given CUI. The format for just using 
+--parents is:
+
+ CUI parents
+
+The format for using both --parents and --children is:
+
+ CUI children|parents
+
+=head2 --term
 
 Returns the terms associated with the CUI in the following format:
 
-CUI term1|term2|term3|...
+ CUI term1|term2|term3|...
 
-=head3 --st <semantic type abbreviation>
+If used with the --parents and/or --children options, the following format 
+is returned:
+
+ CUI children|parents|term1|term2|...
+
+Remember children and parents is a number!
+
+=head2 --st <semantic type abbreviation>
 
 Returns only those CUIs with the specified semantic type
 
-=head4 --sg <semantic group name>
+=head2 --sg <semantic group name>
 
 Returns only those CUIs with the specified semantic group
 
-=head3 --debug
+=head2 --debug
 
 Sets the debug flag for testing
 
-=head3 --username STRING
+=head2 --username STRING
 
 Username is required to access the umls database on MySql
 unless it was specified in the my.cnf file at installation
 
-=head3 --password STRING
+=head2 --password STRING
 
 Password is required to access the umls database on MySql
 unless it was specified in the my.cnf file at installation
 
-=head3 --hostname STRING
+=head2 --hostname STRING
 
 Hostname where mysql is located. DEFAULT: localhost
-
-=head3 --socket STRING
+ 
+=head2 --socket STRING
 
 The socket your mysql is using. DEFAULT: /tmp/mysql.sock
 
-=head3 --database STRING        
+=head2 --database STRING        
 
 Database contain UMLS DEFAULT: umls
 
-=head4 --help
+=head2 --help
 
 Displays the quick summary of program options.
 
-=head4 --version
+=head2 --version
 
 Displays the version information.
-
-=head1 OUTPUT
-
-List of CUIs that are associated with the input term
 
 =head1 SYSTEM REQUIREMENTS
 
@@ -110,7 +134,7 @@ List of CUIs that are associated with the input term
 
 =head1 COPYRIGHT
 
-Copyright (c) 2007-2009,
+Copyright (c) 2007-2011,
 
  Bridget T. McInnes, University of Minnesota
  bthomson at cs.umn.edu
@@ -118,9 +142,6 @@ Copyright (c) 2007-2009,
  Ted Pedersen, University of Minnesota Duluth
  tpederse at d.umn.edu
 
- Siddharth Patwardhan, University of Utah, Salt Lake City
- sidd@cs.utah.edu
- 
  Serguei Pakhomov, University of Minnesota Twin Cities
  pakh0002@umn.edu
 
@@ -155,7 +176,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-eval(GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "term", "st=s", "sg=s")) or die ("Please check the above mentioned option(s).\n");
+eval(GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "term", "st=s", "sg=s", "children", "parents")) or die ("Please check the above mentioned option(s).\n");
 
 
 #  if help is defined, print out help
@@ -243,12 +264,30 @@ foreach my $cui (sort keys %{$hashref}) {
     
     if($flag == 0) { next; }
 
+    my @output = ();
+    
     if(defined $opt_term) {
-	my $terms = $umls->getTermList($cui); 
-	my $termlist = join "|", @{$terms};
-	print "$cui $termlist\n";
+	$terms = $umls->getTermList($cui); 
+	@output = @{$terms};
     }
-    else {
+
+    if(defined $opt_parents) { 
+	my $array = $umls->getParents($cui);
+	my $parents = $#{$array} + 1;
+	unshift @output, $parents;
+    }
+    
+    if(defined $opt_children) { 
+	my $array = $umls->getChildren($cui);
+	$children = $#{$array} + 1;
+	unshift @output, $children;
+    }
+    
+    if($#output >= 0) { 
+	my $outputstring = join "|", @output;
+	print "$cui $outputstring\n";
+    }
+    else { 
 	print "$cui\n";
     }
 }
@@ -278,9 +317,13 @@ sub showHelp() {
     
     print "--term                   Returns CUIs associated terms\n\n";
 
+    print "--parents                Returns number of CUIs parents\n\n";
+    
+    print "--children               Returns number of CUIs children\n\n";
+
     print "--st <semantic type>     Returns CUIs with specified semantic\n";
     print "                         type\n\n";
-
+    
     print "--sg <semantic group>    Returns CUIs with specified semantic\n";
     print "                         group\n\n";
 
@@ -305,7 +348,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getCuiList.pl,v 1.6 2011/04/26 12:19:28 btmcinnes Exp $';
+    print '$Id: getCuiList.pl,v 1.7 2011/08/12 16:47:20 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.125 2011/08/08 22:02:03 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.128 2011/08/12 16:57:44 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -421,7 +421,7 @@ my $pkg = "UMLS::Interface";
 
 use vars qw($VERSION);
 
-$VERSION = '1.19';
+$VERSION = '1.21';
 
 my $debug = 0;
 
@@ -565,9 +565,11 @@ sub _checkOptions {
 
 description:
 
-returns the table names in both human readable and hex form
+ returns the table names in both human readable and hex form
 
-input:   
+input:    
+
+ None  
 	 
 output:
 
@@ -576,7 +578,10 @@ output:
 
 example:
 
-	 my $hash = $umls->returnTableNames();
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
+ my $hash = $umls->returnTableNames();
+ foreach my $table (sort keys %{$hash}) { print "$table\n"; }
 
 =cut
 sub returnTableNames {
@@ -593,14 +598,20 @@ sub returnTableNames {
 
 description:
 
-removes the configuration tables
+ removes the configuration tables
 
-input:   
+input:    
+
+ None  
 	 
-output:
+output:   
+
+ None
 
 example:
 
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
  $umls->dropConfigTable();
 
 =cut
@@ -618,14 +629,20 @@ sub dropConfigTable {
 
 description:
 
-removes the configuration files
+  removes the configuration files
 
-input:   
+input:    
+
+ None  
 	
-output:
+output:   
+
+ None
  
 example:
 
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
  $umls->removeConfigFiles();
 
 =cut
@@ -642,16 +659,22 @@ sub removeConfigFiles {
 
 description:
 
- function to re-initialize the interface configuration parameters
+  function to re-initialize the interface configuration parameters
 
 input:
    
  $hash -> reference to hash containing parameters 
 
-output:
+output:   
+
+ None
 
 example:
 
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
+ my %parameters = ();
+ $parameters{"verbose"} = 1;
  $umls->reConfig(\%parameters);
 
 =cut
@@ -691,9 +714,11 @@ sub checkHierarchicalRelations {
 
 description:
 
- returns the root
+  returns the root
 
-input:   
+input:    
+
+ None  
 	
 output:
 
@@ -701,7 +726,10 @@ output:
 
 example:
 
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
  my $root = $umls->root();
+ print "The root is: $root\n";
  
 =cut
 sub root {
@@ -718,9 +746,11 @@ sub root {
 
 description:
 
-returns the version of the UMLS currently being used
+ returns the version of the UMLS currently being used
 
-input:   
+input:    
+
+ None  
 	 
 output:
 
@@ -728,7 +758,10 @@ output:
 
 example:
 
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
  my $version = $umls->version();
+ print "The version of the UMLS is: $version\n";
       
 =cut
 sub version {
@@ -746,9 +779,11 @@ sub version {
 
 description:
 
-returns the SAB/REL or SABDEF/RELDEF parameters set in the configuration file
+ returns the SAB/REL or SABDEF/RELDEF parameters set in the configuration file
 
-input:   
+input:    
+
+ None  
 	 
 output:
 
@@ -759,7 +794,13 @@ output:
 
 example:
 
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
  my $hash = $umls->getConfigParameters;
+ print "The configuration parameters are: \n";
+ foreach my $param (sort keys %{$hash}) { 
+    print "  $param\n";
+ }
 
 =cut
 sub getConfigParameters {
@@ -774,9 +815,11 @@ sub getConfigParameters {
 
 description:
 
-returns the sab (SAB) information from the configuration file
+ returns the sab (SAB) information from the configuration file
 
-input:   
+input:    
+
+ None  
 	 
 output:
 
@@ -784,7 +827,10 @@ output:
 
 example:
 
- my $string = $umls->getSabString
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
+ my $string = $umls->getSabString();
+ print "The SAB parameter is: $string\n";
 
 =cut
 sub getSabString {
@@ -800,9 +846,11 @@ sub getSabString {
 
 description:
 
-returns the relation (REL) information from the configuration file
+ returns the relation (REL) information from the configuration file
 
-input:   
+input:    
+
+ None  
 	 
 output:
 
@@ -810,7 +858,10 @@ output:
 
 example:
 
- my $string = $umls->getRelString
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
+ my $string = $umls->getRelString();
+ print "The REL parameter is: $string\n";
 
 =cut
 sub getRelString {
@@ -826,9 +877,11 @@ sub getRelString {
 
 description:
 
-returns the rela (RELA) information from the configuration file
+ returns the rela (RELA) information from the configuration file
 
-input:   
+input:    
+
+ None  
 	 
 output:
 
@@ -836,7 +889,10 @@ output:
 
 example:
 
- my $string = $umls->getRelaString
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
+ my $string = $umls->getRelaString();
+ print "The RELA parameter is: $string\n";
 
 =cut
 sub getRelaString {
@@ -850,44 +906,11 @@ sub getRelaString {
 
 =head2 Metathesaurus Concept Functions
 
-=head3 validCui
-
-description:
-
-checks to see a CUI is valid
-
-input:   
-
- $concept <- string containing a cui
-
-output:
-
- 0 | 1    <- integer indicating if the cui is valide
-
-example:
-	 
- my $concept = "C0018563";	
- if($umls->validCui($concept)) { 
-   print "$concept is valid\n";
- }
-
-=cut
-sub validCui {
-
-    my $self = shift;
-    my $concept = shift;
-    
-    my $bool = $cuifinder->_validCui($concept);
-
-    return $bool;
-    
-}
-
 =head3 exists
 
 description:
 
-function to check if a concept ID exists in the database.
+ function to check if a concept ID exists in the database.
 
 input:   
 
@@ -898,6 +921,9 @@ output:
  1 | 0    <- integers indicating if the cui exists
 
 example:
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
 	 
  my $concept = "C0018563";	
  if($umls->exists($concept)) { 
@@ -919,8 +945,8 @@ sub exists() {
 
 description:
 
-function that returns a list of concepts (@concepts) related 
-to a concept $concept through a relation $rel
+ function that returns a list of concepts (@concepts) related 
+ to a concept $concept through a relation $rel
 
 input:   
 
@@ -932,10 +958,13 @@ output:
  $array   <- reference to an array of cuis
 
 example:
-	 
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 	 
  my $concept = "C0018563";
  my $rel     = "SIB";
-	     my $array   = $umls->getRelated($concept, $rel);
+ my $array   = $umls->getRelated($concept, $rel);
+ print "The concepts related to $concept using the $rel relation are: \n";
  foreach my $related_concept (@{$array}) { 
 	  print "$related_concept\n";
  }
@@ -956,8 +985,8 @@ sub getRelated {
 
 description:
 
-function that returns the preferred term of a cui from the sources 
-specified in the configuration file
+ function that returns the preferred term of a cui from the sources 
+ specified in the configuration file
 
 input:   
 
@@ -968,7 +997,9 @@ output:
  $string  <- string containing the preferred term
 
 example:
-	 
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 	 
  my $concept = "C0018563";
  my $string  = $umls->getPreferredTerm($concept);
  print "The preferred term of $concept is $string\n";
@@ -997,9 +1028,11 @@ output:
  $string  <- string containing the preferred term
 
 example:
-	 
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
  my $concept = "C0018563";
- my $string  = $umls->getPreferredTerm($concept);
+ my $string  = $umls->getAllPreferredTerm($concept);
  print "The preferred term of $concept is $string\n";
  
 =cut
@@ -1014,8 +1047,8 @@ sub getAllPreferredTerm {
 
 description:
 
-function to map terms to a given cui from the sources 
-specified in the configuration file using SAB
+ function to map terms to a given cui from the sources 
+ specified in the configuration file using SAB
 
 input:   
 
@@ -1026,7 +1059,9 @@ output:
  $array   <- reference to an array of terms (strings)
 
 example:
-	
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 	
  my $concept = "C0018563";
  my $array   = $umls->getTermList($concept);
  print "The terms associated with $concept are:\n";
@@ -1047,8 +1082,8 @@ sub getTermList {
 
 description:
 
-function to map terms to a given cui from the sources 
-specified in the configuration file using SABDEF
+ function to map terms to a given cui from the sources 
+ specified in the configuration file using SABDEF
 
 input:   
 
@@ -1059,7 +1094,9 @@ output:
  $array   <- reference to an array of terms (strings)
 
 example:
-	
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 	
  my $concept = "C0018563";
  my $array   = $umls->getDefTermList($concept);
  print "The terms associated with $concept are:\n";
@@ -1080,7 +1117,7 @@ sub getDefTermList {
 
 description:
 
-function to map terms from the entire UMLS to a given cui
+ function to map terms from the entire UMLS to a given cui
 
 input:   
 
@@ -1091,9 +1128,11 @@ output:
  $array   <- reference to an array containing terms (strings)
 
 example:
-	
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 	
  my $concept = "C0018563";
- my $array   = $umls->getAllTermList($concept);
+ my $array   = $umls->getAllTerms($concept);
  print "The terms associated with $concept are:\n";
  foreach my $term (@{$array}) { print "  $term\n"; }
 
@@ -1112,8 +1151,8 @@ sub getAllTerms {
 
 description:
 
-function to maps a given term to a set cuis in the sources
-specified in the configuration file by SAB
+ function to maps a given term to a set cuis in the sources
+ specified in the configuration file by SAB
 
 input:   
 
@@ -1124,6 +1163,9 @@ output:
  $array <- reference to an array containing cuis
 
 example:
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
 	
  my $term   = "hand";
  my $array  = $umls->getConceptList($term);
@@ -1145,8 +1187,8 @@ sub getConceptList {
 
 description:
 
-function to maps a given term to a set cuis in the sources
-specified in the configuration file by SABDEF
+ function to maps a given term to a set cuis in the sources
+ specified in the configuration file by SABDEF
 
 input:   
 
@@ -1157,7 +1199,9 @@ output:
  $array <- reference to an array containing cuis
 
 example:
-	
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
  my $term   = "hand";
  my $array  = $umls->getDefConceptList($term);
  print "The concept associated with $term are:\n";
@@ -1178,7 +1222,7 @@ sub getDefConceptList {
 
 description:
 
-function to maps a given term to a set cuis all the sources
+ function to maps a given term to a set cuis all the sources
 
 input:   
 
@@ -1189,9 +1233,11 @@ output:
  $array <- reference to an array containing cuis
 
 example:
-	
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
  my $term   = "hand";
- my $array  = $umls->getAllConceptList($term);
+ my $array  = $umls->getAllConcepts($term);
  print "The concept associated with $term are:\n";
  foreach my $concept (@{$array}) { print "  $concept\n"; }
 
@@ -1225,17 +1271,21 @@ sub getSabDefConcepts {
 
 description:
 
-function returns all the compounds in the sources 
-specified in the configuration file
+ function returns all the compounds in the sources 
+ specified in the configuration file
 
-input:   
+input:    
+
+ None  
 	
 output:
 
  $hash <- reference to a hash containing cuis
 
 example:
-	 
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
  my $hash = $umls->getCompounds();
  foreach my $term (sort keys %{$hash}) {
    print "$term\n";
@@ -1255,16 +1305,20 @@ sub getCompounds {
 
 description:
 
-returns all of the cuis in the sources specified in the configuration file
+ returns all of the cuis in the sources specified in the configuration file
 
-input:   
+input:    
+
+ None  
 	 
 output:
 
  $hash <- reference to a hash containing cuis
 
 example:
-	 
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
  my $hash = $umls->getCuiList();
  foreach my $concept (sort keys %{$hash}) { 
     print "$concept\n";
@@ -1284,7 +1338,7 @@ sub getCuiList {
 
 description:
 
-returns the cuis from a specified source 
+ returns the cuis from a specified source 
 
 input:   
 
@@ -1295,7 +1349,9 @@ output:
  $array <- reference to an array containing cuis
 
 example:
-	 
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 	 
  my $sab   = "MSH";
  my $array = $umls->getCuisFromSource($sab);
  foreach my $concept (@{$array}) { 
@@ -1317,7 +1373,8 @@ sub getCuisFromSource {
 
 description:
 
-takes as input: a cui and returns all of the sources in which it originated from 
+ takes as input a cui and returns all of the sources in which it originated 
+ from 
 
 input:   
 
@@ -1328,10 +1385,12 @@ output:
  $array   <- reference to an array contain the sources (abbreviations)
 
 example:
-	 
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 	 
  my $concept = "C0018563";	
  my $array   = $umls->getSab($concept);
- print "The concept ($concept) exist in sources:\n";
+ print "The concept ($concept) exists in sources:\n";
  foreach my $sab (@{$array}) { print "  $sab\n"; }
 
 =cut
@@ -1349,9 +1408,9 @@ sub getSab {
 
 description:
 
-returns the children of a concept - the relations that are considered children 
-are predefined by the user in the configuration file. The default is the CHD 
-relation.
+ returns the children of a concept - the relations that are considered children 
+ are predefined by the user in the configuration file. The default is the CHD 
+ relation.
 
 input:   
 
@@ -1362,7 +1421,9 @@ output:
  $array   <- reference to an array containing a list of cuis
 
 example:
-	 
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
  my $concept  = "C0018563";	
  my $children = $umls->getChildren($concept);
  print "The children of $concept are:\n";
@@ -1383,8 +1444,9 @@ sub getChildren {
 
 description:
 
-returns the parents of a concept - the relations that are considered parents are 
-predefined by the user in the configuration file.The default is the PAR relation.
+ returns the parents of a concept - the relations that are considered parents 
+ are predefined by the user in the configuration file.The default is the PAR 
+ relation.
 
 input:   
 
@@ -1395,7 +1457,9 @@ output:
  $array   <- reference to an array containing a list of cuis
 
 example:
-	 
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
  my $concept  = "C0018563";	
  my $parents  = $umls->getParents($concept);
  print "The parents of $concept are:\n";
@@ -1417,8 +1481,8 @@ sub getParents {
 
 description:
 
-returns the relations of a concept in the source specified by the user in the 
-configuration file
+ returns the relations of a concept in the source specified by the user in the 
+ configuration file
 
 input:   
 
@@ -1429,6 +1493,9 @@ output:
  $array   <- reference to an array containing strings of relations
 
 example:
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
 	
  my $concept  = "C0018563";	
  my $array    = $umls->getRelations($concept);
@@ -1451,7 +1518,7 @@ sub getRelations {
 
 description:
 
-returns the relations and its source between two concepts
+ returns the relations and its source between two concepts
 
 input:   
 
@@ -1464,6 +1531,8 @@ output:
 
 example:
 
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
  my $concept1  = "C0018563";
  my $concept2  = "C0016129";
  my $array     = $umls->getRelationsBetweenCuis($concept1,$concept2);
@@ -1489,8 +1558,8 @@ sub getRelationsBetweenCuis {
 
 description:
 
-returns the extended definition of a cui given the relation and source 
-information in the configuration file 
+ returns the extended definition of a cui given the relation and source 
+ information in the configuration file 
 
 input:   
 
@@ -1501,7 +1570,9 @@ output:
  $array   <- reference to an array containing the definitions
 
 example:
-	 
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
  my $concept = "C0018563";	
  my $array   = $umls->getExtendedDefinition($concept);
  print "The extended definition of $concept is:\n";
@@ -1522,7 +1593,7 @@ sub getExtendedDefinition {
 
 description:
 
-returns the definition of the cui 
+ returns the definition of the cui 
 
 input:   
 
@@ -1534,7 +1605,9 @@ output:
  $array   <- reference to an array of definitions (strings)
 
 example:
-	 
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
  my $concept = "C0018563";	
  my $array   = $umls->getCuiDef($concept);
  print "The definition of $concept is:\n";
@@ -1558,9 +1631,11 @@ sub getCuiDef {
 
 description:
 
-function to return the maximum depth of a taxonomy.
+ function to return the maximum depth of a taxonomy.
 
-input:   
+input:    
+
+ None  
 	 
 output:
 
@@ -1568,6 +1643,8 @@ output:
 
 example:
 
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
  my $string = $umls->depth();
 	   
 =cut
@@ -1583,7 +1660,7 @@ sub depth {
 
 description:
 
-function to find all the paths from a concept to the root node of the is-a taxonomy.
+ function to find all the paths from a concept to the root node of the is-a taxonomy.
 
 input:   
 
@@ -1594,7 +1671,9 @@ output:
  $array   <- array reference containing the paths
 
 example:
-	 
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
  my $concept = "C0018563";	
  my $array   = $umls->pathsToRoot($concept);
  print "The paths to the root for $concept are:\n";
@@ -1615,9 +1694,10 @@ sub pathsToRoot
 
 description:
 
-
+ 
  function returns the minimum depth of a concept given the
  sources and relations specified in the configuration file
+
 input:   
 
  $concept <- string containing the cui
@@ -1627,7 +1707,9 @@ output:
  $int     <- string containing the depth of the cui
 
 example:
-	 
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
  my $concept = "C0018563";	
  my $int     = $umls->findMinimumDepth($concept);
  print "The minimum depth of $concept is $int\n";
@@ -1647,8 +1729,8 @@ sub findMinimumDepth {
 
 description:
 
-returns the maximum depth of a concept given the sources and relations 
-specified in the configuration file
+ returns the maximum depth of a concept given the sources and relations 
+ specified in the configuration file
 
 input:   
 
@@ -1659,7 +1741,9 @@ output:
  $int     <- string containing the depth of the cui
 
 example:
-	 
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
  my $concept = "C0018563";	
  my $int     = $umls->findMaximumDepth($concept);
  print "The maximum depth of $concept is $int\n";
@@ -1679,7 +1763,7 @@ sub findMaximumDepth {
 
 description:
 
-function that finds the number of cuis closer to concept1 than concept2
+ function that finds the number of cuis closer to concept1 than concept2
 
 input:   
 
@@ -1691,7 +1775,9 @@ output:
  $int <- number of cuis closer to concept1 than concept2
 
 example:
-	 
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
  my $concept1  = "C0018563";
  my $concept2  = "C0016129";
  my $int       = $umls->findNumberOfCloserConcepts($concept1,$concept2);
@@ -1714,7 +1800,7 @@ sub findNumberOfCloserConcepts {
 
 description:
 
-function that finds the length of the shortest path
+ function that finds the length of the shortest path
 
 input:   
 
@@ -1726,7 +1812,9 @@ output:
  $int <- the length of the shortest path between them
 
 example:
-	 
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
  my $concept1  = "C0018563";
  my $concept2  = "C0016129";
  my $int       =  $umls->findShortestPathLength($concept1,$concept2);
@@ -1748,8 +1836,8 @@ sub findShortestPathLength {
 
 description:
 
-returns the shortest path between two concepts given the sources and 
-relations specified in the configuration file
+ returns the shortest path between two concepts given the sources and 
+ relations specified in the configuration file
 
 input:   
 
@@ -1761,7 +1849,9 @@ output:
  $array    <- reference to an array containing the shortest path(s)
 
 example:
-	 
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
  my $concept1  = "C0018563";
  my $concept2  = "C0016129";
  my $array     = $umls->findShortestPath($concept1,$concept2);
@@ -1784,9 +1874,10 @@ sub findShortestPath {
 
 description:
 
+ 
+ returns the least common subsummer between two concepts given the sources 
+ and relations specified in the configuration file
 
- returns the least common subsummer between two concepts given 
-  the sources and relations specified in the configuration file
 input:   
 	
  $concept1 <- string containing the first cui
@@ -1797,7 +1888,9 @@ output:
  $array    <- reference to an array containing the lcs(es)
 
 example:
-	 
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
  my $concept1  = "C0018563";
  my $concept2  = "C0016129";
  my $array     = $umls->findLeastCommonSubsumer($concept1,$concept2);
@@ -1822,7 +1915,7 @@ sub findLeastCommonSubsumer {
 
 description:
 
-sets the propagation counts 
+ sets the propagation counts 
 
 input:   
 
@@ -1833,6 +1926,9 @@ input:
           smooth        -> whether you want to smooth the frequency counts
 
 example:
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
 
  $umls->setPropagationParameters(\%hash);
 
@@ -1849,7 +1945,7 @@ sub setPropagationParameters {
 
 description:
 
-returns the information content of a given cui
+ returns the information content of a given cui
 
 input:   
 
@@ -1860,7 +1956,9 @@ output:
  $double  <- double containing its IC
 
 example:
-	 
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
  my $concept  = "C0018563";
  my $double   = $umls->getIC($concept);
  print "The IC of $concept is $double\n";
@@ -1879,7 +1977,7 @@ sub getIC {
 
 description:
 
-returns the probability of a given cui
+ returns the probability of a given cui
 
 input:   
 
@@ -1890,7 +1988,9 @@ output:
  $double  <- double containing its probability
 
 example:
-	 
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
  my $concept  = "C0018563";
  my $double   = $umls->getProbability($concept);
  print "The probability of $concept is $double\n";
@@ -1909,15 +2009,20 @@ sub getProbability {
 
 description:
 
-returns the total number of CUIs (N)
+ returns the total number of CUIs (N)
 
-input:   
+input:    
+
+ None  
 	 
 output:
 
  $int  <- integer containing frequency
 
 example:
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
 
  my $int = $umls->getN();
 
@@ -1934,7 +2039,7 @@ sub getN {
 
 description:
 
-returns the propagation count (frequency) of a given cui
+ returns the propagation count (frequency) of a given cui
 
 input:   
 
@@ -1945,7 +2050,9 @@ output:
  $double  <- double containing its frequency
 
 example:
-	 
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
  my $concept  = "C0018563";
  my $double   = $umls->getFrequency($concept);
  print "The frequency of $concept is $double\n";
@@ -1964,16 +2071,21 @@ sub getFrequency {
 
 description:
 
-returns all of the cuis to be propagated given the sources 
-and relations specified by the user in the configuration file
+ returns all of the cuis to be propagated given the sources 
+ and relations specified by the user in the configuration file
 
-input:   
+input:    
+
+ None  
 	
 output:
 
  $hash <- reference to hash containing the cuis
 
 example:
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
 
  my $hash = $umls->getPropagationCuis();
 
@@ -1992,7 +2104,7 @@ sub getPropagationCuis
 
 description:
 
-propagates the given frequency counts
+ propagates the given frequency counts
 
 input:   
 	 
@@ -2005,6 +2117,9 @@ output:
           configuration file
 
 example:
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
 
  my $phash = $umls->propagateCounts(\%fhash);
 
@@ -2027,7 +2142,7 @@ sub propagateCounts
 
 description: 
 
-subroutine to get the relation(s) between two semantic types
+ subroutine to get the relation(s) between two semantic types
 
 input:   
 
@@ -2039,6 +2154,9 @@ output:
  $array <- reference to an array of semantic relation(s)
 
 example:
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
 	
  my $st1   = "blor";
  my $st2   = "bpoc";
@@ -2063,10 +2181,11 @@ sub getSemanticRelation {
 
 description:
 
-returns the semantic type(s) of a given concept
+ returns the semantic type(s) of a given concept
 
 input:   
-	 $concept <- string containing a concept
+
+ $concept <- string containing a concept
 
 output:
 
@@ -2074,6 +2193,9 @@ output:
              associated with the concept
 
 example:
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
 	
  my $concept  = "C0018563";	
  my $array    = $umls->getSts($concept);
@@ -2095,7 +2217,7 @@ sub getSt {
 
 description:
 
-function returns the semantic group(s) associated with the concept
+ function returns the semantic group(s) associated with the concept
 
 input:   
 
@@ -2106,6 +2228,9 @@ output:
  $array   <- $array reference containing semantic groups
 
 example:
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
 	
  my $concept  = "C0018563";	
  my $array    = $umls->getSemanticGroup($concept);
@@ -2127,7 +2252,7 @@ sub getSemanticGroup {
 
 description:
 
-function returns the semantic group(s) associated with a semantic type
+ function returns the semantic group(s) associated with a semantic type
 
 input:   
 
@@ -2138,6 +2263,9 @@ output:
  $array   <- $array reference containing semantic groups
 
 example:
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
 	
  my $st  = "pboc";
  my $array    = $umls->stGetSemanticGroup($st);
@@ -2159,7 +2287,7 @@ sub stGetSemanticGroup {
 
 description:
 
-returns the full name of a semantic type given its abbreviation
+ returns the full name of a semantic type given its abbreviation
 
 input:   
 
@@ -2170,6 +2298,9 @@ output:
  $string <- string containing the full name of the semantic type
 
 example:
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
 	
  my $st     = "bpoc";
  my $string = $umls->getStString($st);
@@ -2190,7 +2321,7 @@ sub getStString {
 
 description:
 
-returns the abreviation of a semantic type given its TUI (UI)
+ returns the abreviation of a semantic type given its TUI (UI)
 
 input:   
 
@@ -2201,6 +2332,9 @@ output:
  $string <- string containing the semantic type's abbreviation
 
 example:
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
 	
  my $tui    = "T023"
  my $string = $umls->getStAbr($tui);
@@ -2221,7 +2355,7 @@ sub getStAbr {
 
 description:
 
-function to get the name of a semantic type's TUI given its abbrevation
+ function to get the name of a semantic type's TUI given its abbrevation
 
 input:   
 
@@ -2232,6 +2366,9 @@ output:
  $tui    <- string containing the semantic type's TUI
 
 example:
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
 	
  my $string = "bpoc"
  my $tui     = $umls->getStAbr($tui);
@@ -2251,7 +2388,7 @@ sub getStTui {
 
 description:
 
-returns the definition of the semantic type - expecting abbreviation
+ returns the definition of the semantic type - expecting abbreviation
 
 input:   
 
@@ -2262,6 +2399,9 @@ output:
  $string <- string containing the semantic type's definition
 
 example:
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
 	
  my $st     = "bpoc"
  my $string = $umls->getStDef($st);
@@ -2285,8 +2425,8 @@ sub getStDef {
 
 description:
 
-This function to find all the paths from a semantic type (tui)  
-to the root node of the is-a taxonomy in the semantic network
+ This function to find all the paths from a semantic type (tui)  
+ to the root node of the is-a taxonomy in the semantic network
 
 input:   
 
@@ -2296,7 +2436,10 @@ output:
 
  $array   <- array reference containing the paths
 
-example:	
+example:
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 	
 
  my $tui   = "T023"
  my $array = $umls->stPathsToRoot($tui);
@@ -2319,7 +2462,7 @@ sub stPathsToRoot
 
 description:
 
-This function returns the shortest path between two semantic type TUIs.
+ This function returns the shortest path between two semantic type TUIs.
 
 input: 
 
@@ -2331,6 +2474,9 @@ output:
  $array <- reference to an array containing paths
 
 example:
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
 
   my $st1  = "T023";
   my $st2  = "T029";
@@ -2381,15 +2527,20 @@ sub stFindShortestPath
 
 description:
 
-load the propagation hash for the semantic network
+ load the propagation hash for the semantic network
 
 input:   
 
  $hash  <- reference to a hash containing probability counts
 
-output:
+output:   
+
+ None
  
 example:
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
 
  $umls->loadStPropagationHash(\%hash);
 
@@ -2405,7 +2556,7 @@ sub loadStPropagationHash {
 
 description:
 
-propagates the given frequency counts of the semantic types
+ propagates the given frequency counts of the semantic types
 
 input:   
 
@@ -2416,6 +2567,9 @@ output:
  $hash <- containing the propagation counts of all the semantic types
 
 example:
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
 
  my $phash = $umls->propagateStCounts(\%fhash);
 
@@ -2435,7 +2589,7 @@ sub propagateStCounts
 
 description:
 
-returns the information content of a given semantic type
+ returns the information content of a given semantic type
 
 input:   
 
@@ -2446,7 +2600,9 @@ output:
  $double  <- double containing its IC
 
 example:
-	 
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
  my $st = "bpoc";
  my $double = $umls->getStIC($st);
  print "The IC of $st is $double\n";
@@ -2465,7 +2621,7 @@ sub getStIC {
 
 description:
 
-returns the probability of a given semantic type
+ returns the probability of a given semantic type
 
 input:   
 
@@ -2476,7 +2632,9 @@ output:
  $double  <- double containing its probabilit
 
 example:
-	 
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
  my $st = "bpoc";
  my $double = $umls->getStProbability($st);
  print "The Probability of $st is $double\n";
@@ -2495,7 +2653,7 @@ sub getStProbability {
 
 description:
 
-returns the total number of semantic types (N)
+ returns the total number of semantic types (N)
 
 input:   
 	 
@@ -2505,6 +2663,8 @@ output:
 
 example:
 
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
  my $int = $umls->getStN();
 
 =cut
@@ -2520,14 +2680,20 @@ sub getStN {
 
 description:
 
-function to set the smoothing parameter
+ function to set the smoothing parameter
 
 input:   
+
+ None
 	  
-output:
+output:   
+
+ None
   
 example:
- 
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
  $umls->setStSmoothing();
 
 =cut
