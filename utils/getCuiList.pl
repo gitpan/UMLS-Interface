@@ -65,14 +65,28 @@ The format for using both --parents and --children is:
 
  CUI children|parents
 
+=head2 --relations REL
+
+Returns the number of relations of a given CUI. The REL input can be 
+a list of comma seperated relations. For example:
+
+  --relation "SIB,RO"
+
+This would return the number of SIB and RO relations for a given concept 
+in the format : CUI sib|ro
+
+This option current can not be used with the --children and --parent 
+option because if you want them just add them to the list. For example: 
+--relation "SIB,PAR,CHD"
+
 =head2 --term
 
 Returns the terms associated with the CUI in the following format:
 
  CUI term1|term2|term3|...
 
-If used with the --parents and/or --children options, the following format 
-is returned:
+If used with the --parents and/or --children options or the --relation 
+options, the following format is returned:
 
  CUI children|parents|term1|term2|...
 
@@ -103,7 +117,7 @@ unless it was specified in the my.cnf file at installation
 =head2 --hostname STRING
 
 Hostname where mysql is located. DEFAULT: localhost
- 
+
 =head2 --socket STRING
 
 The socket your mysql is using. DEFAULT: /tmp/mysql.sock
@@ -176,7 +190,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-eval(GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "term", "st=s", "sg=s", "children", "parents")) or die ("Please check the above mentioned option(s).\n");
+eval(GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "term", "st=s", "sg=s", "relations=s", "children", "parents")) or die ("Please check the above mentioned option(s).\n");
 
 
 #  if help is defined, print out help
@@ -199,6 +213,23 @@ if(scalar(@ARGV) < 1) {
     &minimalUsageNotes();
     exit;
 }
+
+if(defined $opt_relations && $opt_children) { 
+    print STDERR "The --relation and --children option can not be used\n";
+    print STDERR "together. Just add CHD to your relations. For example:\n";
+    print STDERR "    --relations \"SIB,PAR,CHD\"\n";   
+    &minimalUsageNotes();
+    exit;
+}
+
+if(defined $opt_relations && $opt_parents) { 
+    print STDERR "The --relation and --parents option can not be used\n";
+    print STDERR "together. Just add CHD to your relations. For example:\n";
+    print STDERR "    --relations \"SIB,PAR,CHD\"\n";   
+    &minimalUsageNotes();
+    exit;
+}
+	
 
 my $config = shift;
 
@@ -272,16 +303,25 @@ foreach my $cui (sort keys %{$hashref}) {
     }
 
     if(defined $opt_parents) { 
-	my $array = $umls->getParents($cui);
+	my $array   = $umls->getParents($cui);
 	my $parents = $#{$array} + 1;
 	unshift @output, $parents;
     }
     
     if(defined $opt_children) { 
-	my $array = $umls->getChildren($cui);
-	$children = $#{$array} + 1;
+	my $array    = $umls->getChildren($cui);
+	my $children = $#{$array} + 1;
 	unshift @output, $children;
     }
+    
+    if(defined $opt_relations) { 
+	my @relations = split/\,/, $opt_relations;
+	foreach my $relation (reverse @relations) {
+	    my $array = $umls->getRelated($cui, $relation);
+	    my $rel   = $#{$array}+1;
+	    unshift @output, $rel;
+	}
+    }	    
     
     if($#output >= 0) { 
 	my $outputstring = join "|", @output;
@@ -290,6 +330,7 @@ foreach my $cui (sort keys %{$hashref}) {
     else { 
 	print "$cui\n";
     }
+    
 }
 
 ##############################################################################
@@ -321,6 +362,8 @@ sub showHelp() {
     
     print "--children               Returns number of CUIs children\n\n";
 
+    print "--relations RELs         Returns the number of CUIs relations\n\n";
+
     print "--st <semantic type>     Returns CUIs with specified semantic\n";
     print "                         type\n\n";
     
@@ -348,7 +391,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getCuiList.pl,v 1.7 2011/08/12 16:47:20 btmcinnes Exp $';
+    print '$Id: getCuiList.pl,v 1.8 2011/08/17 15:27:38 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 
