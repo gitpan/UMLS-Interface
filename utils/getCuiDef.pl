@@ -184,13 +184,6 @@ if(scalar(@ARGV) < 1) {
     exit;
 }
 
-my $database = "umls";
-if(defined $opt_database) { $database = $opt_database; }
-my $hostname = "localhost";
-if(defined $opt_hostname) { $hostname = $opt_hostname; }
-my $socket   = "/tmp/mysql.sock";
-if(defined $opt_socket)   { $socket   = $opt_socket;   }
-
 my $umls = "";
 my %option_hash = ();
 
@@ -207,19 +200,19 @@ if(defined $opt_username) {
     $option_hash{"username"} = $opt_username;
 }
 if(defined $opt_driver) {
-    $option_hash{"driver"}   = "mysql";
+    $option_hash{"driver"}   = $opt_driver;
 }
 if(defined $opt_database) {
-    $option_hash{"database"} = $database;
+    $option_hash{"database"} = $opt_database;
 }
 if(defined $opt_password) {
     $option_hash{"password"} = $opt_password;
 }
 if(defined $opt_hostname) {
-    $option_hash{"hostname"} = $hostname;
+    $option_hash{"hostname"} = $opt_hostname;
 }
 if(defined $opt_socket) {
-    $option_hash{"socket"}   = $socket;
+    $option_hash{"socket"}   = $opt_socket;
 }
 
 $umls = UMLS::Interface->new(\%option_hash); 
@@ -341,7 +334,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getCuiDef.pl,v 1.16 2011/06/06 15:57:19 btmcinnes Exp $';
+    print '$Id: getCuiDef.pl,v 1.17 2011/08/29 16:37:03 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

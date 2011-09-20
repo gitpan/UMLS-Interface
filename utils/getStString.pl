@@ -158,13 +158,6 @@ if(scalar(@ARGV) < 1 && !(defined $opt_infile) ) {
     exit;
 }
 
-my $database = "umls";
-if(defined $opt_database) { $database = $opt_database; }
-my $hostname = "localhost";
-if(defined $opt_hostname) { $hostname = $opt_hostname; }
-my $socket   = "/tmp/mysql.sock";
-if(defined $opt_socket)   { $socket   = $opt_socket;   }
-
 my $umls = "";
 my %option_hash = ();
 
@@ -178,19 +171,19 @@ if(defined $opt_username) {
     $option_hash{"username"} = $opt_username;
 }
 if(defined $opt_driver) {
-    $option_hash{"driver"}   = "mysql";
+    $option_hash{"driver"}   = $opt_driver;
 }
 if(defined $opt_database) {
-    $option_hash{"database"} = $database;
+    $option_hash{"database"} = $opt_database;
 }
 if(defined $opt_password) {
     $option_hash{"password"} = $opt_password;
 }
 if(defined $opt_hostname) {
-    $option_hash{"hostname"} = $hostname;
+    $option_hash{"hostname"} = $opt_hostname;
 }
 if(defined $opt_socket) {
-    $option_hash{"socket"}   = $socket;
+    $option_hash{"socket"}   = $opt_socket;
 }
 
 $option_hash{"t"} = 1;
@@ -272,7 +265,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getStString.pl,v 1.3 2011/01/26 16:15:47 btmcinnes Exp $';
+    print '$Id: getStString.pl,v 1.4 2011/08/29 16:37:03 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 
