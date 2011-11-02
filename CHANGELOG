@@ -1,9 +1,13 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 1.25 to 1.27
+    1. modified the To Do list
+
   Changes from version 1.23 to 1.25
-1. modified the utils/ programs database options - some where 
-   not working correctly. They all should be operational now!
+    1. modified the utils/ programs database options - some where not
+    working correctly. They all should be operational now!
+
   Changes from version 1.21 to 1.23
     1. added a --relations option to getCuiList.pl in order to obtain the
     number of specified relations from given CUIs

@@ -391,7 +391,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getCuiList.pl,v 1.9 2011/08/29 16:37:03 btmcinnes Exp $';
+    print '$Id: getCuiList.pl,v 1.10 2011/11/02 13:52:58 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 
