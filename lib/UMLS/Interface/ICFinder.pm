@@ -181,6 +181,7 @@ sub _setOptions
 
     #  check if the debug option has been been defined
     if(defined $debugoption) {
+	print STDERR "HERE\n";
 	$debug = 1; 
 	$output .= "   --debug option set\n";
     }
@@ -279,6 +280,7 @@ sub _getIC
 
     my $ic = 0;
     if($prob > 0 and $prob < 1) { $ic = -1 * (log($prob) / log(10)); }    
+
     return $ic;
 }
 
@@ -678,10 +680,7 @@ sub _loadPropagationHashFromFile {
 	my ($cui, $freq) = split/<>/;
 
 	#  load it into the propagation hash
-	if(! (exists $propagationHash{$cui})) { 
-	    $propagationHash{$cui} = 0;
-	}
-	$propagationHash{$cui} += $freq;
+	$propagationHash{$cui} = $freq;
     }
 }
 

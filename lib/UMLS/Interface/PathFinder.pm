@@ -2155,6 +2155,9 @@ sub _findShortestPathLengthInRealTimeBFS2 {
 	$errorhandler->_error($pkg, $function, "", 2);
     }
 
+    #  base case
+    if($concept1 eq $concept2) { return 2; }
+
     #  set the count
     my %visited1 = ();    my %visited2 = ();
     

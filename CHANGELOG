@@ -1,6 +1,11 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 1.27 to 1.29
+    1. modified loading the IC propagation file to require only on CUI per
+    file -- prior it allowed for multiple -- this played havoc on the web
+    interface.
+
   Changes from version 1.25 to 1.27
     1. modified the To Do list
 
