@@ -1,5 +1,5 @@
 # UMLS::Interface::PathFinder
-# (Last Updated $Id: PathFinder.pm,v 1.53 2011/04/26 15:28:52 btmcinnes Exp $)
+# (Last Updated $Id: PathFinder.pm,v 1.54 2012/06/23 20:51:41 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)

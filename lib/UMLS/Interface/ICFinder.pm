@@ -1,5 +1,5 @@
 # UMLS::Interface::ICFinder
-# (Last Updated $Id: ICFinder.pm,v 1.25 2011/05/04 18:20:41 btmcinnes Exp $)
+# (Last Updated $Id: ICFinder.pm,v 1.26 2012/06/23 20:51:41 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -401,7 +401,9 @@ sub _loadFrequencyHash {
     my $self = shift;
     
     my $function = "_loadFrequencyHash";
+    &_debug($function);
 
+    
     #  check self
     if(!defined $self || !ref $self) {
 	$errorhandler->_error($pkg, $function, "", 2);
@@ -409,6 +411,55 @@ sub _loadFrequencyHash {
 
     #  open the frequency file
     open(FILE, $frequencyFile) || die "Could not open file $frequencyFile\n";
+
+    #  get the source and relations associated with the propagation file
+    my $sab  = <FILE>; chomp $sab;
+    my $rel  = <FILE>; chomp $rel;
+
+    #  get the rela realtions associated with the propagation file if one exists
+    my $rela = <FILE>; chomp $rela;
+
+    #  if it does exist in then get N otherwise we got N already.
+    my $ninfo = $rela;
+    if($rela=~/RELA/) { 
+	$ninfo = <FILE>; chomp $ninfo; 
+    }
+    else { 
+	$rela = "";
+    }
+
+    $ninfo=~/N\s*\:\:\s*([0-9]+)/;
+    $configN = $1;
+
+    #  get the source and relations from config file or the defaults
+    my $configsab = $cuifinder->_getSabString();
+    my $configrel = $cuifinder->_getRelString();
+    
+    #  check the source information is correct
+    if(! ($self->_checkParameters($configsab, $sab)) ) {
+	my $str = "SAB information ($sab) does not match the config file ($configsab).";
+	$errorhandler->_error($pkg, $function, $str, 5);	
+       }
+    
+    #  check that that the relation information is correct
+    if(! ($self->_checkParameters($configrel, $rel)) ) { 
+	my $str = "REL information ($rel) does not match the config file ($configrel).";
+	$errorhandler->_error($pkg, $function, $str, 5);
+    }
+    
+    #  check if rela information was used
+    if($rela ne "") { 
+	if(!($self->_checkParameters($_, $cuifinder->_getRelaString()))) {
+	    my $str = "RELA information does not match the config file ($_).";
+	    $errorhandler->_error($pkg, $function, $str, 5);
+	}
+    }
+    #  check that the relations used are acceptable for propagation
+    #  the only acceptable relations are RB/RN and PAR/CHD
+    if(! ($self->_checkHierarchicalRelations ($configrel)) ) { 
+	my $str = "REL information ($rel) contains relations other than RB/RN and PAR/CHD.";
+	$errorhandler->_error($pkg, $function, $str, 11);
+    }
 
     #  obtain the frequency counts storing them in the frequency hash table
     while(<FILE>) { 
@@ -541,7 +592,9 @@ sub _checkParameters {
     if( ($string1=~/^\s*$/) && !($string2=~/^\s*$/) ) { return 0; }
     if( !($string1=~/^\s*$/) && ($string2=~/^\s*$/) ) { return 0; }
 
-    	
+    if(!($string1=~/([A-Z]+) :: (include|exclude) (.*?)$/)) { return 0; }
+    if(!($string2=~/([A-Z]+) :: (include|exclude) (.*?)$/)) { return 0; }
+
     $string1=~/([A-Z]+) :: (include|exclude) (.*?)$/;
     my $option1 = $1;
     my $type1   = $2;

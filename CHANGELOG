@@ -1,6 +1,11 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 1.29 to 1.31
+    1. modified ICFinder.pm to return an error if the icfrequency
+    information does not match the configuration file -- similar to what we
+    do with icpropagation
+
   Changes from version 1.27 to 1.29
     1. modified loading the IC propagation file to require only on CUI per
     file -- prior it allowed for multiple -- this played havoc on the web

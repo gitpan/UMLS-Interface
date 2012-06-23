@@ -3310,8 +3310,8 @@ sub _getCuiList {
     }
 
     #  add upper level taxonomy
-    foreach my $cui (sort keys %parentTaxonomyArray)   { $cuiListHash{$cui} = 0; }
-    foreach my $cui (sort keys %childTaxonomyArray) { $cuiListHash{$cui} = 0; }
+    foreach my $cui (sort keys %parentTaxonomyArray) { $cuiListHash{$cui} = 0; }
+    foreach my $cui (sort keys %childTaxonomyArray)  { $cuiListHash{$cui} = 0; }
 
     return \%cuiListHash;
 }

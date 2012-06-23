@@ -314,7 +314,7 @@ Stage 4 - Install UMLS, if already installed go to Stage 5
       3. <current release>-2-meta.nlm  
       4. mmsys.zip    
       5. <current release>.CHK  
-           6. Copyright_Notice.txt  
+          6. Copyright_Notice.txt  
            7. README.txt
 
   Step 2: Unzip the mmsys.zip file (unzip mmsys.zip)
