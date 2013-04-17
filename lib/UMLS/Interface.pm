@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.132 2012/06/23 20:51:41 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.135 2013/04/08 11:35:23 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -421,7 +421,7 @@ my $pkg = "UMLS::Interface";
 
 use vars qw($VERSION);
 
-$VERSION = '1.31';
+$VERSION = '1.33';
 
 my $debug = 0;
 
@@ -1969,6 +1969,71 @@ sub getIC {
     my $concept  = shift;
     
     my $ic = $icfinder->_getIC($concept);
+
+    return $ic;    
+}
+
+=head3 getSecoIntrinsicIC
+
+description:
+
+ returns the intrinsic information content of a given cui using 
+ the formula proposed by Seco, Veale and Hayes 2004
+
+input:   
+
+ $concept <- string containing a cui
+
+output:
+
+ $double  <- double containing its IC
+
+example:
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
+ my $concept  = "C0018563";
+ my $double   = $umls->getSecoIntrinsicIC($concept);
+ print "The Intrinsic IC of $concept is $double\n";
+
+=cut
+sub getSecoIntrinsicIC {
+    my $self     = shift;
+    my $concept  = shift;
+    
+    my $ic = $icfinder->_getSecoIntrinsicIC($concept);
+
+    return $ic;    
+}
+=head3 getSanchezIntrinsicIC
+
+description:
+
+ returns the intrinsic information content of a given cui using 
+ the formula proposed by Sanchez and Batet 2011
+
+input:   
+
+ $concept <- string containing a cui
+
+output:
+
+ $double  <- double containing its IC
+
+example:
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
+ my $concept  = "C0018563";
+ my $double   = $umls->getSanchezIntrinsicIC($concept);
+ print "The Intrinsic IC of $concept is $double\n";
+
+=cut
+sub getSanchezIntrinsicIC {
+    my $self     = shift;
+    my $concept  = shift;
+    
+    my $ic = $icfinder->_getSanchezIntrinsicIC($concept);
 
     return $ic;    
 }

@@ -177,6 +177,7 @@ utils/getCuiDef.pl
 utils/getCuiList.pl
 utils/getExtendedDef.pl
 utils/getIC.pl
+utils/getIntrinsicIC.pl
 utils/getParents.pl
 utils/getRelated.pl
 utils/getRelations.pl

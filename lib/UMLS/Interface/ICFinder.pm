@@ -1,5 +1,5 @@
 # UMLS::Interface::ICFinder
-# (Last Updated $Id: ICFinder.pm,v 1.26 2012/06/23 20:51:41 btmcinnes Exp $)
+# (Last Updated $Id: ICFinder.pm,v 1.31 2013/04/17 13:44:57 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -69,6 +69,10 @@ my $configN              = 0;
 
 my $errorhandler = "";
 my $cuifinder    = "";
+
+my %leafs = (); 
+my %subsumers = (); 
+my $max_leaves = 0; 
 
 # UMLS-specific stuff ends ----------
 
@@ -223,10 +227,161 @@ sub _getN
     my $function = "_getN";
     &_debug($function);
 
+    if($configN == 0) { 
+	my $hash = $cuifinder->_getCuiList(); 
+	$configN = keys %{$hash}; 
+    }
     return $configN;
 }
 
  
+#  returns the intrinsic information content (IC) of a cui
+#  input : $concept <- string containing a cui
+#  output: $double  <- double containing its IC
+sub _getSecoIntrinsicIC
+{
+    my $self     = shift;
+    my $concept  = shift;
+
+    my $function = "_getIC";
+    &_debug($function);
+
+     #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+     
+    #  check concept was obtained
+    if(!$concept) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept.", 4);
+    }
+    
+    #  check if valid concept
+    if(! ($errorhandler->_validCui($concept)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($concept) in not valid.", 6);
+    }    
+       
+    my $children = $cuifinder->_getChildren($concept);
+
+    my $n = _getN(); 
+
+    my $children_num = ($#{$children}) + 2; 
+    my $ic = 1 - ( (log($children_num)/log(10)) / (log($n)/log(10)) );
+		   
+    return $ic;
+}
+
+######################################################################### 
+#  Depth First Search (DFS) 
+######################################################################### 
+sub _getSubsumers
+{
+    my $concept   = shift;
+    my $array     = shift;
+    
+    if($concept=~/^\s*$/) { return; }
+
+    #  if concept is one of the following just return
+    #C1274012|Ambiguous concept (inactive concept)
+    if($concept=~/C1274012/) { return; }
+    #C1274013|Duplicate concept (inactive concept)
+    if($concept=~/C1274013/) { return; }
+    #C1276325|Reason not stated concept (inactive concept)
+    if($concept=~/C1276325/) { return; }
+    #C1274014|Outdated concept (inactive concept)
+    if($concept=~/C1274014/) { return; }
+    #C1274015|Erroneous concept (inactive concept)
+    if($concept=~/C1274015/) { return; }
+    #C1274021|Moved elsewhere (inactive concept)
+    if($concept=~/C1274021/) { return; }
+    #C2733115|limited status concept
+    if($concept=~/C2733115/) { return; }
+    
+    #  set the new path
+    my @path = @{$array};
+    push @path, $concept;
+    
+    my $series = join " ", @path;
+
+    #  get all the children
+    my $children = $cuifinder->_getChildren($concept);
+    
+    $subsumers{$concept}++; 
+    if($#{$children} < 0) { 
+	$leafs{$concept}++; 
+    }
+    
+    #  search through the children
+    foreach my $child (@{$children}) {	
+
+	#  check if child cui has already in the path
+	my $flag = 0;
+	foreach my $cui (@path) {
+	    if($cui eq $child) { 
+		$flag = 1; 
+	    }
+	}
+	
+	#  if it isn't continue on with the depth first search
+	if($flag == 0) {
+	    &_getSubsumers($child, \@path); 
+	}
+    }
+}
+
+#  returns the intrinsic information content (IC) of a cui
+#  input : $concept <- string containing a cui
+#  output: $double  <- double containing its IC
+sub _getSanchezIntrinsicIC
+{
+    my $self     = shift;
+    my $concept  = shift;
+
+    my $function = "_getIC";
+    &_debug($function);
+
+     #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+     
+    #  check concept was obtained
+    if(!$concept) { 
+	$errorhandler->_error($pkg, $function, "Error with input variable \$concept.", 4);
+    }
+    
+    #  check if valid concept
+    if(! ($errorhandler->_validCui($concept)) ) {
+	$errorhandler->_error($pkg, $function, "Concept ($concept) in not valid.", 6);
+    }    
+      
+    %leafs = (); %subsumers = (); my @path = (); 
+    _getSubsumers($concept, \@path); 
+    
+    my $leaves   = keys %leafs; 
+    my $subsumes = keys %subsumers; 
+    
+    my $a = $leaves/$subsumes; $a++; 
+    my $b = _getMaxLeaves(); $b++; 
+
+    my $ic = -1 * ( (log( $a/$b )/log(10)) ); 
+    
+    return $ic;
+}
+
+sub _getMaxLeaves { 
+    
+    if($max_leaves == 0) {
+
+	my @path = (); 	%leafs = (); %subsumers = (); 
+	_getSubsumers($cuifinder->_root(), \@path); 
+	$max_leaves = keys %leafs;
+	%leafs = (); %subsumers = (); 
+    }
+    
+    return $max_leaves;
+}
+    
 #  returns the information content (IC) of a cui
 #  input : $concept <- string containing a cui
 #  output: $double  <- double containing its IC
@@ -252,7 +407,7 @@ sub _getIC
     if(! ($errorhandler->_validCui($concept)) ) {
 	$errorhandler->_error($pkg, $function, "Concept ($concept) in not valid.", 6);
     }    
-       
+    
     #  if option frequency then the propagation hash 
     #  hash has not been loaded and we should determine
     #  the information content of the concept using the

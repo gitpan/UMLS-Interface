@@ -256,9 +256,10 @@ Stage 3 - Install MySQL, if already installed go to Stage 4
     <http://dev.mysql.com/doc/refman/5.1/en/adding-users.html>
 
 Stage 4 - Install UMLS, if already installed go to Stage 5
-
   VERSION
-    The UMLS-Interface requires version UMLS 2008AA or higher
+    The UMLS-Interface requires version UMLS 2008AA or higher.
+
+    Directionsmodified for installation version 2012AA.
 
   REMINDER
     If you already have the UMLS installed, make certain that you have the
@@ -314,8 +315,8 @@ Stage 4 - Install UMLS, if already installed go to Stage 5
       3. <current release>-2-meta.nlm  
       4. mmsys.zip    
       5. <current release>.CHK  
-          6. Copyright_Notice.txt  
-           7. README.txt
+      6. Copyright_Notice.txt  
+      7. README.txt
 
   Step 2: Unzip the mmsys.zip file (unzip mmsys.zip)
     The following should be created: 1. linux_mmsys.sh 2. solaris_mmsys.sh
@@ -323,7 +324,7 @@ Stage 4 - Install UMLS, if already installed go to Stage 5
 
   Step 3: Run MetamorphoSys (the install wizard)
      -- Run the appropriate .sh file for your system 
-         --> I ran ./linux_mmsys.sh
+         --> I ran ./run_linux.sh
 
      -- Click 'Install UMLS'
 
@@ -334,6 +335,8 @@ Stage 4 - Install UMLS, if already installed go to Stage 5
           box is checked. Although, I installed all three of the 
           Knowledge Sources: 'Metathesaurus', 'Semantic 
           Network' and 'SPECIALIST Lexicon and Lexical Tools'.
+        - Choose the mysql database for the Semantic Network load
+          scripts    
         - Click 'OK'
 
      -- 'Install UMLS' and 'MetamorphoSys Configuration' windows will appear
@@ -367,7 +370,8 @@ Stage 5 - Load UMLS into MySQL, if already installed go to Stage 6
   Step 1: Create the MySQL database
     Log into MySQL and create a database called 'umls' as follows:
 
-    CREATE DATABASE IF NOT EXISTS umls CHARACTER SET utf8 COLLATE utf8_unicode_ci;
+    CREATE DATABASE IF NOT EXISTS umls CHARACTER SET utf8 COLLATE
+    utf8_unicode_ci;
 
   Step 2: Modify the 'my.cnf' file.
     This has been put in a different place every version or distribution
@@ -385,12 +389,15 @@ Stage 5 - Load UMLS into MySQL, if already installed go to Stage 6
     performance, the MySQL 5 server requires changing buffer sizes to make
     use of the memory available.
 
-          key_buffer        = 300M
-          table_cache       = 300
-          sort_buffer_size  = 20M
-          read_buffer_size  = 20M
-          query_cache_limit = 3M
-          query_cache_size  = 100M
+          key_buffer              = 600M
+          table_cache             = 300
+          sort_buffer_size        = 20M
+          read_buffer_size        = 200M
+          query_cache_limit       = 3M
+          query_cache_size        = 100M
+          myisam_sort_buffer      = 200M
+          bulk_insert_buffer_size = 100M
+          join_buffer_size        = 100M
 
     Also make certain that this file is readable in order to run this as
     non-root. To change permission on it: chmod gou+r /etc/my.cnf

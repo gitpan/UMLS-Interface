@@ -1,5 +1,5 @@
 # UMLS::Interface::PathFinder
-# (Last Updated $Id: PathFinder.pm,v 1.54 2012/06/23 20:51:41 btmcinnes Exp $)
+# (Last Updated $Id: PathFinder.pm,v 1.56 2013/04/17 13:44:57 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -444,12 +444,12 @@ sub _pathsToRoot {
 
     #  check to make certain the configuration file only contains
     #  heirarchical relations (PAR/CHD or RB/RN).
-    my @relations = split/\s*\,\s*/, $relationstring; 
-    foreach my $rel (@relations) { 
-	if(! ($rel=~/(PAR|CHD|RB|RN)/) ) { 
-	    $errorhandler->_error($pkg, $function, "Method only supports heirarhical relations (PAR/CHD or RB/RN).", 10);
-	} 
-    }
+    #my @relations = split/\s*\,\s*/, $relationstring; 
+    #foreach my $rel (@relations) { 
+	#if(! ($rel=~/(PAR|CHD|RB|RN)/) ) { 
+	    #$errorhandler->_error($pkg, $function, "Method only supports heirarhical relations (PAR/CHD or RB/RN).", 10);
+	#} 
+    #}
          
     #  if the realtime option is set get the paths otherwise 
     #  they are or should be stored in the database 
@@ -612,6 +612,8 @@ sub _createIndex {
     my $indexname = "$tableName" . "_CUIINDEX";
     my $index = $sdb->do("create index $indexname on $tableName (CUI)");
     $errorhandler->_checkDbError($pkg, $function, $sdb);
+
+    print "Index created.\n\n";
 }
 
 #  creates the index containing all of the path to root information 

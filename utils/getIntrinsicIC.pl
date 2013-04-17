@@ -2,15 +2,16 @@
 
 =head1 NAME
 
-getIC.pl - This program returns the information content of a concept or a term.
+getIntrinsicIC.pl - This program returns the intrinsic information content of a concept or a term.
 
 =head1 SYNOPSIS
 
-This program takes in a CUI or a term and returns its information content.
+This program takes in a CUI or a term and returns its intrinsic information
+content. 
 
 =head1 USAGE
 
-Usage: getIC.pl [OPTION] IC | FREQUENCY FILE [CUI|TERM]
+Usage: getIntrinsicIC.pl [OPTION] [CUI|TERM]
 
 =head1 INPUT
 
@@ -21,31 +22,15 @@ Usage: getIC.pl [OPTION] IC | FREQUENCY FILE [CUI|TERM]
 Concept Unique Identifier (CUI) or a term from the Unified Medical 
 Language System (UMLS)
 
-=head3 IC | FREQUENCY FILE
-
-File containing the information content or the frequency counts of CUIs in 
-the following format:
-
-    CUI<>freq
-    CUI<>freq
-
-See the example files called icpropagation and icfrequency in the 
-samples/ directory. 
-
-Note: if you are using a frequency file you must specify --icfrequency on 
-the command line because the propagation counts are computed on the fly 
-
 =head2 Optional Arguments:
 
-=head3 --icfrequency
+=head3 --sanchez
 
-Flag to indicate that the FILE specified on the command line 
-is a frequency file.
+Use the formula proposed by Sanchez and Betet 2011
 
-=head3 --icpropagation
+=head3 --seco [default]
 
-Flag to indicate that the FILE specified on the command line 
-is a propagation file. This is the default.
+Use the formula proposed by Seco, Veale and Hayes 2005
 
 =head3 --config FILE
 
@@ -73,15 +58,6 @@ REL :: exclude PAR, CHD
 If you go to the configuration file directory, there will 
 be example configuration files for the different runs that 
 you have performed.
-
-
-=head3 --smooth 
-
-Incorporate Laplace smoothing, where the frequency count of each of the 
-concepts in the taxonomy is incremented by one. The advantage of 
-doing this is that it avoides having a concept that has a probability 
-of zero. The disadvantage is that it can shift the overall probability 
-mass of the concepts from what is actually seen in the corpus. 
 
 =head3 --infile
 
@@ -185,7 +161,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-eval(GetOptions( "version", "help", "debug", "infile=s", "icfrequency", "icpropagation", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "smooth")) or die ("Please check the above mentioned option(s).\n");
+eval(GetOptions( "version", "help", "debug", "infile=s", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "sanchez", "seco")) or die ("Please check the above mentioned option(s).\n");
 
 
 #  if help is defined, print out help
@@ -203,29 +179,18 @@ if( defined $opt_version ) {
 }
 
 # At least 1 CUI should be given on the command line.
-if(!(defined $opt_infile) && scalar(@ARGV) < 2) {
+if(!(defined $opt_infile) && scalar(@ARGV) < 1) {
     print STDERR "No term or file was specified on the command line\n";
     &minimalUsageNotes();
     exit;
 }
 
 
-my $inputfile = shift;
-
 my $umls = "";
 my %option_hash = ();
 
-if(defined $opt_icfrequency) { 
-    $option_hash{"icfrequency"} = $inputfile;
-}
-else {
-    $option_hash{"icpropagation"} = $inputfile;
-}
 if(defined $opt_config) {
     $option_hash{"config"} = $opt_config;
-}
-if(defined $opt_smooth) {
-    $option_hash{"smooth"} = $opt_smooth;
 }
 if(defined $opt_verbose) {
     $option_hash{"verbose"} = $opt_verbose;
@@ -290,11 +255,18 @@ foreach my $input (@array) {
 	#  make certain cui exists in this view
 	if($umls->exists($cui) == 0) { print STDERR "$cui\n"; next; }	
 	
-	my $ic = $umls->getIC($cui); 
+	my $ic = 0; 
+
+	if(defined $opt_sanchez) { 
+	    $ic = $umls->getSanchezIntrinsicIC($cui); 
+	}
+	else { 
+	    $ic = $umls->getSecoIntrinsicIC($cui); 
+	}
 	#    my $pic = sprintf $floatformat, $ic;
 	#    my $pprob = sprintf $floatformat, $prob;
 	
-	print "The information content of $term ($cui) is $ic\n";
+	print "The intrinsic information content of $term ($cui) is $ic\n";
     }
 }
 
@@ -303,7 +275,7 @@ foreach my $input (@array) {
 ##############################################################################
 sub minimalUsageNotes {
     
-    print "Usage: getIC.pl [OPTIONS] IC | FREQUENCY FILE [CUI|TERM] \n";
+    print "Usage: getIntrinsicIC.pl [OPTIONS] [CUI|TERM] \n";
     &askHelp();
     exit;
 }
@@ -315,22 +287,14 @@ sub showHelp() {
 
         
     print "This is a utility that takes as input a term \n";
-    print "or a CUI and returns its information content (IC).\n\n";
+    print "or a CUI and returns its intrinsic information content (IC).\n\n";
   
-    print "Usage: getIC.pl [OPTIONS] IC | FREQUENCY FILE [CUI|TERM]\n\n";
+    print "Usage: getIntrinsicIC.pl [OPTIONS] [CUI|TERM]\n\n";
 
     print "Options:\n\n";
 
-    print "--icfrequency            Flag specifying that a frequency file\n";
-    print "                         was specified on the command line\n\n";
-
-    print "--icpropagation          Flag specifiying that a propagation file\n";
-    print "                         was specified (this is the DEFAULT)\n\n";
-
     print "--config FILE            Configuration file\n\n";
 
-    print "--smooth                 Incorporate Laplace smoothing, when \n";
-    print "                         calculating the probability of a concept\n\n";
     print "--debug                  Sets the debug flag for testing\n\n";
 
     print "--username STRING        Username required to access mysql\n\n";
@@ -352,7 +316,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getIC.pl,v 1.19 2013/04/08 08:21:54 btmcinnes Exp $';
+    print '$Id: getIntrinsicIC.pl,v 1.2 2013/04/08 11:35:23 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 
@@ -360,6 +324,6 @@ sub showVersion {
 #  function to output "ask for help" message when user's goofed
 ##############################################################################
 sub askHelp {
-    print STDERR "Type getIC.pl --help for help.\n";
+    print STDERR "Type getIntrinsicIC.pl --help for help.\n";
 }
     

@@ -1,6 +1,11 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 1.31 to 1.33
+    1. Updated documentation
+
+    2. Added getIntrinsicIC function and corresponding util/ program
+
   Changes from version 1.29 to 1.31
     1. modified ICFinder.pm to return an error if the icfrequency
     information does not match the configuration file -- similar to what we

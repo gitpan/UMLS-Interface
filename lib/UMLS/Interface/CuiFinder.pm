@@ -1,5 +1,5 @@
 # UMLS::Interface::CuiFinder
-# (Last Updated $Id: CuiFinder.pm,v 1.76 2011/07/28 18:25:45 btmcinnes Exp $)
+# (Last Updated $Id: CuiFinder.pm,v 1.77 2012/06/24 11:16:07 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
