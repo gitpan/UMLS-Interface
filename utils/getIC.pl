@@ -10,7 +10,7 @@ This program takes in a CUI or a term and returns its information content.
 
 =head1 USAGE
 
-Usage: getIC.pl [OPTION] IC | FREQUENCY FILE [CUI|TERM]
+Usage: getIC.pl [OPTION] [CUI|TERM]
 
 =head1 INPUT
 
@@ -21,31 +21,32 @@ Usage: getIC.pl [OPTION] IC | FREQUENCY FILE [CUI|TERM]
 Concept Unique Identifier (CUI) or a term from the Unified Medical 
 Language System (UMLS)
 
-=head3 IC | FREQUENCY FILE
-
-File containing the information content or the frequency counts of CUIs in 
-the following format:
-
-    CUI<>freq
-    CUI<>freq
-
-See the example files called icpropagation and icfrequency in the 
-samples/ directory. 
-
-Note: if you are using a frequency file you must specify --icfrequency on 
-the command line because the propagation counts are computed on the fly 
-
 =head2 Optional Arguments:
+
+=head3 --intrinsic [seco|sanchez]
+
+Uses intrinic information content of the CUIs defined by Sanchez and 
+Betet 2011 or Seco, et al 2004.
 
 =head3 --icfrequency
 
-Flag to indicate that the FILE specified on the command line 
-is a frequency file.
+Calculate information content using the frequency information 
+in FILE. The file must be in the following format:
 
-=head3 --icpropagation
+    CUI<>freq
+    CUI<>freq
 
-Flag to indicate that the FILE specified on the command line 
-is a propagation file. This is the default.
+See the example files called icfrequency in the samples/ directory. 
+
+=head3 --icpropagation FILE
+
+Calculate information content using the probability information 
+in FILE. The file must be in the following format:
+
+    CUI<>prob
+    CUI<>prob
+
+See the example files called icpropagation in the samples/ directory. 
 
 =head3 --config FILE
 
@@ -82,6 +83,13 @@ concepts in the taxonomy is incremented by one. The advantage of
 doing this is that it avoides having a concept that has a probability 
 of zero. The disadvantage is that it can shift the overall probability 
 mass of the concepts from what is actually seen in the corpus. 
+
+
+=head3 --realtime
+
+This option will not create a database of the information content 
+for all of concepts in the specified set of sources and relations 
+in the config file 
 
 =head3 --infile
 
@@ -185,7 +193,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-eval(GetOptions( "version", "help", "debug", "infile=s", "icfrequency", "icpropagation", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "smooth")) or die ("Please check the above mentioned option(s).\n");
+eval(GetOptions( "version", "help", "debug", "intrinsic=s", "infile=s", "icfrequency=s", "icpropagation=s", "realtime", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "smooth")) or die ("Please check the above mentioned option(s).\n");
 
 
 #  if help is defined, print out help
@@ -203,23 +211,27 @@ if( defined $opt_version ) {
 }
 
 # At least 1 CUI should be given on the command line.
-if(!(defined $opt_infile) && scalar(@ARGV) < 2) {
+if(scalar(@ARGV) < 1) {
     print STDERR "No term or file was specified on the command line\n";
     &minimalUsageNotes();
     exit;
 }
 
-
-my $inputfile = shift;
-
 my $umls = "";
 my %option_hash = ();
 
-if(defined $opt_icfrequency) { 
-    $option_hash{"icfrequency"} = $inputfile;
+if(defined $opt_intrinsic) { 
+    $option_hash{"intrinsic"} = $opt_intrinsic; 
+}
+elsif(defined $opt_icfrequency) { 
+    $option_hash{"icfrequency"} = $opt_icfrequency;
 }
 else {
-    $option_hash{"icpropagation"} = $inputfile;
+    $option_hash{"icpropagation"} = $opt_icpropagation;
+}
+
+if(defined $opt_realtime) {
+    $option_hash{"realtime"} = $opt_realtime;
 }
 if(defined $opt_config) {
     $option_hash{"config"} = $opt_config;
@@ -256,6 +268,41 @@ $umls = UMLS::Interface->new(\%option_hash);
 die "Unable to create UMLS::Interface object.\n" if(!$umls);
 
 $umls->setPropagationParameters(\%option_hash);
+	
+#  if the icpropagation or icfrequency option is not 
+#  defined set the default options for icpropagation
+if( (!defined $opt_intrinsic) &&
+    (!defined $opt_icpropagation) &&
+    (!defined $opt_icfrequency) ) {
+    
+    print STDERR "Setting default propagation file\n";
+	    
+    #  get the icfrequency file
+    my $icfrequency = ""; foreach my $path (@INC) {
+	if(-e $path."/UMLS/icfrequency.default.dat") { 
+	    $icfrequency = $path."/UMLS/icfrequency.default.dat";
+	}
+	elsif(-e $path."\\UMLS\\icfrequency.default.dat") { 
+	    $icfrequency =  $path."\\UMLS\\icfrequency.default.dat";
+	}
+    }
+    
+    #  set the cuilist
+    my $fhash = $umls->getCuiList();
+    
+    #  load the frequency counts
+    open(FILE, $icfrequency) || die "Could not open $icfrequency\n";
+    while(<FILE>) { 
+	chomp;
+	my ($cui, $freq) = split/<>/;
+	if(exists ${$fhash}{$cui}) { 
+	    ${$fhash}{$cui} = $freq;
+	}
+    }
+    
+    #  propagate the counts
+    my $phash = $umls->propagateCounts($fhash);
+}
 
 my @array = ();
 if(defined $opt_infile) { 
@@ -290,7 +337,18 @@ foreach my $input (@array) {
 	#  make certain cui exists in this view
 	if($umls->exists($cui) == 0) { print STDERR "$cui\n"; next; }	
 	
-	my $ic = $umls->getIC($cui); 
+	my $ic = 0; 
+	if(defined $opt_intrinsic) { 
+	    if($opt_intrinsic=~/seco/) { 
+		$ic = $umls->getSecoIntrinsicIC($cui); 
+	    }
+	    else { 
+		$ic = $umls->getSanchezIntrinsicIC($cui); 
+	    }
+	}
+	else { 
+	    $ic = $umls->getIC($cui); 
+	}
 	#    my $pic = sprintf $floatformat, $ic;
 	#    my $pprob = sprintf $floatformat, $prob;
 	
@@ -303,7 +361,7 @@ foreach my $input (@array) {
 ##############################################################################
 sub minimalUsageNotes {
     
-    print "Usage: getIC.pl [OPTIONS] IC | FREQUENCY FILE [CUI|TERM] \n";
+    print "Usage: getIC.pl [OPTIONS] [CUI|TERM] \n";
     &askHelp();
     exit;
 }
@@ -321,11 +379,19 @@ sub showHelp() {
 
     print "Options:\n\n";
 
+    print "--infile FILE            File containing TERM or CUI pairs\n\n";    
+
+    print "--intrinsic [seco|sanchez] Use the intrinsic IC defined either by\n";
+    print "                           Seco et al 2004 or Sanchez et al 2011\n\n"; 
+
     print "--icfrequency            Flag specifying that a frequency file\n";
     print "                         was specified on the command line\n\n";
 
     print "--icpropagation          Flag specifiying that a propagation file\n";
     print "                         was specified (this is the DEFAULT)\n\n";
+
+    print "--realtime               This option finds the information content\n";
+    print "                         in realtime rather than building an index\n\n";
 
     print "--config FILE            Configuration file\n\n";
 
@@ -352,7 +418,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getIC.pl,v 1.19 2013/04/08 08:21:54 btmcinnes Exp $';
+    print '$Id: getIC.pl,v 1.20 2013/04/21 13:20:22 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

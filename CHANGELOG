@@ -1,6 +1,18 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 1.33 to 1.35
+    1. updated the IC measure modules to store the parameters required to
+    calculate Intrinisic IC while the index is being created rather than
+    done on the fly. To do them on the fly you can use the realtime
+    parameter can be set.
+
+    2. added test cases to getIC.t
+
+    3. modified getIC.pl with the --intrinsic (sanchez|seco) option. I also
+    don't require an icpropagation or icfrequency file to specified -- use
+    the default if one is not provided.
+
   Changes from version 1.31 to 1.33
     1. Updated documentation
 

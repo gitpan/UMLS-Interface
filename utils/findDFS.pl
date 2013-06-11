@@ -271,6 +271,7 @@ my %branch_hash = ();
 #  set leaf node counter
 my %leafs = ();
 my %nodes = ();
+my %decendents = (); 
 
 #  set max depth variable
 my $max_depth = 0;
@@ -308,6 +309,7 @@ foreach my $child (@{$children}) {
 #  set the node count for the root
 if($#{$children} >= 0) { 
     $nodes{$root}++;
+    $decendents{$root}++; 
 }
 else {
     $leafs{$root}++;
@@ -330,7 +332,9 @@ $avg_branch = $avg_branch / $branch_counter;
 #  set the node and leaf counts
 my $leaf_count = keys %leafs;
 my $node_count = keys %nodes;
-my $total_count = $leaf_count + $node_count;
+my $decendent_count = keys %decendents;
+
+my $total_count= $leaf_count + $node_count;
 
 #  get the average depth
 my $avg_leaf_depth = 0; my $avg_node_depth = 0;
@@ -366,14 +370,21 @@ my $level_node_above = 0;
 my $level_node_below = 0;
 my $counter          = 1;
 
+open(FILE, ">$root.decendents") || die "Could not open file ($root.decendents)\n";
+foreach my $c (sort {$decendents{$b}<=>$decendents{$a}} keys %decendents) { 
+    print FILE "$c\n";
+} close FILE; 
+
+open(FILE, ">$root.leafs") || die "Could not open file ($root.leafs)\n";
 foreach my $c (sort {$leafs{$b}<=>$leafs{$a}} keys %leafs) { 
+    print FILE "$c\n";
     if($counter == $leaf_mean) { 
 	$leaf_mean_depth = $leafs{$c};
     }
     if($leafs{$c} >= $opt_level) { $level_leaf_above++; }
     if($leafs{$c} <  $opt_level) { $level_leaf_below++; }
     $counter++; 
-}
+} close FILE; 
 
 $counter = 1;
 foreach my $c (sort {$nodes{$b}<=>$nodes{$a}} keys %nodes) { 
@@ -385,6 +396,8 @@ foreach my $c (sort {$nodes{$b}<=>$nodes{$a}} keys %nodes) {
     $counter++; 
 }
     
+$subsumers = $leaf_count + $node_count;
+
 #  print out the information
 print "max_depth : $max_depth\n";
 print "avg_depth : $avg_depth\n";
@@ -395,6 +408,7 @@ print "max_branch : $max_branch\n";
 print "avg_branch : $avg_branch\n";
 print "leaf_count : $leaf_count\n";
 print "node_count : $node_count\n";
+print "decendents : $decendent_count\n";
 print "avg_leaf_depth : $avg_leaf_depth\n";
 print "avg_node_depth : $avg_node_depth\n";
 print "mean_leaf_depth : $leaf_mean_depth\n";
@@ -485,6 +499,14 @@ sub _depthFirstSearch
 	$branch_hash{$concept} = $branches;
     }
     
+    #  get the decendent and capture the max depth
+    if(exists $decendents{$concept}) { 
+	if($d > $decendents{$concept}) { 
+	    $decendents{$concept} = $d; 
+	} 
+    } else { $decendents{$concept} = $d; }
+    
+    
     #  set the leaf count and capture the max depth
     if($branches == 0) { 
 	if(exists $leafs{$concept}) { 
@@ -557,7 +579,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findDFS.pl,v 1.23 2011/08/29 16:37:03 btmcinnes Exp $';
+    print '$Id: findDFS.pl,v 1.24 2013/06/11 01:55:21 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

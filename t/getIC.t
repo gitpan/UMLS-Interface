@@ -5,7 +5,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 3;
+use Test::More tests => 7;
 
 use UMLS::Interface;
 use File::Spec;
@@ -49,13 +49,66 @@ my ($keyfile, $file, $output, $term, $config, $cui);
 ###        exists we will test our run against the key 
 ###        otherwise the key will be created
 #######################################################################################
-#  check msh tests for term
+#  check with icpropagation option
 #######################################################################################
 $term    = "hand";
-$file    = "getIC.msh.par-chd.$term";
+$file    = "getIC.icprop"; 
 $keyfile = File::Spec->catfile($keydir, $file);
 $config  = File::Spec->catfile('t', 'config', 'config.msh.par-chd');
-$output = `$perl $util_prg --config $config $icpropagation $term 2>&1`;
+$output = `$perl $util_prg --config $config --icpropagation $icpropagation $term 2>&1`;
+
+if(-e $keyfile) {
+    ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";
+    my $key = "";
+    while(<KEY>) { $key .= $_; } close KEY;
+    cmp_ok($output, 'eq', $key);
+}
+else {
+    ok(open KEY, ">$keyfile") || diag "Could not open $keyfile: $!";
+    print KEY $output;
+    close KEY;
+  SKIP: {
+      skip ("Generating key, no need to run test", 1);
+    }
+}
+
+### Note : if a key for the version of UMLS is being run on 
+###        exists we will test our run against the key 
+###        otherwise the key will be created
+#######################################################################################
+#  check with intrinsic option for seco
+#######################################################################################
+$term    = "hand";
+$file    = "getIC.seco"; 
+$keyfile = File::Spec->catfile($keydir, $file);
+$config  = File::Spec->catfile('t', 'config', 'config.msh.par-chd');
+$output = `$perl $util_prg --config $config --intrinsic seco $term 2>&1`;
+
+if(-e $keyfile) {
+    ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";
+    my $key = "";
+    while(<KEY>) { $key .= $_; } close KEY;
+    cmp_ok($output, 'eq', $key);
+}
+else {
+    ok(open KEY, ">$keyfile") || diag "Could not open $keyfile: $!";
+    print KEY $output;
+    close KEY;
+  SKIP: {
+      skip ("Generating key, no need to run test", 1);
+    }
+}
+### Note : if a key for the version of UMLS is being run on 
+###        exists we will test our run against the key 
+###        otherwise the key will be created
+#######################################################################################
+#  check with intrinsic option for sanchez
+#######################################################################################
+$term    = "hand";
+$file    = "getIC.sanchez";
+$keyfile = File::Spec->catfile($keydir, $file);
+$config  = File::Spec->catfile('t', 'config', 'config.msh.par-chd');
+$output = `$perl $util_prg --config $config --intrinsic sanchez --realtime $term 2>&1`;
 
 if(-e $keyfile) {
     ok (open KEY, $keyfile) or diag "Could not open $keyfile: $!";

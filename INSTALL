@@ -43,7 +43,6 @@ INSTALLATION STAGES
     Stage 1: Install Programming Languages
                   If already installed you need at minimum: 
                       - Perl version 5.8 or better
-                      - Java SE Development Kit
 
     Stage 2: Install CPAN Modules
     Stage 3: Install MySQL
@@ -84,24 +83,6 @@ Stage 1: Install Programming Languages, if already installed go to Stage 2
     that you will already have Perl installed if you are using a Unix/Linux
     based system.
 
-  Java SE Development Kit (JDK)
-    JDK is freely available at <http://java.sun.com/>. The latest version
-    today is JDK 6 which can be found here:
-
-    <http://java.sun.com/javase/6/webnotes/install/index.html>
-
-    I installed JDK 6 on Red Hat Enterprise Linux WS release 4 using rpms.
-    The instructions that I used can be found here:
-
-    <http://java.sun.com/javase/6/webnotes/install/jdk/install-linux.html#in
-    stall-rpm>
-
-    You can also install it using the binaries. Instructions for that can be
-    found here:
-
-    <http://java.sun.com/javase/6/webnotes/install/jdk/install-linux.html#se
-    lf-extracting>
-
 Stage 2 - Install CPAN modules, if already installed go to Stage 3
   DBI
     CPAN modules, and will not be repeated in detail for each module.****
@@ -128,6 +109,22 @@ Stage 2 - Install CPAN modules, if already installed go to Stage 3
 
     You must include /home/MyPerlLib in your PERL5LIB environment variable
     to access this module when running.
+
+    UMLS-Interface uses this module to connect with umls installed on the
+    mysql database. It is the MySQL sriver for the Perl5 Database interface.
+    This package is freely available at
+    <http://search.cpan.org/dist/DBD-mysql/>
+
+    During a recent install there were some very very strange looking
+    errors. These wereresolved after installing the Ubuntu package
+    libmysqld-dev via
+
+    sudo apt-get install libmysql-dev
+
+    The following gives a little discussion about this situation :
+
+    <http://www.dslreports.com/forum/r26750216-Can-t-install-the-DBD-mysql-p
+    ackage-on-Ubuntu>
 
   Digest::SHA1
     UMLS-Interface uses Digest::SHA1 to conver the human readable tables
@@ -644,9 +641,10 @@ Stage 6 - Install UMLS-Interface and set environment variable
 
     <http://search.cpan.org/dist/Test-Simple/lib/Test/Builder.pm#EXIT_CODES>
 
-    Now please set the UMLSINTERFACE_CONFIGFILE_DIR environment variable.
-    This will be the location where you don't mind the UMLS-Interface module
-    writing out system files. The system files that created are:
+    If desired, you can set the UMLSINTERFACE_CONFIGFILE_DIR environment
+    variable. This will be the location where you don't mind the
+    UMLS-Interface module writing out system files when using the verbose
+    option. The files created when using this option are:
 
            1. <UMLS_version>_<sources><relations>_config
 
@@ -661,10 +659,7 @@ Stage 6 - Install UMLS-Interface and set environment variable
 
            3. <UMLS_version>_<sources><relations>_table
 
-              this file contains the path to the root for each 
-              concept in the UMLS view. this information is stored 
-              in a mysql database of the same name. This really 
-              helps speed up the initialization.
+    They are primarily for testing purposes.
 
 CONTACT US
      If you have any trouble installing and using UMLS-Interface, please 
@@ -680,4 +675,11 @@ CONTACT US
 
      Bridget T. McInnes: bthomson at cs.umn.edu
      Ted Pedersen      : tpederse at d.umn.edu
+
+POD ERRORS
+    Hey! The above document had some coding errors, which are explained
+    below:
+
+    Around line 145:
+        Unknown directive: =head
 

@@ -1,5 +1,5 @@
 # UMLS::Interface::CuiFinder
-# (Last Updated $Id: CuiFinder.pm,v 1.77 2012/06/24 11:16:07 btmcinnes Exp $)
+# (Last Updated $Id: CuiFinder.pm,v 1.78 2013/04/21 11:07:07 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -91,20 +91,22 @@ my $indexDB        = "umlsinterfaceindex";
 my $umlsinterface   = $ENV{UMLSINTERFACE_CONFIGFILE_DIR};
 
 #  table names
-my $tableName       = "";
-my $parentTable     = "";
-my $childTable      = "";
-my $tableFile       = "";
-my $parentTableHuman= "";
-my $childTableHuman = "";
-my $tableNameHuman  = "";
-my $configFile      = "";
-my $childFile       = "";
-my $parentFile      = "";
-my $infoTable       = "";
-my $infoTableHuman  = "";
-my $cacheTable      = "";
-my $cacheTableHuman = "";
+my $tableName          = "";
+my $intrinsicTable     = "";
+my $parentTable        = "";
+my $childTable         = "";
+my $tableFile          = "";
+my $intrinsicTableHuman= "";
+my $parentTableHuman   = "";
+my $childTableHuman    = "";
+my $tableNameHuman     = "";
+my $configFile         = "";
+my $childFile          = "";
+my $parentFile         = "";
+my $infoTable          = "";
+my $infoTableHuman     = "";
+my $cacheTable         = "";
+my $cacheTableHuman    = "";
 
 #  flags and options
 my $umlsall            = 0;
@@ -215,20 +217,22 @@ sub _initializeGlobalVariables {
 
 
     #  table names
-    $tableName       = "";
-    $parentTable     = "";
-    $childTable      = "";
-    $tableFile       = "";
-    $parentTableHuman= "";
-    $childTableHuman = "";
-    $tableNameHuman  = "";
-    $configFile      = "";
-    $childFile       = "";
-    $parentFile      = "";
-    $infoTable       = "";
-    $infoTableHuman  = "";
-    $cacheTable      = "";
-    $cacheTableHuman = "";
+    $tableName          = "";
+    $parentTable        = "";
+    $intrinsicTable     = "";
+    $childTable         = "";
+    $tableFile          = "";
+    $intrinsicTableHuman= "";
+    $parentTableHuman   = "";
+    $childTableHuman    = "";
+    $tableNameHuman     = "";
+    $configFile         = "";
+    $childFile          = "";
+    $parentFile         = "";
+    $infoTable          = "";
+    $infoTableHuman     = "";
+    $cacheTable         = "";
+    $cacheTableHuman    = "";
 
     #  flags and options
     $umlsall            = 0;
@@ -537,6 +541,10 @@ sub _createTaxonomyTables {
     my $sdb = $self->{'sdb'};
     if(!$sdb) { $errorhandler->_error($pkg, $function, "Error with sdb.", 3); }
 
+    #  create intrinsic table
+    $sdb->do("CREATE TABLE IF NOT EXISTS $intrinsicTable (CUI char(8), LEAVES int, SUBSUMERS int, INDEX(CUI))");
+    $errorhandler->_checkDbError($pkg, $function, $sdb);
+
     #  create parent table
     $sdb->do("CREATE TABLE IF NOT EXISTS $parentTable (CUI1 char(8), CUI2 char(8))");
     $errorhandler->_checkDbError($pkg, $function, $sdb);
@@ -554,6 +562,8 @@ sub _createTaxonomyTables {
     $errorhandler->_checkDbError($pkg, $function, $sdb);
 
     #  add them to the index table
+    $sdb->do("INSERT INTO tableindex (TABLENAME, HEX) VALUES ('$intrinsicTableHuman', '$intrinsicTable')");
+    $errorhandler->_checkDbError($pkg, $function, $sdb);
     $sdb->do("INSERT INTO tableindex (TABLENAME, HEX) VALUES ('$parentTableHuman', '$parentTable')");
     $errorhandler->_checkDbError($pkg, $function, $sdb);
     $sdb->do("INSERT INTO tableindex (TABLENAME, HEX) VALUES ('$childTableHuman', '$childTable')");
@@ -952,11 +962,12 @@ sub _setConfigurationFile {
 
     $configFile = "$umlsinterface/$ver";
 
-    $tableName  = "$ver";
-    $parentTable= "$ver";
-    $childTable = "$ver";
-    $infoTable  = "$ver";
-    $cacheTable = "$ver";
+    $tableName     = "$ver";
+    $intrinsicTable= "$ver";
+    $parentTable   = "$ver";
+    $childTable    = "$ver";
+    $infoTable     = "$ver";
+    $cacheTable    = "$ver";
 
     my $output = "";
     $output .= "UMLS-Interface Configuration Information\n";
@@ -974,15 +985,16 @@ sub _setConfigurationFile {
     
 
     foreach my $sab (sort keys %sabnamesHash) {
-        $tableFile  .= "_$sab";
-        $childFile  .= "_$sab";
-        $parentFile .= "_$sab";
-        $configFile .= "_$sab";
-        $tableName  .= "_$sab";
-        $parentTable.= "_$sab";
-        $childTable .= "_$sab";
-	$cacheTable .= "_$sab";
-        $infoTable  .= "_$sab";
+        $tableFile     .= "_$sab";
+        $childFile     .= "_$sab";
+        $parentFile    .= "_$sab";
+        $configFile    .= "_$sab";
+        $tableName     .= "_$sab";
+        $intrinsicTable.= "_$sab";
+        $parentTable   .= "_$sab";
+        $childTable    .= "_$sab";
+	$cacheTable    .= "_$sab";
+        $infoTable     .= "_$sab";
     }
 
     if($umlsall) {
@@ -1010,15 +1022,16 @@ sub _setConfigurationFile {
     }
 
     foreach my $rel (sort keys %rels) {
-        $tableFile  .= "_$rel";
-        $childFile  .= "_$rel";
-        $parentFile .= "_$rel";
-        $configFile .= "_$rel";
-        $tableName  .= "_$rel";
-        $parentTable.= "_$rel";
-        $childTable .= "_$rel";
-	$cacheTable .= "_$rel";
-        $infoTable  .= "_$rel";
+        $tableFile     .= "_$rel";
+        $childFile     .= "_$rel";
+        $parentFile    .= "_$rel";
+        $configFile    .= "_$rel";
+        $tableName     .= "_$rel";
+        $intrinsicTable.= "_$rel";
+        $parentTable   .= "_$rel";
+        $childTable    .= "_$rel";
+	$cacheTable    .= "_$rel";
+        $infoTable     .= "_$rel";
 
         $output .= "    $rel\n";
     }
@@ -1033,42 +1046,46 @@ sub _setConfigurationFile {
         }
     }
     foreach my $rel (sort keys %relas) {
-        $tableFile  .= "_$rel";
-        $childFile  .= "_$rel";
-        $parentFile .= "_$rel";
-        $configFile .= "_$rel";
-        $tableName  .= "_$rel";
-        $parentTable.= "_$rel";
-        $childTable .= "_$rel";
-	$cacheTable .= "_$rel";
-        $infoTable  .= "_$rel";
+        $tableFile     .= "_$rel";
+        $childFile     .= "_$rel";
+        $parentFile    .= "_$rel";
+        $configFile    .= "_$rel";
+        $tableName     .= "_$rel";
+        $intrinsicTable.= "_$rel";
+        $parentTable   .= "_$rel";
+        $childTable    .= "_$rel";
+	$cacheTable    .= "_$rel";
+        $infoTable     .= "_$rel";
 
         $output .= "    $rel\n";
     }
 
-    $tableFile  .= "_table";
-    $childFile  .= "_child";
-    $parentFile .= "_parent";
-    $configFile .= "_config";
-    $tableName  .= "_table";
-    $parentTable.= "_parent";
-    $childTable .= "_child";
-    $cacheTable .= "_cache";
-    $infoTable .= "_info";
+    $tableFile     .= "_table";
+    $childFile     .= "_child";
+    $parentFile    .= "_parent";
+    $configFile    .= "_config";
+    $tableName     .= "_table";
+    $intrinsicTable.= "_intrinsic";
+    $parentTable   .= "_parent";
+    $childTable    .= "_child";
+    $cacheTable    .= "_cache";
+    $infoTable     .= "_info";
 
     #  convert the databases to the hex name
     #  and store the human readable form
-    $tableNameHuman   = $tableName;
-    $childTableHuman  = $childTable;
-    $cacheTableHuman  = $cacheTable;
-    $parentTableHuman = $parentTable;
-    $infoTableHuman   = $infoTable;
+    $tableNameHuman      = $tableName;
+    $intrinsicTableHuman = $intrinsicTable;
+    $childTableHuman     = $childTable;
+    $cacheTableHuman     = $cacheTable;
+    $parentTableHuman    = $parentTable;
+    $infoTableHuman      = $infoTable;
 
-    $tableName   = "a" . sha1_hex($tableNameHuman);
-    $childTable  = "a" . sha1_hex($childTableHuman);
-    $parentTable = "a" . sha1_hex($parentTableHuman);
-    $infoTable   = "a" . sha1_hex($infoTableHuman);
-    $cacheTable  = "a" . sha1_hex($cacheTableHuman);
+    $tableName      = "a" . sha1_hex($tableNameHuman);
+    $intrinsicTable = "a" . sha1_hex($intrinsicTableHuman);
+    $childTable     = "a" . sha1_hex($childTableHuman);
+    $parentTable    = "a" . sha1_hex($parentTableHuman);
+    $infoTable      = "a" . sha1_hex($infoTableHuman);
+    $cacheTable     = "a" . sha1_hex($cacheTableHuman);
 
     if($option_verbose) {
         $output .= "  Configuration file:\n";
@@ -4297,10 +4314,11 @@ sub _returnTableNames {
 
     #  set the output variable
     my %hash = ();
-    $hash{$parentTableHuman} = $parentTable;
-    $hash{$childTableHuman}  = $childTable;
-    $hash{$tableNameHuman}   = $tableName;
-    $hash{$cacheTableHuman} = $cacheTable;
+    $hash{$parentTableHuman}    = $parentTable;
+    $hash{$childTableHuman}     = $childTable;
+    $hash{$intrinsicTableHuman} = $intrinsicTable;
+    $hash{$tableNameHuman}      = $tableName;
+    $hash{$cacheTableHuman}     = $cacheTable;
 
     return \%hash;
 }
@@ -4479,6 +4497,10 @@ sub _dropConfigTable {
     }
     $sth->finish();
 
+    if(exists $tables{$intrinsicTable}) {
+        $sdb->do("drop table $intrinsicTable");
+        $errorhandler->_checkDbError($pkg, $function, $sdb);
+    }
     if(exists $tables{$parentTable}) {
         $sdb->do("drop table $parentTable");
         $errorhandler->_checkDbError($pkg, $function, $sdb);
@@ -4500,6 +4522,9 @@ sub _dropConfigTable {
         $errorhandler->_checkDbError($pkg, $function, $sdb);
     }
     if(exists $tables{"tableindex"}) {
+
+        $sdb->do("delete from tableindex where HEX='$intrinsicTable'");
+        $errorhandler->_checkDbError($pkg, $function, $sdb);
 
         $sdb->do("delete from tableindex where HEX='$parentTable'");
         $errorhandler->_checkDbError($pkg, $function, $sdb);
@@ -4678,6 +4703,14 @@ sub _getInfoTableName {
 
 sub _getInfoTableNameHuman {
     return $infoTableHuman;
+}
+
+sub _getIntrinsicTableName {
+    return $intrinsicTable;
+}
+
+sub _getIntrinsicTableNameHuman {
+    return $intrinsicTableHuman;
 }
 
 1;

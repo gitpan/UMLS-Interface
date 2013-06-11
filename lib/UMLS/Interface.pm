@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.135 2013/04/08 11:35:23 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.138 2013/06/11 01:55:20 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -421,7 +421,7 @@ my $pkg = "UMLS::Interface";
 
 use vars qw($VERSION);
 
-$VERSION = '1.33';
+$VERSION = '1.35';
 
 my $debug = 0;
 
@@ -490,7 +490,7 @@ sub _initialize {
     }
     
     #  set the icfinder
-    $icfinder = UMLS::Interface::ICFinder->new($params, $cuifinder);
+    $icfinder = UMLS::Interface::ICFinder->new($params, $cuifinder, $pathfinder);
     if(! defined $icfinder) { 
 	my $str = "The UMLS::Interface::ICFinder object was not created.";
 	$errorhandler->_error($pkg, $function, $str, 8);
@@ -1924,6 +1924,7 @@ input:
           icpropagation -> file containing icpropagation counts
           icfrequency   -> file containing icfrequency counts
           smooth        -> whether you want to smooth the frequency counts
+          realtime      -> calculate the intrinsic ic in realtime         
 
 example:
 

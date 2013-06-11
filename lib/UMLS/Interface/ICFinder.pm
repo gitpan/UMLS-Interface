@@ -1,5 +1,5 @@
 # UMLS::Interface::ICFinder
-# (Last Updated $Id: ICFinder.pm,v 1.31 2013/04/17 13:44:57 btmcinnes Exp $)
+# (Last Updated $Id: ICFinder.pm,v 1.34 2013/06/11 01:55:21 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -69,6 +69,7 @@ my $configN              = 0;
 
 my $errorhandler = "";
 my $cuifinder    = "";
+my $pathfinder   = ""; 
 
 my %leafs = (); 
 my %subsumers = (); 
@@ -83,8 +84,9 @@ sub new {
     my $self = {};
     my $className = shift;
     my $params    = shift;
-    my $handler   = shift;
-    
+    my $chandler  = shift;
+    my $phandler  = shift; 
+
     # initialize error handler
     $errorhandler = UMLS::Interface::ErrorHandler->new();
     if(! defined $errorhandler) {
@@ -93,11 +95,20 @@ sub new {
     }
     
     #  initialize the cuifinder
-    $cuifinder = $handler;
-    if(! (defined $handler)) { 
+    $cuifinder = $chandler;
+    if(! (defined $chandler)) { 
 	$errorhandler->_error($pkg, 
 			      "new", 
 			      "The CuiFinder handler did not get passed properly", 
+			      8);
+    }
+
+    #  initialize the pathfinder
+    $pathfinder = $phandler;
+    if(! (defined $phandler)) { 
+	$errorhandler->_error($pkg, 
+			      "new", 
+			      "The PathFinder handler did not get passed properly", 
 			      8);
     }
 
@@ -174,18 +185,18 @@ sub _setOptions
     my $icpropagation = $params->{'icpropagation'};
     my $icfrequency   = $params->{'icfrequency'};
     my $icsmooth      = $params->{'smooth'};
-  
+    my $realtime      = $params->{'realtime'};
+
     my $output = "";
 
     #  check if options have been defined
-    if(defined $icpropagation || defined $icfrequency || 
+    if(defined $icpropagation || defined $icfrequency || defined $realtime || 
        defined $debugoption   || defined $icsmooth) { 
 	$output .= "\nICFinder User Options:\n";
     }
 
     #  check if the debug option has been been defined
     if(defined $debugoption) {
-	print STDERR "HERE\n";
 	$debug = 1; 
 	$output .= "   --debug option set\n";
     }
@@ -209,6 +220,12 @@ sub _setOptions
 	$output .= "  --icfrequency $icfrequency\n";
     }
 
+    #  check if the realtime option has been identified
+    if(defined $realtime) { 
+	$option_realtime = 1;
+	$output .= "  --realtime option set\n"; 
+    }
+
     &_debug($function);
       
     if(defined $t) {
@@ -223,7 +240,7 @@ sub _setOptions
 sub _getN
 {
     my $self = shift;
-
+    
     my $function = "_getN";
     &_debug($function);
 
@@ -243,7 +260,7 @@ sub _getSecoIntrinsicIC
     my $self     = shift;
     my $concept  = shift;
 
-    my $function = "_getIC";
+    my $function = "_getSecoInrinsicIC";
     &_debug($function);
 
      #  check self
@@ -271,10 +288,8 @@ sub _getSecoIntrinsicIC
     return $ic;
 }
 
-######################################################################### 
-#  Depth First Search (DFS) 
-######################################################################### 
-sub _getSubsumers
+
+sub _getDecendents
 {
     my $concept   = shift;
     my $array     = shift;
@@ -306,14 +321,11 @@ sub _getSubsumers
     #  get all the children
     my $children = $cuifinder->_getChildren($concept);
     
-    $subsumers{$concept}++; 
-    if($#{$children} < 0) { 
-	$leafs{$concept}++; 
-    }
-    
+    my %subsumers = (); my %leaves = ();
+
     #  search through the children
     foreach my $child (@{$children}) {	
-
+	
 	#  check if child cui has already in the path
 	my $flag = 0;
 	foreach my $cui (@path) {
@@ -324,9 +336,14 @@ sub _getSubsumers
 	
 	#  if it isn't continue on with the depth first search
 	if($flag == 0) {
-	    &_getSubsumers($child, \@path); 
+	    my ($s, $l) = &_getDecendents($child, \@path); 
+	    %subsumers = (%subsumers, %{$s}); %leaves = (%leaves, %{$l});  
 	}
     }
+    
+    if($#{$children} < 0) { $leaves{$concept}++; } $subsumers{$concept}++;
+    
+    return (\%subsumers, \%leaves); 
 }
 
 #  returns the intrinsic information content (IC) of a cui
@@ -337,7 +354,7 @@ sub _getSanchezIntrinsicIC
     my $self     = shift;
     my $concept  = shift;
 
-    my $function = "_getIC";
+    my $function = "_getSanchezIntrinsicIC";
     &_debug($function);
 
      #  check self
@@ -353,18 +370,69 @@ sub _getSanchezIntrinsicIC
     #  check if valid concept
     if(! ($errorhandler->_validCui($concept)) ) {
 	$errorhandler->_error($pkg, $function, "Concept ($concept) in not valid.", 6);
-    }    
-      
-    %leafs = (); %subsumers = (); my @path = (); 
-    _getSubsumers($concept, \@path); 
+    }   
     
-    my $leaves   = keys %leafs; 
-    my $subsumes = keys %subsumers; 
-    
-    my $a = $leaves/$subsumes; $a++; 
-    my $b = _getMaxLeaves(); $b++; 
+    #  get the leaves
+    my $leaves = 0; my $maxleaves = 0; 
+    if($option_realtime) { 
+	my @path = (); 
+	my ($d, $l) = _getDecendents($concept, \@path);
+	$leaves = keys %{$l}; 
+	$maxleaves = _getMaxLeaves(); 
+    }
+    else {
+	#  get the umlsinterfaceindex database from CuiFinder
+	my $sdb = $cuifinder->_getIndexDB();
+	if(!$sdb) { $errorhandler->_error($pkg, $function, "Error with sdb.", 3); }
+	$self->{'sdb'} = $sdb;
+	
+	#  get the intrinsic table name
+	my $intrinsicTableName = $cuifinder->_getIntrinsicTableName();
 
-    my $ic = -1 * ( (log( $a/$b )/log(10)) ); 
+	#  check that it exists in the index
+	my $arrRefCheck = $sdb->selectcol_arrayref("select count(*) from tableindex where HEX=\'$intrinsicTableName\'"); 
+	$errorhandler->_checkDbError($pkg, $function, $sdb);
+	my $check = shift @{$arrRefCheck};
+	
+	if($check != 1) { 
+	    print STDERR "The index does not contain the intrinsic table for the\n"; 
+	    print STDERR "sources/relations in the configration file. It must have\n";
+	    print STDERR "been created with an earlier version of UMLS-Interface.\n";
+	    print STDERR "Please either recreate the index by removing it using the\n";
+	    print STDERR "removeConfigData.pl or run with the --realtime option.\n\n";
+	    exit; 
+	}
+
+	#  get subsumers and leaves from the intrinsic table
+	my $arrRefLeaves = $sdb->selectcol_arrayref("select LEAVES from $intrinsicTableName where CUI=\'$concept\'");
+	$errorhandler->_checkDbError($pkg, $function, $sdb);
+
+	my $arrRefMaxLeaves = $sdb->selectcol_arrayref("select LEAVES from $intrinsicTableName where CUI=\'$root\'");
+	$errorhandler->_checkDbError($pkg, $function, $sdb);
+	
+	$maxleaves = shift @{$arrRefMaxLeaves}; 
+	$leaves    = shift @{$arrRefLeaves};
+    }
+    
+    #  get the subsumers
+    my $paths = $pathfinder->_pathsToRoot($concept);
+    my %subhash = (); 
+    foreach my $path (@{$paths}) {
+	my @array = split/\s+/, $path;
+	foreach my $element (@array) { $subhash{$element}++; }
+    }
+    my $subsumers = keys %subhash; 
+
+    my $a = 0; 
+    if(defined $leaves) { 
+	if($leaves != 0 && $subsumers != 0) { 
+	    $a = $leaves/$subsumers; 
+	}
+    }$a++; 
+
+    my $b = $maxleaves; $b++; 
+        
+    my $ic = -1 * ( (log( $a/$b )/log(2)) ); 
     
     return $ic;
 }
@@ -373,10 +441,10 @@ sub _getMaxLeaves {
     
     if($max_leaves == 0) {
 
-	my @path = (); 	%leafs = (); %subsumers = (); 
-	_getSubsumers($cuifinder->_root(), \@path); 
-	$max_leaves = keys %leafs;
-	%leafs = (); %subsumers = (); 
+	my @path = (); 
+	my ($s, $l) = _getDecendents($cuifinder->_root(), \@path); 
+	
+	$max_leaves = keys %{$l}; 
     }
     
     return $max_leaves;

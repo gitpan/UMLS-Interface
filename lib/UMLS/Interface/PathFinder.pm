@@ -1,5 +1,5 @@
 # UMLS::Interface::PathFinder
-# (Last Updated $Id: PathFinder.pm,v 1.56 2013/04/17 13:44:57 btmcinnes Exp $)
+# (Last Updated $Id: PathFinder.pm,v 1.60 2013/06/11 01:55:21 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -300,6 +300,7 @@ sub _depth {
     if($option_realtime) {
 	my @array = ();
 	my %visited = ();
+
       	$self->_getMaxDepth($root, 0, \@array, \%visited);
 	
 	#  the _getMaxDepth method does a DFS over the entire 
@@ -384,7 +385,7 @@ sub _getMaxDepth {
     #  increment the depth
     $d++;
     
-    #  add to the depths array - if we are going to go through the trouble 
+    #  add to the depths hash - if we are going to go through the trouble 
     #  of having to do a depth first search - we might as well find the 
     #  the maximum depths of all the cuis and store these in the database
     #  I am going to see if I can store them in a hash and then dump the 
@@ -394,7 +395,6 @@ sub _getMaxDepth {
     if(! (exists $maximumDepths{$concept}) ) { $maximumDepths{$concept} = $d; }
     elsif($maximumDepths{$concept} < $d)     { $maximumDepths{$concept} = $d; }
 
-    
     #  get all the children
     my $children = $cuifinder->_getChildren($concept);
        
@@ -728,14 +728,26 @@ sub _initializeDepthFirstSearch {
     #  get the children
     my $children = $cuifinder->_getChildren($concept);
     
+    my $subsumers; my $leafs; 
     #  foreach of the children continue down the taxonomy
     foreach my $child (@{$children}) {
 	my @array = (); 
 	push @array, $concept; 
 	my $path  = \@array;
-	$self->_depthFirstSearch($child, $d,$path,*TABLEFILE);
+	($subsumers, $leafs) = $self->_depthFirstSearch($child, $d,$path,*TABLEFILE); 
     }
     
+    #  get the database
+    my $sdb = $self->{'sdb'};
+    if(!$sdb) { $errorhandler->_error($pkg, $function, "Error with sdb.", 3); }
+
+    my $s = %{$subsumers}; my $l = %{$leafs}; 
+        
+    #  get the table name of the intrinsic index and insert the leaves and subsumers
+    my $intrinsicTableName = $cuifinder->_getIntrinsicTableName();    
+    my $arrRef = $sdb->do("INSERT INTO $intrinsicTableName (CUI, LEAVES, SUBSUMERS) VALUES(\'$concept\', '$l', \'$s\')");
+    $errorhandler->_checkDbError($pkg, $function, $sdb);
+
     #  close the table file if in verbose mode
     if($option_verbose) {
 	close TABLEFILE;
@@ -870,16 +882,15 @@ sub _getPathsToRootInRealtime {
 #          $array   <- reference to an array containing the path
 sub _depthFirstSearch {
 
-    my $self    = shift;
-    my $concept = shift;
-    my $d       = shift;
-    my $array   = shift;
-    local(*F)   = shift;
+    my $self      = shift;
+    my $concept   = shift;
+    my $d         = shift;
+    my $array     = shift;
+    local(*F)     = shift;
         
     my $function = "_depthFirstSearch";
     
-  
-    #  check self
+      #  check self
     if(!defined $self || !ref $self) {
 	$errorhandler->_error($pkg, $function, "", 2);
     }
@@ -941,16 +952,38 @@ sub _depthFirstSearch {
     #  get all the children
     my $children = $cuifinder->_getChildren($concept);
 
+    my %totalLeaves = (); my %totalSubsumers = (); 
     #  search through the children
     foreach my $child (@{$children}) {
 	
 	#  check if child cui has already in the path
 	if($series=~/$child/)  { next; }
 	if($child eq $concept) { next; }
-
+	
 	#  if it isn't continue on with the depth first search
-	$self->_depthFirstSearch($child, $d, \@path,*F);
+	my ($subsumers, $leafs) = $self->_depthFirstSearch($child, $d, \@path,*F);
+	%totalLeaves = (%totalLeaves, %{$leafs}); 
+	%totalSubsumers = (%totalSubsumers, %{$subsumers}); 
     }
+    my $l = keys %totalLeaves; my $s = keys %totalSubsumers; 
+    
+    #  get the table name of the intrinsic index and insert the leaves and subsumers
+    my $intrinsicTableName = $cuifinder->_getIntrinsicTableName();    
+    
+    #  check if CUI is already there
+    my $ex = $sdb->selectcol_arrayref("select count(*) from $intrinsicTableName where CUI=\'$concept\'");
+    $errorhandler->_checkDbError($pkg, $function, $sdb);
+    
+    #  return the minimum depth
+    my $count = shift @{$ex}; 
+    if($count == 0) { 
+	my $arrRef = $sdb->do("INSERT INTO $intrinsicTableName (CUI, LEAVES, SUBSUMERS) VALUES(\'$concept\', '$l', \'$s\')");
+	$errorhandler->_checkDbError($pkg, $function, $sdb);
+    }
+
+    if($#{$children} < 0) { $totalLeaves{$concept}++; } $totalSubsumers{$concept}++; 
+
+    return (\%totalSubsumers, \%totalLeaves);
 }
 
 #  function returns the minimum depth of a concept
@@ -1053,7 +1086,7 @@ sub _findMaximumDepth {
 	#  get maximum depth from the info table
 	my $arrRef = $sdb->selectcol_arrayref("select INFO from $infoTableName where ITEM=\'$cui\'");
 	$errorhandler->_checkDbError($pkg, $function, $sdb);
-
+	
 	#  get the depth from the array
 	my $depth = shift @{$arrRef};
 
