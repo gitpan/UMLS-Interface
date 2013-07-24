@@ -1,6 +1,10 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 1.34 to 1.37
+    1. updated the documentation and test parameters for the intrinsic IC
+    meaures.
+
   Changes from version 1.33 to 1.35
     1. updated the IC measure modules to store the parameters required to
     calculate Intrinisic IC while the index is being created rather than

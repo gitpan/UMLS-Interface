@@ -1,5 +1,5 @@
 # UMLS::Interface::PathFinder
-# (Last Updated $Id: PathFinder.pm,v 1.60 2013/06/11 01:55:21 btmcinnes Exp $)
+# (Last Updated $Id: PathFinder.pm,v 1.61 2013/07/03 14:31:48 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -728,20 +728,19 @@ sub _initializeDepthFirstSearch {
     #  get the children
     my $children = $cuifinder->_getChildren($concept);
     
-    my $subsumers; my $leafs; 
+    my $subsumers; my $leafs; my $s = 0; my $l = 0; 
     #  foreach of the children continue down the taxonomy
     foreach my $child (@{$children}) {
 	my @array = (); 
 	push @array, $concept; 
 	my $path  = \@array;
 	($subsumers, $leafs) = $self->_depthFirstSearch($child, $d,$path,*TABLEFILE); 
+	$s += keys %{$subsumers}; $l += keys %{$leafs}; 
     }
     
     #  get the database
     my $sdb = $self->{'sdb'};
     if(!$sdb) { $errorhandler->_error($pkg, $function, "Error with sdb.", 3); }
-
-    my $s = %{$subsumers}; my $l = %{$leafs}; 
         
     #  get the table name of the intrinsic index and insert the leaves and subsumers
     my $intrinsicTableName = $cuifinder->_getIntrinsicTableName();    

@@ -370,22 +370,6 @@ my $level_node_above = 0;
 my $level_node_below = 0;
 my $counter          = 1;
 
-open(FILE, ">$root.decendents") || die "Could not open file ($root.decendents)\n";
-foreach my $c (sort {$decendents{$b}<=>$decendents{$a}} keys %decendents) { 
-    print FILE "$c\n";
-} close FILE; 
-
-open(FILE, ">$root.leafs") || die "Could not open file ($root.leafs)\n";
-foreach my $c (sort {$leafs{$b}<=>$leafs{$a}} keys %leafs) { 
-    print FILE "$c\n";
-    if($counter == $leaf_mean) { 
-	$leaf_mean_depth = $leafs{$c};
-    }
-    if($leafs{$c} >= $opt_level) { $level_leaf_above++; }
-    if($leafs{$c} <  $opt_level) { $level_leaf_below++; }
-    $counter++; 
-} close FILE; 
-
 $counter = 1;
 foreach my $c (sort {$nodes{$b}<=>$nodes{$a}} keys %nodes) { 
     if($counter == $node_mean) { 

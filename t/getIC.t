@@ -98,6 +98,7 @@ else {
       skip ("Generating key, no need to run test", 1);
     }
 }
+
 ### Note : if a key for the version of UMLS is being run on 
 ###        exists we will test our run against the key 
 ###        otherwise the key will be created

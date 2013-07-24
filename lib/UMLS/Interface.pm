@@ -421,7 +421,7 @@ my $pkg = "UMLS::Interface";
 
 use vars qw($VERSION);
 
-$VERSION = '1.35';
+$VERSION = '1.37';
 
 my $debug = 0;
 

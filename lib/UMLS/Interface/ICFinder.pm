@@ -71,8 +71,6 @@ my $errorhandler = "";
 my $cuifinder    = "";
 my $pathfinder   = ""; 
 
-my %leafs = (); 
-my %subsumers = (); 
 my $max_leaves = 0; 
 
 # UMLS-specific stuff ends ----------
