@@ -1,5 +1,5 @@
 # UMLS::Interface::CuiFinder
-# (Last Updated $Id: CuiFinder.pm,v 1.78 2013/04/21 11:07:07 btmcinnes Exp $)
+# (Last Updated $Id: CuiFinder.pm,v 1.79 2014/02/06 13:08:18 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -452,7 +452,7 @@ sub _createUpperLevelTaxonomy {
         my $parCuis = "";
         my %parCuisHash = ();
         if( !($parentRelations=~/\(\)/) ) {
-            $parCuis = $db->selectcol_arrayref("select CUI1 from MRREL where ($parentRelations) and (SAB=\'$sab\')");
+            $parCuis = $db->selectcol_arrayref("select CUI1 from MRREL where ($parentRelations) and (SAB=\'$sab\') and SUPPRESS='N'");
             $errorhandler->_checkDbError($pkg, $function, $db);
 
             #  load the cuis that have a parent into a temporary hash
@@ -2494,11 +2494,11 @@ sub _getCuis {
     #  NOTE: it is quicker to get all the CUI1s and then all of the CUI2 and then merge
     #        rather than try to get them all together in a single query.
     #  get all of the CUI1s
-    my $allCui1 = $db->selectcol_arrayref("select CUI1 from MRREL where ($relations) and (SAB=\'$sab\')\;");
+    my $allCui1 = $db->selectcol_arrayref("select CUI1 from MRREL where ($relations) and (SAB=\'$sab\') and SUPPRESS='N'\;");
     $errorhandler->_checkDbError($pkg, $function, $db);
 
     #  get all of the CUI1s
-    my $allCui2 = $db->selectcol_arrayref("select CUI2 from MRREL where ($relations) and (SAB=\'$sab\')");
+    my $allCui2 = $db->selectcol_arrayref("select CUI2 from MRREL where ($relations) and (SAB=\'$sab\')and SUPPRESS='N'");
     $errorhandler->_checkDbError($pkg, $function, $db);
 
     #  merge and return them
@@ -3454,10 +3454,10 @@ sub _getChildren {
     else {
         my $arrRef = "";
         if($umlsall) {
-            $arrRef = $db->selectcol_arrayref("select distinct CUI2 from MRREL where CUI1='$concept' and ($childRelations) and CUI2!='$concept'");
+            $arrRef = $db->selectcol_arrayref("select distinct CUI2 from MRREL where CUI1='$concept' and ($childRelations) and CUI2!='$concept' and SUPPRESS='N'");
         }
         else {
-            $arrRef = $db->selectcol_arrayref("select distinct CUI2 from MRREL where CUI1='$concept' and ($childRelations) and ($sources) and CUI2!='$concept'");
+            $arrRef = $db->selectcol_arrayref("select distinct CUI2 from MRREL where CUI1='$concept' and ($childRelations) and ($sources) and CUI2!='$concept' and SUPPRESS='N'");
         }
 
         #  check the database for errors
@@ -3522,10 +3522,10 @@ sub _getParents {
     else {
         my $arrRef = "";
         if($umlsall) {
-            $arrRef = $db->selectcol_arrayref("select distinct CUI2 from MRREL where CUI1='$concept' and ($parentRelations) and CUI2!='$concept'");
+            $arrRef = $db->selectcol_arrayref("select distinct CUI2 from MRREL where CUI1='$concept' and ($parentRelations) and CUI2!='$concept' and SUPPRESS='N'");
         }
         else {
-            $arrRef = $db->selectcol_arrayref("select distinct CUI2 from MRREL where CUI1='$concept' and ($parentRelations) and ($sources) and CUI2!='$concept'");
+            $arrRef = $db->selectcol_arrayref("select distinct CUI2 from MRREL where CUI1='$concept' and ($parentRelations) and ($sources) and CUI2!='$concept' and SUPPRESS='N'");
         }
 
         #  check the database for errors

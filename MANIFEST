@@ -188,3 +188,4 @@ utils/getSts.pl
 utils/getStString.pl
 utils/getTableNames.pl
 utils/removeConfigData.pl
+META.json                                Module JSON meta-data (added by MakeMaker)

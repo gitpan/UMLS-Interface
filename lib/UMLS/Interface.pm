@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.138 2013/06/11 01:55:20 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.141 2014/02/06 13:08:18 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -421,7 +421,7 @@ my $pkg = "UMLS::Interface";
 
 use vars qw($VERSION);
 
-$VERSION = '1.37';
+$VERSION = '1.39';
 
 my $debug = 0;
 
@@ -1794,6 +1794,39 @@ sub findNumberOfCloserConcepts {
     my $length = $pathfinder->_findNumberOfCloserConcepts($concept1, $concept2);
     
     return $length;
+}
+
+=head3 findClosenessCentrality
+
+description:
+
+ function that closeness centrality of a concept 
+
+input:   
+
+ $concept  <- the concept
+
+output:
+
+ $double <- the closeness centrality 
+
+example:
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
+ my $concept  = "C0018563";
+ my $double   =  $umls->findClosenessCentrality($concept);
+ print "The Closeness Centrality for $concept is $double\n";
+
+=cut
+sub findClosenessCentrality {
+
+    my $self = shift;
+    my $concept = shift;
+    
+    my $closeness = $pathfinder->_findClosenessCentrality($concept);
+    
+    return $closeness;
 }
 
 =head3 findShortestPathLength

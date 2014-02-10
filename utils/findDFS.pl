@@ -442,6 +442,29 @@ sub _depthFirstSearch
     if($concept=~/C1274021/) { return; }
     #C2733115|limited status concept
     if($concept=~/C2733115/) { return 1; }
+    #C1443286|
+    if($concept=~/C1443286/) { return; }
+
+    if($concept=~/C0332280/) { return 1; }
+    if($concept=~/C0458341/) { return 1; }
+    if($concept=~/C0562418/) { return 1; }
+    if($concept=~/C0588390/) { return 1; }
+    if($concept=~/C1264758/) { return 1; }
+    if($concept=~/C1273115/) { return 1; }
+    if($concept=~/C1274012/) { return 1; }
+    if($concept=~/C1274013/) { return 1; }
+    if($concept=~/C1274014/) { return 1; }
+    if($concept=~/C1274015/) { return 1; }
+    if($concept=~/C1274021/) { return 1; }
+    if($concept=~/C1276325/) { return 1; }
+    if($concept=~/C1285556/) { return 1; }
+    if($concept=~/C1285659/) { return 1; }
+    if($concept=~/C1298232/) { return 1; }
+    if($concept=~/C1299995/) { return 1; }
+    if($concept=~/C2733115/) { return 1; }
+    if($concept=~/C3645578/) { return 1; }
+    if($concept=~/C3645611/) { return 1; }
+    if($concept=~/C3645619/) { return 1; }
     
     #  set the new path
     my @path = @{$array};
@@ -563,7 +586,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findDFS.pl,v 1.24 2013/06/11 01:55:21 btmcinnes Exp $';
+    print '$Id: findDFS.pl,v 1.26 2014/02/06 13:08:19 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

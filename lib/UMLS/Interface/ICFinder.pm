@@ -1,5 +1,5 @@
 # UMLS::Interface::ICFinder
-# (Last Updated $Id: ICFinder.pm,v 1.34 2013/06/11 01:55:21 btmcinnes Exp $)
+# (Last Updated $Id: ICFinder.pm,v 1.36 2014/02/06 13:08:18 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -309,6 +309,8 @@ sub _getDecendents
     if($concept=~/C1274021/) { return; }
     #C2733115|limited status concept
     if($concept=~/C2733115/) { return; }
+    #C1443286|
+    if($concept=~/C1443286/) { return; }
     
     #  set the new path
     my @path = @{$array};

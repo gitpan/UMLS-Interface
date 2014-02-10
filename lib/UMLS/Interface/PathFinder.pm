@@ -1,5 +1,5 @@
 # UMLS::Interface::PathFinder
-# (Last Updated $Id: PathFinder.pm,v 1.61 2013/07/03 14:31:48 btmcinnes Exp $)
+# (Last Updated $Id: PathFinder.pm,v 1.64 2014/02/10 17:21:29 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -961,8 +961,17 @@ sub _depthFirstSearch {
 	
 	#  if it isn't continue on with the depth first search
 	my ($subsumers, $leafs) = $self->_depthFirstSearch($child, $d, \@path,*F);
-	%totalLeaves = (%totalLeaves, %{$leafs}); 
-	%totalSubsumers = (%totalSubsumers, %{$subsumers}); 
+	
+	if(defined $leafs) { 
+	    if(%{$leafs}) {
+		%totalLeaves = (%totalLeaves, %{$leafs}); 
+	    }
+	}
+	if(defined $subsumers) { 
+	    if(%{$subsumers}) { 
+		%totalSubsumers = (%totalSubsumers, %{$subsumers}); 
+	    }
+	}
     }
     my $l = keys %totalLeaves; my $s = keys %totalSubsumers; 
     
@@ -1995,6 +2004,38 @@ sub _findMaximumDepthInRealTime {
 
     return $maximum_path_length;
 }
+
+#  method that finds the closeness centrality of a concept 
+#  input : $concept1  <- the concept
+#  output: $double    <- the closeness
+sub _findClosenessCentrality { 
+    my $self = shift;
+    my $concept = shift; 
+    
+    my $function = "_findClosenessCentrality";
+    &_debug($function);
+      
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    #  get the cuis associated with the config file
+    my $hashref= $cuifinder->_getCuiList(); 
+
+    #  calculate the length of the shortest path for each cui
+    my $sum = 0; 
+    foreach my $cui (sort keys %{$hashref}) {
+	if($cui eq $concept) { next; } 
+	my $d = $self->_findShortestPathLength($concept, $cui); 
+	if($d > 0) { 
+	    $sum += $d; 
+	}
+    }
+    
+    #  return closeness
+    return (1/$sum); 
+}    
 
 #  method that finds the length of the shortest path
 #  input : $concept1  <- the first concept

@@ -149,7 +149,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-eval(GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "sab")) or die ("Please check the above mentioned option(s).\n");
+eval(GetOptions( "version", "help", "debug", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "sab", "infile=s")) or die ("Please check the above mentioned option(s).\n");
 
 
 #  if help is defined, print out help
@@ -167,7 +167,7 @@ if( defined $opt_version ) {
 }
 
 # At least 1 term should be given on the command line.
-if(scalar(@ARGV) < 1) {
+if(!(defined $opt_infile) && (scalar(@ARGV) < 1) ) {
     print STDERR "No term was specified on the command line\n";
     &minimalUsageNotes();
     exit;
@@ -208,31 +208,39 @@ if(defined $opt_socket) {
 $umls = UMLS::Interface->new(\%option_hash); 
 die "Unable to create UMLS::Interface object.\n" if(!$umls);
 
-my $input = shift;
-
-my $term  = $input;
-
-$term=~s/\'/\\\'/g;
-
-my $cuis = $umls->getConceptList($term); 
-
-if($#{$cuis} < 0) {
-    print "No CUIs are associated with $input.\n";
+my @terms; 
+if(defined $opt_infile) { 
+    open(FILE, $opt_infile) || die "Could not open infile ($opt_infile)\n";
+    while(<FILE>) { chomp; push @terms, $_; }
 }
-else {
-    print "The CUIs associated with $term are:\n";
-    my $i = 1;
-    foreach my $cui (@{$cuis}) {
-	if(defined $opt_sab) {
-	    my $sabs = $umls->getSab($cui);
-	    print "$i. $cui (@{$sabs})\n"; $i++;
-	}
-	else {
-	    print "$i. $cui\n"; $i++;
+else { 
+    my $t = shift;
+    push @terms, $t;
+}
+
+foreach my $term (@terms) { 
+
+    $term=~s/\'/\\\'/g;
+    
+    my $cuis = $umls->getConceptList($term); 
+    
+    if($#{$cuis} < 0) {
+	print "No CUIs are associated with $input.\n";
+    }
+    else {
+	print "The CUIs associated with $term are:\n";
+	my $i = 1;
+	foreach my $cui (@{$cuis}) {
+	    if(defined $opt_sab) {
+		my $sabs = $umls->getSab($cui);
+		print "$i. $cui (@{$sabs})\n"; $i++;
+	    }
+	    else {
+		print "$i. $cui\n"; $i++;
+	    }
 	}
     }
 }
-
 ##############################################################################
 #  function to output minimal usage notes
 ##############################################################################
@@ -281,7 +289,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getAssociatedCuis.pl,v 1.9 2011/08/29 16:37:03 btmcinnes Exp $';
+    print '$Id: getAssociatedCuis.pl,v 1.10 2014/02/06 13:08:19 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

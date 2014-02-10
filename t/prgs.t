@@ -220,7 +220,7 @@ like ($output, qr/No term was specified on the command line\s+Type getAssociated
 
 #  check when invalid term is entered
 $output = `$perl $util_prg C98 2>&1`;
-like ($output, qr/No CUIs are associated with C98\./);
+like ($output, qr/No CUIs are associated with \./);
 
 #######################################################################################
 #  check the getAssociatedTerms.pl program with the --config option
