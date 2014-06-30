@@ -1,10 +1,20 @@
 NAME
     UMLS::Interface CHANGES
 
+  Changes from version 1.39 to 1.41
+    1. add the findNumberTurns.pl program to the utils/ directory.
+
+    2. modified findShortestPath.pl to set the realtime option automatically
+    when using --undirected
+
+    3. added a setRealtimeOption and setUndirectedOption to the Interface.pm
+    module and their subsequent Finder modules
+
   Changes from version 1.37 to 1.39
-1. modification of path information to account for changes 
-    the SNOMEDCT -- added SUPPRESS='N' to obtain the PAR/CHD
-    and RB/RN relations between CUIs
+    1. modification of path information to account for changes the SNOMEDCT
+    -- added SUPPRESS='N' to obtain the PAR/CHD and RB/RN relations between
+    CUIs
+
     2. modified the test cases to account for the SNOMEDCT name change to
     SNOMEDCT_US in the database
 

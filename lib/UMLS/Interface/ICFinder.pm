@@ -1,5 +1,5 @@
 # UMLS::Interface::ICFinder
-# (Last Updated $Id: ICFinder.pm,v 1.36 2014/02/06 13:08:18 btmcinnes Exp $)
+# (Last Updated $Id: ICFinder.pm,v 1.37 2014/06/27 13:23:47 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -234,7 +234,34 @@ sub _setOptions
     }    
 }
 
-#  returns the configN - the total number of CUIs
+
+#  method to set the realtime global parameter options               
+#  input : bool <- 1 (turn on) 0 (turn off)                     
+#  output:
+sub _setRealtimeOption {
+
+    my $self = shift;
+    my $option = shift;
+
+    my $function = "_setRealtimeOption";
+    &_debug($function);
+
+    #  check self                                                       
+    if(!defined $self || !ref $self) {
+        $errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    if($option == 1) {
+        $option_realtime = 1;
+    }
+    else {
+        $option_realtime = 0;
+    }
+}
+
+#  method returns the configN - the total number of CUIs
+#  input: 
+#  output: int 
 sub _getN
 {
     my $self = shift;

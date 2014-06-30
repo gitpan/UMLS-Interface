@@ -225,7 +225,7 @@ foreach my $term (@terms) {
     my $cuis = $umls->getConceptList($term); 
     
     if($#{$cuis} < 0) {
-	print "No CUIs are associated with $input.\n";
+	print "No CUIs are associated with $term.\n";
     }
     else {
 	print "The CUIs associated with $term are:\n";
@@ -289,7 +289,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: getAssociatedCuis.pl,v 1.10 2014/02/06 13:08:19 btmcinnes Exp $';
+    print '$Id: getAssociatedCuis.pl,v 1.11 2014/06/03 16:36:48 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 

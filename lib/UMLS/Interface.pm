@@ -1,5 +1,5 @@
 # UMLS::Interface 
-# (Last Updated $Id: Interface.pm,v 1.141 2014/02/06 13:08:18 btmcinnes Exp $)
+# (Last Updated $Id: Interface.pm,v 1.143 2014/06/27 13:23:47 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -421,7 +421,7 @@ my $pkg = "UMLS::Interface";
 
 use vars qw($VERSION);
 
-$VERSION = '1.39';
+$VERSION = '1.41';
 
 my $debug = 0;
 
@@ -1941,6 +1941,61 @@ sub findLeastCommonSubsumer {
 
     return $array;
 }    
+
+=head3 setUndirectedPath
+
+description:
+ 
+ function set the undirected option for the path on or off
+
+input:   
+
+ $option <- 1 (true) 0 (false)
+
+output:
+
+example:
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
+ $umls->setUndirectedOption(1); 
+
+=cut
+sub setUndirectedOption { 
+
+    my $self     = shift;
+    my $option  = shift;
+    
+    $pathfinder->_setUndirectedOption($option); 
+}
+
+=head3 setRealtimePath
+
+description:
+ 
+ function set the realtime option for the path on or off
+
+input:   
+
+ $option <- 1 (true) 0 (false)
+
+output:
+
+example:
+
+ use UMLS::Interface;
+ my $umls = UMLS::Interface->new(); 
+ $umls->setRealtimeOption(1); 
+
+=cut
+sub setRealtimeOption { 
+
+    my $self     = shift;
+    my $option  = shift;
+    
+    $pathfinder->_setRealtimeOption($option); 
+    $icfinder->_setRealtimeOption($option); 
+}
 
 =head2 Metathesaurus Concept Propagation Functions
 

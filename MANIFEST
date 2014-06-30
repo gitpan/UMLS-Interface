@@ -168,6 +168,8 @@ utils/findLeastCommonSubsumer.pl
 utils/findNumberOfCloserConcepts.pl
 utils/findPathToRoot.pl
 utils/findShortestPath.pl
+utils/findShortestPath.pl
+utils/findNumberTurns.pl
 utils/findShortestPathLength.pl
 utils/getAssociatedCuis.pl
 utils/getAssociatedTerms.pl

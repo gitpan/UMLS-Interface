@@ -2,17 +2,17 @@
 
 =head1 NAME
 
-findShortestPath.pl - This program finds the shoretest path between two 
-concepts.
+findNumberTurns.pl - This program finds the number of terms between 
+in the shoretest path between the two concepts.
 
 =head1 SYNOPSIS
 
-This program takes two terms or CUIs and returns the shortest 
-path between them.
+This program takes two terms or CUIs and returns the least number of 
+turns in the shortest path between them.
 
 =head1 USAGE
 
-Usage: findShortestPath.pl [OPTIONS] [CUI1|TERM1] [CUI2|TERM2]
+Usage: findNumberTurns.pl [OPTIONS] [CUI1|TERM1] [CUI2|TERM2]
 
 =head1 INPUT
 
@@ -20,16 +20,10 @@ Usage: findShortestPath.pl [OPTIONS] [CUI1|TERM1] [CUI2|TERM2]
 
 =head3 [CUI1|TERM1|ST1] [CUI2|TERM2|ST2]
 
-A TERM or CUI (or some combination), or two semantic types (with the --st option) 
-from the Unified Medical Language System
+A TERM or CUI (or some combination) from the Unified Medical Language 
+System (UMLS)
 
 =head2 Optional Arguments:
-
-=head3 --st 
-
-The input is two seamntic types and the shortest path between them comes 
-from the semantic network. This can either be a TUI or the Abbreviation 
-of the semantic type.    
 
 =head3 --config FILE
 
@@ -150,13 +144,6 @@ file if you use the --verbose option while creating the index.
 This option will print out the table information to the 
 config directory that you specified.
 
-=head3 --cuilist FILE
-
-This option takes in a file containing a list of CUIs (one CUI 
-per line) and stores only the path information for those CUIs 
-rather than for all of the CUIs given the specified set of 
-sources and relations
-
 =head3 --help
 
 Displays the quick summary of program options.
@@ -227,7 +214,7 @@ this program; if not, write to:
 use UMLS::Interface;
 use Getopt::Long;
 
-eval(GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "cui", "infile=s", "forcerun", "verbose", "debugpath=s", "cuilist=s", "realtime", "debug", "icpropagation=s", "length", "info", "undirected", "st")) or die ("Please check the above mentioned option(s).\n");
+eval(GetOptions( "version", "help", "username=s", "password=s", "hostname=s", "database=s", "socket=s", "config=s", "infile=s", "forcerun", "verbose", "debugpath=s", "realtime", "debug")) or die ("Please check the above mentioned option(s).\n");
 
 
 #  if help is defined, print out help
@@ -281,18 +268,14 @@ else {
 my $umls = "";
 my %option_hash = ();
 
+$option_hash{"undirected"} = 1; 
+$option_hash{"realtime"}   = 1; 
+
 if(defined $opt_icpropagation) {
     $option_hash{"icpropagation"} = $opt_icpropagation;
 }
 if(defined $opt_debug) {
     $option_hash{"debug"} = $opt_debug;
-}
-if(defined $opt_realtime) {
-    $option_hash{"realtime"} = $opt_realtime;
-}
-if(defined $opt_undirected) {
-    $option_hash{"undirected"} = $opt_undirected;
-    $option_hash{"realtime"} = 1; 
 }
 if(defined $opt_config) {
     $option_hash{"config"} = $opt_config;
@@ -340,23 +323,12 @@ foreach my $element (@fileArray) {
     
     my $c1 = undef; my $c2 = undef;
 
-    if(defined $opt_st) { 
-	if($input1=~/T[0-9]+/) { push @{$c1}, $input1; }
-       	else { push @{$c1}, $umls->getStTui($input1); $flag1 = "term"; }
+    if( ($input1=~/C[0-9]+/)) { push @{$c1}, $input1; }
+    else { $c1 = $umls->getConceptList($input1); $flag1 = "term"; }
 
-	if($input2=~/T[0-9]+/) { push @{$c2}, $input2; }
-	else { push @{$c2}, $umls->getStTui($input2); $flag2 = "term"; }
-    }
-    else {
-	if( ($input1=~/C[0-9]+/)) { push @{$c1}, $input1; }
-	else { $c1 = $umls->getConceptList($input1); $flag1 = "term"; }
-
-	if( ($input2=~/C[0-9]+/)) { push @{$c2}, $input2; }
-	else { $c2 = $umls->getConceptList($input2); $flag2 = "term"; }
-    }
+    if( ($input2=~/C[0-9]+/)) { push @{$c2}, $input2; }
+    else { $c2 = $umls->getConceptList($input2); $flag2 = "term"; }
     
-    
-    my $printFlag = 0;
     my $precision = 4;      
     my $floatformat = join '', '%', '.', $precision, 'f';    
     foreach $cui1 (@{$c1}) {
@@ -384,61 +356,34 @@ foreach my $element (@fileArray) {
 		else                { $shortestpaths = $umls->findShortestPath($cui1, $cui2); }
 	    }
 	    
+	    my $minturn = 0; 
 	    foreach my $path (@{$shortestpaths}) {
 		my @shortestpath = split/\s+/, $path;
-		
-		
-		my $length = $#shortestpath + 1;
-		print "\nThe shortest path ";
-		if(defined $opt_length) {
-		    print "(length: $length) ";
-		}
-		print "between $t1 ($cui1) and $t2 ($cui2):\n";
-		print "  => ";
+				
+		my $turn = -1; my $prevrel = ""; 
 		foreach my $i (0..$#shortestpath) {
 		    #  get the concept
 		    my $concept = $shortestpath[$i];
 		
-		    #  get one of the terms associated with the concept/st
-		    my $t = "";
-		    if(defined $opt_st) { $t = $umls->getStAbr($concept); }
-		    else { $t = $umls->getAllPreferredTerm($concept); }
-		    
-		    #  print out the concept
-		    print "$concept ($t) "; 
-		    
-		    #  if the propagation option was defined print out 
-		    #  the propagation count and IC count
-		    if(defined $opt_icpropagation) { 
-			my $value = "";
-			if(defined $opt_st) { $value = $umls->getStIC($concept); }
-			else                { $value = $umls->getIC($concept);   }
-       
-			my $ic = sprintf $floatformat, $value;
-			print "($ic) ";
-		    }     
-		    
-		    #  if the info option was defined print out 
-		    #  the relation and source information
-		    if(!defined $opt_st) { 
-			if( (defined $opt_info) and ($i < $#shortestpath) ) {
-			    my $second = $shortestpath[$i+1];
-			    my $relations = $umls->getRelationsBetweenCuis($concept, $second);
-			    print " => @{$relations} => ";
-			}
+		    if( $i < $#shortestpath) {
+			my $second = $shortestpath[$i+1];
+			my $relations = $umls->getRelationsBetweenCuis($concept, $second);
+			my $relsab = shift @{$relations}; 
+			$relsab=~/([A-Z]+) \([A-Z\_]+\)/;
+			my $rel = $1; 
+			
+
+			if($rel ne $prevrel) { $turn++; }
+
+			$prevrel = $rel; 
 		    }
 		}
-		print "\n";
 		
-		$printFlag = 1;
+		if($turn < $minturn || $minturn == 0) { $minturn = $turn; }
 	    }
+	    
+	    print "\nThe least number of turns in the shortest path between $t1 ($cui1) and $t2 ($cui2) is : $minturn\n";
 	}
-    }
-    
-    if( !($printFlag) ) {
-	print "\n";
-	print "There is not a path between $input1 and $input2\n";
-	print "given the current view of the UMLS.\n\n";
     }
 }
 
@@ -447,7 +392,7 @@ foreach my $element (@fileArray) {
 ##############################################################################
 sub minimalUsageNotes {
     
-    print "Usage: findShortestPath.pl [OPTIONS] [CUI1|TERM1] [CUI2|TERM2]\n";
+    print "Usage: findNumberTurns.pl [OPTIONS] [CUI1|TERM1] [CUI2|TERM2]\n";
     &askHelp();
     exit;
 }
@@ -461,7 +406,7 @@ sub showHelp() {
     print "This is a utility that takes as input two Terms or\n";
     print "CUIs and returns the shortest path between them.\n\n";
   
-    print "Usage: findShortestPath.pl [OPTIONS] [CUI1|TERM1] [CUI2|TERM2]\n\n";
+    print "Usage: findNumberTurns.pl [OPTIONS] [CUI1|TERM1] [CUI2|TERM2]\n\n";
 
     print "Options:\n\n";
 
@@ -490,8 +435,7 @@ sub showHelp() {
 
     print "--config FILE            Configuration file\n\n";
     
-    print "--realtime
-               This option will not create a database of the\n";
+    print "--realtime               This option will not create a database of the\n";
     print "                         path information for all of concepts but just\n"; 
     print "                         obtain the information for the input concept\n\n";
     print "--forcerun               This option will bypass any command \n";
@@ -504,10 +448,6 @@ sub showHelp() {
 
     print "--verbose                This option prints out the path information\n";
     print "                         to a file in your config directory.\n\n";    
-    print "--cuilist FILE           This option takes in a file containing a \n";
-    print "                         list of CUIs (one CUI per line) and stores\n";
-    print "                         only the path information for those CUIs\n"; 
-    print "                         rather than for all of the CUIs\n\n";
 
     print "--version                Prints the version number\n\n";
  
@@ -518,7 +458,7 @@ sub showHelp() {
 #  function to output the version number
 ##############################################################################
 sub showVersion {
-    print '$Id: findShortestPath.pl,v 1.26 2014/06/27 00:18:32 btmcinnes Exp $';
+    print '$Id: findNumberTurns.pl,v 1.1 2014/06/27 00:18:32 btmcinnes Exp $';
     print "\nCopyright (c) 2008, Ted Pedersen & Bridget McInnes\n";
 }
 
@@ -526,6 +466,6 @@ sub showVersion {
 #  function to output "ask for help" message when user's goofed
 ##############################################################################
 sub askHelp {
-    print STDERR "Type findShortestPath.pl --help for help.\n";
+    print STDERR "Type findNumberTurns.pl --help for help.\n";
 }
     

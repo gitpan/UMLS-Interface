@@ -1,5 +1,5 @@
 # UMLS::Interface::PathFinder
-# (Last Updated $Id: PathFinder.pm,v 1.64 2014/02/10 17:21:29 btmcinnes Exp $)
+# (Last Updated $Id: PathFinder.pm,v 1.65 2014/06/27 13:23:47 btmcinnes Exp $)
 #
 # Perl module that provides a perl interface to the
 # Unified Medical Language System (UMLS)
@@ -157,6 +157,53 @@ sub _initialize {
     $self->_setOptions($params);
 }
 
+#  method to set the realtime global parameter options
+#  input : bool <- 1 (turn on) 0 (turn off)
+#  output: 
+sub _setRealtimeOption { 
+
+    my $self = shift;
+    my $option = shift;
+
+    my $function = "_setRealtimeOption";
+    &_debug($function);
+
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    if($option == 1) { 
+	$option_realtime = 1; 
+    }
+    else { 
+	$option_realtime = 0; 
+    }
+}
+
+#  method to set the undirected global parameter options
+#  input : bool <- 1 (turn on) 0 (turn off)
+#  output: 
+sub _setUndirectedOption { 
+
+    my $self = shift;
+    my $option = shift;
+
+    my $function = "_setUndirectedOption";
+    &_debug($function);
+
+    #  check self
+    if(!defined $self || !ref $self) {
+	$errorhandler->_error($pkg, $function, "", 2);
+    }
+
+    if($option == 1) { 
+	$option_undirected = 1; 
+    }
+    else { 
+	$option_undirected = 0; 
+    }
+}
 
 #  method to set the global parameter options
 #  input : $params <- reference to a hash

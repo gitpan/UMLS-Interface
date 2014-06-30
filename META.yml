@@ -23,4 +23,4 @@ requires:
   Digest::SHA1: 2.12
   File::Path: 2.08
   File::Spec: 3.31
-version: 1.39
+version: 1.41
